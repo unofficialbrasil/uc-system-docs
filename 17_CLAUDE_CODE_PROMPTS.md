@@ -1,13 +1,13 @@
 # Claude Code Session Prompts
 
 **Last Updated:** 2026-01-14
-**Version:** 5.0
+**Version:** 5.2
 
 ---
 
-## Files Registry (26 Files Total)
+## Files Registry (28 Files Total)
 
-### Repository Files (8 files)
+### Repository Files (10 files)
 
 | Repo | CLAUDE.md | README.md |
 |------|-----------|-----------|
@@ -15,10 +15,11 @@
 | uc-api | `/srv/unofficial/prod/app/uc-api/CLAUDE.md` | `/srv/unofficial/prod/app/uc-api/README.md` |
 | uc-webhooks | `/srv/unofficial/prod/app/uc-webhooks/CLAUDE.md` | `/srv/unofficial/prod/app/uc-webhooks/README.md` |
 | uc-world | `/srv/unofficial/prod/app/uc-world/CLAUDE.md` | `/srv/unofficial/prod/app/uc-world/README.md` |
+| uc-system-docs | `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` | `/srv/unofficial/prod/app/uc-system-docs/README.md` |
 
 ### System Documentation (18 files)
 
-Location: `/srv/unofficial/prod/app/system/`
+Location: `/srv/unofficial/prod/app/uc-system-docs/`
 
 | # | File |
 |---|------|
@@ -52,24 +53,26 @@ Hi Claude, let's start a development session. Execute the COMPLETE startup check
 
 ## PHASE 1: READ ALL FILES (MANDATORY - NO EXCEPTIONS)
 
-You MUST read ALL 26 files to have full context. No exceptions.
+You MUST read ALL 28 files to have full context. No exceptions.
 
-### 1.1 Repository CLAUDE.md Files (4 files)
+### 1.1 Repository CLAUDE.md Files (5 files)
 Read each file completely:
 - `/srv/unofficial/prod/app/unofficial-communities/CLAUDE.md`
 - `/srv/unofficial/prod/app/uc-api/CLAUDE.md`
 - `/srv/unofficial/prod/app/uc-webhooks/CLAUDE.md`
 - `/srv/unofficial/prod/app/uc-world/CLAUDE.md`
+- `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md`
 
-### 1.2 Repository README.md Files (4 files)
+### 1.2 Repository README.md Files (5 files)
 Read each file completely:
 - `/srv/unofficial/prod/app/unofficial-communities/README.md`
 - `/srv/unofficial/prod/app/uc-api/README.md`
 - `/srv/unofficial/prod/app/uc-webhooks/README.md`
 - `/srv/unofficial/prod/app/uc-world/README.md`
+- `/srv/unofficial/prod/app/uc-system-docs/README.md`
 
 ### 1.3 System Documentation (18 files)
-Read ALL files in `/srv/unofficial/prod/app/system/`:
+Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `01_SYSTEM_CANONICAL_INDEX.md`
 - `02_PRODUCT_BLUEPRINT.md`
 - `03_TECHNICAL_ARCHITECTURE.md`
@@ -117,7 +120,7 @@ echo "║                     REPOSITORY STATUS CHECK                      ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 cd /srv/unofficial/prod/app
-for repo in unofficial-communities uc-api uc-webhooks uc-world; do
+for repo in unofficial-communities uc-api uc-webhooks uc-world uc-system-docs; do
   echo "┌─────────────────────────────────────────────────────────────────┐"
   printf "│ %-63s │\n" "$repo"
   echo "├─────────────────────────────────────────────────────────────────┤"
@@ -391,9 +394,9 @@ After completing ALL phases, provide this summary:
 ║ Date: YYYY-MM-DD HH:MM                                           ║
 ║                                                                  ║
 ║ FILES LOADED:                                                    ║
-║   ✓ Repository files: 8/8                                        ║
+║   ✓ Repository files: 10/10                                      ║
 ║   ✓ System files: 18/18                                          ║
-║   ✓ Total context: 26 files                                      ║
+║   ✓ Total context: 28 files                                      ║
 ║                                                                  ║
 ║ SYSTEM STATUS:                                                   ║
 ║   • VPS: [Connected/Disconnected]                                ║
@@ -464,25 +467,27 @@ echo "└───────────────────────�
 
 ## PHASE 2: UPDATE ALL REPOSITORY FILES (MANDATORY)
 
-For EACH of the 8 repository files below, either:
+For EACH of the 10 repository files below, either:
 - **UPDATE** with changes made during this session, OR
 - **ADD** a review stamp if no changes: `<!-- Last Reviewed: YYYY-MM-DD - No updates needed -->`
 
-### CLAUDE.md Files (4 files)
+### CLAUDE.md Files (5 files)
 | File | Action |
 |------|--------|
 | `/srv/unofficial/prod/app/unofficial-communities/CLAUDE.md` | Update "Current Status" |
 | `/srv/unofficial/prod/app/uc-api/CLAUDE.md` | Update if API changed |
 | `/srv/unofficial/prod/app/uc-webhooks/CLAUDE.md` | Update if webhooks changed |
 | `/srv/unofficial/prod/app/uc-world/CLAUDE.md` | Update if World changed |
+| `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` | Update if docs structure changed |
 
-### README.md Files (4 files)
+### README.md Files (5 files)
 | File | Action |
 |------|--------|
 | `/srv/unofficial/prod/app/unofficial-communities/README.md` | Update if significant changes |
 | `/srv/unofficial/prod/app/uc-api/README.md` | Update if significant changes |
 | `/srv/unofficial/prod/app/uc-webhooks/README.md` | Update if significant changes |
 | `/srv/unofficial/prod/app/uc-world/README.md` | Update if significant changes |
+| `/srv/unofficial/prod/app/uc-system-docs/README.md` | Update if docs structure changed |
 
 ## PHASE 3: UPDATE ALL SYSTEM FILES (MANDATORY)
 
@@ -490,7 +495,7 @@ For EACH of the 18 system files, either:
 - **UPDATE** the content if relevant changes were made, OR
 - **ADD** a review stamp at the end: `<!-- Last Reviewed: YYYY-MM-DD - No updates needed -->`
 
-Location: `/srv/unofficial/prod/app/system/`
+Location: `/srv/unofficial/prod/app/uc-system-docs/`
 
 | # | File | Update if... |
 |---|------|--------------|
@@ -567,7 +572,7 @@ echo "║                      GIT STATUS CHECK                            ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 cd /srv/unofficial/prod/app
-for repo in unofficial-communities uc-api uc-webhooks uc-world; do
+for repo in unofficial-communities uc-api uc-webhooks uc-world uc-system-docs; do
   echo "┌─────────────────────────────────────────────────────────────────┐"
   printf "│ 📁 %-60s │\n" "$repo"
   echo "├─────────────────────────────────────────────────────────────────┤"
@@ -612,7 +617,7 @@ echo "┌───────────────────────�
 echo "│ FINAL GIT SYNC STATUS                                           │"
 echo "├─────────────────────────────────────────────────────────────────┤"
 cd /srv/unofficial/prod/app
-for repo in unofficial-communities uc-api uc-webhooks uc-world; do
+for repo in unofficial-communities uc-api uc-webhooks uc-world uc-system-docs; do
   AHEAD=$(git -C "$repo" rev-list @{u}..HEAD --count 2>/dev/null || echo "0")
   if [ "$AHEAD" -eq 0 ]; then
     printf "│ ✓  %-40s Synced              │\n" "$repo"
@@ -701,7 +706,7 @@ Provide this final summary:
 ║   3. [Other work]                                                ║
 ║                                                                  ║
 ║ FILES UPDATED:                                                   ║
-║   • Repository files: X/8                                        ║
+║   • Repository files: X/10                                       ║
 ║   • System files: X/18                                           ║
 ║   • Session log: ✓ Added                                         ║
 ║                                                                  ║
@@ -710,6 +715,7 @@ Provide this final summary:
 ║   • uc-api: [Synced/X unpushed]                                  ║
 ║   • uc-webhooks: [Synced/X unpushed]                             ║
 ║   • uc-world: [Synced/X unpushed]                                ║
+║   • uc-system-docs: [Synced/X unpushed]                          ║
 ║                                                                  ║
 ║ SYSTEM STATUS AT CLOSE:                                          ║
 ║   • Disk: XX%                                                    ║
@@ -731,7 +737,7 @@ Provide this final summary:
 ║   [Any issues to address or "None"]                              ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-Session closed. All 26 files reviewed/updated. Context preserved.
+Session closed. All 28 files reviewed/updated. Context preserved.
 ```
 ```
 
@@ -743,7 +749,7 @@ Session closed. All 26 files reviewed/updated. Context preserved.
 | Item | Path |
 |------|------|
 | App Base | `/srv/unofficial/prod/app/` |
-| System Docs | `/srv/unofficial/prod/app/system/` |
+| System Docs | `/srv/unofficial/prod/app/uc-system-docs/` |
 | Docker Compose | `/srv/unofficial/prod/app/docker-compose.prod.yml` |
 | Secrets | `/etc/uc/secrets/` |
 | Backups | `/root/uc-backups/` |
@@ -769,4 +775,4 @@ Session closed. All 26 files reviewed/updated. Context preserved.
 
 ---
 
-*Version 5.1 - 2026-01-14 - Added comprehensive backup checks*
+*Version 5.2 - 2026-01-14 - Added uc-system-docs as 5th repository (28 files total)*

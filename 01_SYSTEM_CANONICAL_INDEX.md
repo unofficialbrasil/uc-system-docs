@@ -9,7 +9,7 @@
 
 ## 1. Purpose of This System Folder
 
-This folder (`/srv/unofficial/prod/app/system/`) is the **authoritative system-of-record** for the Unofficial Communities SaaS platform.
+This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative system-of-record** for the Unofficial Communities SaaS platform.
 
 **It provides:**
 1. **Single Source of Truth** - All system-level decisions, specifications, and governance documents
@@ -110,7 +110,7 @@ For audit trail:
 
 | Resource | Path |
 |----------|------|
-| System Documentation | `/srv/unofficial/prod/app/system/` |
+| System Documentation | `/srv/unofficial/prod/app/uc-system-docs/` |
 | Application Code | `/srv/unofficial/prod/app/` |
 | Docker Compose | `/srv/unofficial/prod/app/docker-compose.prod.yml` |
 | Secrets | `/etc/uc/secrets/` |
