@@ -41,6 +41,80 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-15-1
+
+**Date:** 2026-01-15
+**Duration:** ~1 hour
+**Focus Area:** System Documentation Repository & Session Prompts v6.0
+
+### Summary
+Renamed system folder to `uc-system-docs` to match GitHub repository, created proper repo documentation (CLAUDE.md, README.md), and upgraded session prompts to v6.0 with comprehensive verification phases including GO/NO-GO gates.
+
+### Changes Made
+
+**Repository Rename:**
+- Renamed `/srv/unofficial/prod/app/system/` → `/srv/unofficial/prod/app/uc-system-docs/`
+- Updated all path references across 4 repos (CLAUDE.md and README.md files)
+
+**New Files Created:**
+- `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` - Technical reference for system docs repo
+
+**Files Modified:**
+1. `17_CLAUDE_CODE_PROMPTS.md` - Upgraded to v6.0 (+839 lines)
+   - Open Session: Added PHASE 9-14 (DB Health, Queue, E2E Smoke Tests, Runtime/Git Consistency, Security Drift, Observability)
+   - Close Session: Added PHASE 8-11 (DB Health, Queue, Security, Observability)
+   - Added GO/NO-GO gate with explicit criteria
+   - Added SAFE TO LEAVE UNATTENDED gate
+   - Updated file count: 26 → 28 files (5 repos × 2 files each)
+   - Added Quick Reference tables for criteria
+
+2. `01_SYSTEM_CANONICAL_INDEX.md` - Updated path references
+
+3. All 4 repo CLAUDE.md files - Updated paths from `system/` to `uc-system-docs/`
+
+4. All 4 repo README.md files - Updated relative links
+
+**Git Commits:**
+- unofficial-communities: 6ca2c48
+- uc-api: ce94d9b
+- uc-webhooks: f114568
+- uc-world: 21dff58
+- uc-system-docs: 3471a56
+
+### Decisions Made
+
+1. **Repository Naming**
+   - Decision: Match folder name to GitHub repo name (`uc-system-docs`)
+   - Rationale: Consistency, easier to find and reference
+
+2. **Session Prompts v6.0 Features**
+   - Decision: Add comprehensive verification beyond "service up" checks
+   - Rationale: Verify system is actually *working*, not just running
+
+3. **GO/NO-GO Gates**
+   - Decision: Add explicit gates with criteria
+   - Rationale: Prevent starting/ending sessions with critical issues
+
+### Issues Encountered
+- Git pull with divergent branches when adding README from GitHub
+- Resolution: Used `--allow-unrelated-histories` flag
+
+### Follow-up Items
+- [ ] Investigate webhooks health endpoint (showed 🔴 in pre-close check)
+- [ ] Add git commit labels to Docker images for Runtime/Git consistency checks
+
+### Notes
+- Installed Claude Code CLI v2.1.7 globally (`npm i -g @anthropic-ai/claude-code`)
+- Session prompts now check: MySQL, Prisma migrations, Redis, BullMQ queues, auth guards, secrets in git, container restarts, latency
+
+**Metrics at Close:**
+- Disk: 18%
+- Memory: 43%
+- Load: 0.80
+- Services: 6/7 healthy (webhooks showing issue)
+
+---
+
 ## SESS-2026-01-14-1
 
 **Date:** 2026-01-14
