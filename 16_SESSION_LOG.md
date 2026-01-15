@@ -41,6 +41,89 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-15-2
+
+**Date:** 2026-01-15
+**Duration:** ~1 hour
+**Focus Area:** Frontend Type Safety & UI Updates
+
+### Summary
+Fixed TypeScript type mismatches across the frontend codebase, extended SessionUser type with proper fields from the API, and updated UI labels from "Mundo 3D" to "UC World".
+
+### Changes Made
+
+**Type System Fixes:**
+- Extended `SessionUser` type in `useSession.ts` with `displayName`, `handle`, `tier` fields
+- Added `LoginStartPayload` type and `loginStart` function to session hook
+- Fixed `user.id` → `user.identityId` across 11 files
+
+**Files Modified (16 total):**
+1. `src/hooks/useSession.ts` - Extended types, added loginStart function
+2. `src/app/login/components/LoginCard.tsx` - Removed `any` cast, use typed loginStart
+3. `src/app/(members)/dashboard/sections/Profile.tsx` - Display all available session data
+4. `src/app/(members)/dashboard/sections/MedalProgress.tsx` - Fix identityId
+5. `src/app/(members)/dashboard/sections/PeriodVariation.tsx` - Fix identityId
+6. `src/app/(members)/dashboard/sections/Top10.tsx` - Fix identityId
+7. `src/app/(members)/dashboard/useDashboardSummary.ts` - Fix identityId
+8. `src/app/(members)/dashboard/useGamificationProfileBadges.ts` - Fix identityId
+9. `src/app/(members)/dashboard/useGamificationProfileMix.ts` - Fix identityId
+10. `src/app/(members)/dashboard/useGamificationProfileScore14d.ts` - Fix identityId
+11. `src/app/(members)/dashboard/usePointsMetrics.ts` - Fix identityId
+12. `src/app/(members)/dashboard/useRankingTop.ts` - Fix identityId
+13. `src/app/(members)/lendas/missoes/page.tsx` - Fix identityId
+14. `src/hooks/useMiniRanking.ts` - Fix identityId
+15. `src/components/dashboard/DashboardShell.tsx` - "Mundo 3D" → "UC World"
+16. `src/components/world/WorldExperience.tsx` - "MUNDO 3D" → "UC WORLD"
+
+**Git Commit:**
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| unofficial-communities | 958b67a | fix: correct SessionUser type and update UI labels |
+
+### Decisions Made
+
+1. **Type Extension over Any Cast**
+   - Decision: Properly extend SessionUser type instead of using `any` cast
+   - Rationale: Type safety, better IDE support, catch errors at compile time
+
+2. **UI Label Standardization**
+   - Decision: Use "UC World" consistently across UI
+   - Rationale: Match product naming, clearer branding
+
+### Issues Encountered
+
+1. **TypeScript Build Errors**
+   - Error: `Property 'id' does not exist on type 'SessionUser'`
+   - Resolution: Changed `user.id` to `user.identityId` across all files
+
+2. **LoginCard Type Mismatch**
+   - Error: `Property 'loginStart' does not exist on type 'SessionCtx'`
+   - Resolution: Added loginStart to SessionCtx type and implemented in useSession hook
+
+### Follow-up Items
+- [x] Push unpushed commit to unofficial-communities
+- [ ] Consider adding more user profile data from API (waNumber, igUsername if available)
+
+### Notes
+- Build completed successfully with no TypeScript errors
+- All containers running healthy after rebuild
+
+---
+
+### System State at Session Close
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Disk | 24% | 🟢 Healthy |
+| Memory | 47% | 🟢 Healthy |
+| Load | 0.37 | 🟢 Healthy |
+| Services | 3/4 | 🟢 (Webhooks internal only) |
+| Queue | 0 waiting / 0 failed | 🟢 Clear |
+| Backup | 2026-01-14 03:00 | 🟢 Success |
+
+---
+
 ## SESS-2026-01-15-1
 
 **Date:** 2026-01-15
