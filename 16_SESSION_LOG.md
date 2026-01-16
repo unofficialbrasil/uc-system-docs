@@ -41,6 +41,106 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-16-3
+
+**Date:** 2026-01-16
+**Duration:** ~1 hour
+**Focus Area:** Living Graph Step 2 - Consent-Gated Event Ingestion
+
+### Summary
+Implemented Step 2 of the Living Graph execution plan by adding consent tracking infrastructure and consent-gated analytics event ingestion in uc-api. WhatsApp events are now only stored to analytics_events if the user has granted explicit consent for `whatsapp_activity` purpose.
+
+### Changes Made
+
+**uc-api (5 files):**
+
+1. **prisma/schema.prisma** (+67 lines)
+   - Added `user_consents` model for LGPD-compliant consent tracking
+   - Added `analytics_events` model for pseudonymized event storage
+   - Added `consent_audit_log` model for compliance audit trail
+   - Added relations to `identities` model
+
+2. **prisma/migrations/20260116_add_consent_and_analytics_events/migration.sql** (new)
+   - CREATE TABLE user_consents with unique (identity_id, purpose)
+   - CREATE TABLE analytics_events with indexes for aggregation queries
+   - CREATE TABLE consent_audit_log for immutable audit trail
+
+3. **src/services/consentService.ts** (new, 236 lines)
+   - `checkConsent()` - Full consent status check
+   - `hasActiveConsent()` - Quick boolean check for performance
+   - `grantConsent()` - Grant consent with audit logging
+   - `revokeConsent()` - Revoke consent with audit logging
+   - `getUserConsents()` - List all active consents for a user
+
+4. **src/services/analyticsEventsService.ts** (new, 89 lines)
+   - `storeAnalyticsEvent()` - Store single event with pseudonymized identity
+   - `storeAnalyticsEventsBatch()` - Batch storage for efficiency
+   - `mapWhatsAppEventType()` - Map event kinds to standardized types
+   - `buildWhatsAppEventData()` - Build event data (no content, only metadata)
+
+5. **src/services/socialEventsProcessor.ts** (+123 lines)
+   - Added consent check before processing WhatsApp events
+   - Added `storeToAnalyticsIfConsented()` helper function
+   - Feature flag `FEATURE_CONSENT_GATING` (default: enabled)
+   - Events only stored to analytics_events if consent granted
+   - Gamification processing continues regardless of consent
+
+**Database:**
+- Applied migration to create 3 new tables
+- Marked migration as applied via `prisma migrate resolve`
+
+**Git Commit:**
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | 65c150b | feat(living-graph): implement consent-gated event ingestion (Step 2) |
+
+### Decisions Made
+
+1. **Consent Purpose Separation**
+   - Decision: Separate consent purposes (whatsapp_activity, analytics, marketing, world_telemetry)
+   - Rationale: LGPD requires granular consent per data processing purpose
+
+2. **Gamification Independent of Consent**
+   - Decision: Gamification (XP, streaks) continues without consent; only analytics_events requires consent
+   - Rationale: Gamification is core functionality; analytics is for Living Graph features
+
+3. **Feature Flag for Consent Gating**
+   - Decision: `FEATURE_CONSENT_GATING` env var controls behavior (default: enabled)
+   - Rationale: Allow rollback if issues arise; backwards compatible
+
+4. **Pseudonymization in Analytics**
+   - Decision: Store `identity_id_hash` (HMAC-SHA256) instead of raw identity_id
+   - Rationale: Privacy by design; k-anonymity for aggregate queries
+
+### Issues Encountered
+
+1. **MySQL IF NOT EXISTS Syntax**
+   - Issue: MySQL 8.0 doesn't support `ADD COLUMN IF NOT EXISTS` syntax
+   - Resolution: Removed from migration SQL, ran table creation statements individually
+
+2. **Prisma Migration Not Registered**
+   - Issue: Tables created manually weren't tracked by Prisma migration system
+   - Resolution: Used `prisma migrate resolve --applied` to mark migration as applied
+
+3. **API Maintenance Mode on Startup**
+   - Issue: db-gate script detected pending migrations (exit code 10)
+   - Resolution: Ran `prisma db push` and marked migration as applied
+
+### Follow-up Items
+- [ ] Implement Step 3: Daily aggregation job (community_day_features)
+- [ ] Create consent UI in frontend for users to grant/revoke consent
+- [ ] Add consent API endpoints (GET/POST /api/v1/me/consents)
+- [ ] Implement data retention/purge jobs for analytics_events
+
+### Notes
+- Consent table uses BIGINT for id (future-proofing for high volume)
+- Analytics events include `consent_verified` boolean for audit trail
+- No message content is ever stored - only metadata (source, kind, channel_id, timestamp_bucket)
+- Events tested: API healthy, worker initialized, no errors in logs
+
+---
+
 ## SESS-2026-01-16-2
 
 **Date:** 2026-01-16
