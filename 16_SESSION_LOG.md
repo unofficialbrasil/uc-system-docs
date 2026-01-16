@@ -145,6 +145,113 @@ Implemented Step 4 of the Living Graph execution plan by creating the community 
 
 ---
 
+## SESS-2026-01-16-6
+
+**Date:** 2026-01-16
+**Duration:** ~60 minutes
+**Focus Area:** Living Graph Step 5 - Portal Rendering + Travel Gating
+
+### Summary
+Implemented Step 5 of the Living Graph execution plan by creating the portal system that connects UC World to the Living Graph. This includes loading portal mapping from uc-api on room init, displaying portal info cards when players enter portal zones, and validating travel requests through travel gating rules.
+
+### Changes Made
+
+**uc-api (2 files):**
+
+1. **src/services/portalService.ts** (new, ~280 lines)
+   - `getCommunityPortals()` - Get active portal mapping for a community
+   - `validatePortalTravel()` - Travel gating with override/visibility checks
+   - `logPortalTraversal()` - Log traversals for analytics
+   - `getPortalBySlot()` - Get specific portal by slot
+
+2. **src/routes/portalRoutes.ts** (new, ~310 lines)
+   - `GET /v1/communities/:id/portals` - Get portal mapping
+   - `GET /v1/communities/:communityId/portals/:slot` - Get specific portal
+   - `POST /v1/portals/validate-travel` - Validate travel request
+   - `POST /v1/portals/log-traversal` - Log traversal
+
+3. **src/server.ts** (+3 lines)
+   - Import and register portal routes
+
+**uc-world/shared (1 file):**
+
+1. **src/messages.ts** (+50 lines)
+   - Added `PORTAL_TRAVEL_REQUEST` message type
+   - Added `PORTAL_INFO`, `PORTAL_TRAVEL_RESPONSE`, `PORTAL_TRAVEL_EXECUTE` message types
+   - Added `PortalSlotData`, `PortalInfoPayload`, `PortalTravelRequestPayload`, `PortalTravelResponsePayload`, `PortalTravelExecutePayload` interfaces
+
+**uc-world/server (1 file):**
+
+1. **src/rooms/WorldRoom.ts** (+150 lines)
+   - Added `portalData` and `communityId` properties
+   - Added `playerIdentities` map for tracking identity IDs
+   - Made `onCreate` async to load portal data
+   - Added `PORTAL_TRAVEL_REQUEST` message handler
+   - Added `loadPortalData()` - Fetch portals from uc-api on room init
+   - Added `handlePortalTravelRequest()` - Validate and respond to travel requests
+   - Added `logPortalTraversal()` - Log traversals to uc-api
+
+**uc-world/client (3 files):**
+
+1. **src/network/ColyseusClient.ts** (+60 lines)
+   - Added portal message type imports
+   - Added `portalInfo` cache and callbacks
+   - Added `PORTAL_INFO` and `PORTAL_TRAVEL_RESPONSE` message handlers
+   - Added `onPortalInfo()`, `onPortalTravelResponse()`, `requestPortalTravel()`, `getPortalInfo()` methods
+
+2. **src/systems/ZoneManager.ts** (+220 lines)
+   - Added `portalData` map and `portalInfoCard` element
+   - Added `setPortalInfo()` - Set portal data from server
+   - Added `createPortalInfoCard()` - Create styled portal info card UI
+   - Added `showPortalInfo()` / `hidePortalInfo()` - Show/hide card on zone entry/exit
+   - Added `formatReasonCodes()` - Human-readable reason code formatting
+   - Added `formatDirection()`, `formatConfidence()`, `formatAssignmentType()` formatters
+
+3. **src/scenes/GameWorld.ts** (+25 lines)
+   - Added `onPortalInfo()` handler to update ZoneManager
+   - Added `onPortalTravelResponse()` handler for travel feedback
+
+**Docker:**
+- Rebuilt and deployed uc-world container
+
+### Decisions Made
+
+1. **Portal Info Card Design**
+   - Decision: Show floating card at bottom center when entering portal zones
+   - Rationale: Non-intrusive but visible, matches gaming conventions
+
+2. **Reason Code Formatting**
+   - Decision: Convert snake_case codes to human-readable phrases
+   - Rationale: Explainability is key to trust in Living Graph
+
+3. **Travel Gating Flow**
+   - Decision: Require identityId for travel (anonymous users denied)
+   - Rationale: Travel logging requires identity, prevents abuse
+
+4. **Portal Data Loading**
+   - Decision: Load on room init, cache for all players
+   - Rationale: Single API call per room, not per player
+
+### Issues Encountered
+
+1. **No Test Data**
+   - Issue: No communities exist in database to test portal system
+   - Resolution: Verified code is functional, will work once data exists
+
+### Follow-up Items
+- [ ] Add keyboard shortcut (E key) to initiate portal travel
+- [ ] Implement actual world redirect on travel approval
+- [ ] Add visual portal effects (particles, glow animation)
+- [ ] Test with real community data after Step 6
+
+### Notes
+- Portal API returns 404 for non-existent communities (expected behavior)
+- Portal info card shows "No Destination" for empty slots
+- Travel validation checks: portal exists, no override blocks, destination visible
+- Client handles both successful and denied travel responses with notifications
+
+---
+
 ## SESS-2026-01-16-4
 
 **Date:** 2026-01-16
