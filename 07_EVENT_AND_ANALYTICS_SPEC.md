@@ -501,3 +501,5 @@ async function trackEvent(event: BaseEvent, identityId: number) {
 ---
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
+
+<!-- Last Reviewed: 2026-01-16 - No updates needed -->

@@ -41,6 +41,73 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-16-2
+
+**Date:** 2026-01-16
+**Duration:** ~30 minutes
+**Focus Area:** Living Graph Step 1 - Event Taxonomy Implementation
+
+### Summary
+Implemented Step 1 of the Living Graph execution plan by upgrading uc-webhooks to properly detect and emit WhatsApp activity events (message, reaction, reply) with timestamp bucketing for daily aggregation.
+
+### Changes Made
+
+**uc-webhooks (4 files modified):**
+
+1. **src/socialEvent.ts**
+   - Added `reply` to `socialEventTypeSchema` enum
+   - Event types now: message, reaction, reply, status, unknown
+
+2. **src/meta/whatsappMapper.ts**
+   - Added `getTimestampBucket()` helper for daily aggregation (YYYY-MM-DD)
+   - Added `determineMessageType()` to detect:
+     - `reaction`: msg.type === "reaction" or msg.reaction exists
+     - `reply`: msg.context?.message_id exists
+     - `message`: default for regular messages
+   - Payload now includes `timestamp_bucket` for Living Graph aggregation
+
+3. **src/queues/socialEventsQueue.ts**
+   - Updated type comment to include "reply" in allowed kinds
+
+4. **src/meta/whatsappRoute.ts**
+   - Added documentation comment explaining consent check happens in uc-api
+
+**Deployment:**
+- Container rebuilt and restarted
+- All three event types tested and verified in logs
+
+### Decisions Made
+
+1. **Consent Check Location**
+   - Decision: Consent check happens in uc-api worker, not uc-webhooks
+   - Rationale: uc-webhooks only has phone numbers, no access to identity_id or consent data
+
+2. **Timestamp Bucketing**
+   - Decision: Add `timestamp_bucket` (YYYY-MM-DD) to event payload
+   - Rationale: Enables efficient daily aggregation for Living Graph features
+
+3. **Reply Detection**
+   - Decision: Detect replies via `context.message_id` field
+   - Rationale: WhatsApp API includes context object for reply messages
+
+### Issues Encountered
+
+1. **Port Mapping**
+   - Issue: uc-webhooks not exposed externally, couldn't test from host
+   - Resolution: Used curl container on Docker network for testing
+
+### Follow-up Items
+- [ ] Implement Step 2: Consent-gated event ingestion in uc-api
+- [ ] Add database migrations for Living Graph tables
+- [ ] Implement event aggregation worker in uc-api
+
+### Notes
+- Events tested: message, reaction, reply - all detected correctly
+- Logs confirm event types: `"type":"message"`, `"type":"reaction"`, `"type":"reply"`
+- timestamp_bucket included in payload for daily aggregation
+
+---
+
 ## SESS-2026-01-16-1
 
 **Date:** 2026-01-16
@@ -121,7 +188,7 @@ Executed startup checklist, fixed system issues (frontend TypeError, swap usage,
 
 ### Follow-up Items
 - [ ] Implement Step 0: Reality audit of zone IDs
-- [ ] Implement Step 1: Event taxonomy upgrade in uc-webhooks
+- [x] Implement Step 1: Event taxonomy upgrade in uc-webhooks
 - [ ] Implement Step 2: Consent-gated event ingestion
 - [ ] Create database migrations for Living Graph tables
 

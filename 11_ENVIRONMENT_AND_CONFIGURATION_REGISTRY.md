@@ -797,3 +797,5 @@ services:
 ---
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
+
+<!-- Last Reviewed: 2026-01-16 - No updates needed -->

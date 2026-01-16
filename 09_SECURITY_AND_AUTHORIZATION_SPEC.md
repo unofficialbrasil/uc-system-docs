@@ -920,3 +920,5 @@ CREATE TABLE security_audit_log (
 ---
 
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
+
+<!-- Last Reviewed: 2026-01-16 - No updates needed -->
