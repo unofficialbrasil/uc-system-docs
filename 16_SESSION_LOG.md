@@ -41,6 +41,110 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-16-4
+
+**Date:** 2026-01-16
+**Duration:** ~45 minutes
+**Focus Area:** Living Graph Step 3 - Daily Feature Aggregation
+
+### Summary
+Implemented Step 3 of the Living Graph execution plan by creating the daily aggregation job that populates `community_day_features` table. This job runs at 01:00 America/Sao_Paulo and aggregates analytics_events, portal traversals, and world telemetry into community-level daily features for graph building.
+
+### Changes Made
+
+**uc-api (6 files):**
+
+1. **prisma/schema.prisma** (+45 lines)
+   - Added `community_day_features` model for daily aggregated metrics
+   - Added `aggregation_job_runs` model for job execution tracking
+   - Includes DAU, WAU, missions, portal travels, WhatsApp activity, zone dwell times
+
+2. **prisma/migrations/20260116_add_daily_aggregation/migration.sql** (new)
+   - CREATE TABLE community_day_features with unique (community_id, feature_date)
+   - CREATE TABLE aggregation_job_runs with job_type and status indexes
+
+3. **src/services/dailyFeatureAggregationService.ts** (new, ~350 lines)
+   - `runDailyFeatureAggregation()` - Main aggregation function
+   - `aggregateCommunityFeatures()` - Per-community aggregation
+   - `aggregateWhatsAppActivity()` - WhatsApp counts from analytics_events
+   - `aggregateMissionCompletions()` - Mission completion counts
+   - `aggregatePortalTravels*()` - Portal traversal counts (in/out)
+   - `aggregateWorldSessions()` - UC World session counts
+   - `aggregateZoneDwellTimes()` - Zone dwell time aggregation
+   - `countDistinctActiveUsers()` - DAU/WAU calculation
+   - `backfillAggregation()` - Backfill utility for date ranges
+
+4. **src/infra/queues/analyticsQueue.ts** (new, ~75 lines)
+   - BullMQ queue for analytics jobs
+   - `scheduleDailyFeatureAggregation()` - Schedule at 04:00 UTC (01:00 BRT)
+   - `triggerManualAggregation()` - Manual trigger for testing/backfill
+
+5. **src/workers/analyticsWorker.ts** (new, ~120 lines)
+   - BullMQ worker for analytics queue
+   - Processes `daily-feature-aggregation` jobs
+   - Structured logging with job status tracking
+
+6. **src/server.ts** (+10 lines)
+   - Import and initialize analytics worker
+   - Schedule daily feature aggregation on startup
+
+**Database:**
+- Applied migration for 2 new tables
+- Marked all pending migrations as applied via `prisma migrate resolve`
+
+**Git Commit:**
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | f144a79 | feat: Step 3 - Daily feature aggregation for Living Graph |
+
+### Decisions Made
+
+1. **Aggregation Schedule**
+   - Decision: Run at 01:00 America/Sao_Paulo (04:00 UTC)
+   - Rationale: Matches execution plan schedule, runs after midnight for previous day data
+
+2. **Job Tracking Table**
+   - Decision: Create `aggregation_job_runs` table for execution tracking
+   - Rationale: Provides audit trail, debugging, and monitoring capabilities
+
+3. **Zone Dwell Derivation**
+   - Decision: Derive dwell times from zone.exit events with dwell_seconds in event_data
+   - Rationale: No new raw dwell event needed; computed from enter/exit pairs in aggregation
+
+4. **BigInt Serialization**
+   - Decision: Convert BigInt ids to strings in return values
+   - Rationale: JavaScript JSON.stringify cannot serialize BigInt natively
+
+### Issues Encountered
+
+1. **Prisma Schema Not Synced**
+   - Issue: `db push` said "already in sync" but tables didn't exist
+   - Resolution: Rebuilt container to pick up new schema, then re-ran db push
+
+2. **Migration Baseline**
+   - Issue: 19 migrations pending, couldn't run `migrate deploy` on non-empty DB
+   - Resolution: Used `prisma migrate resolve --applied` for each migration
+
+3. **BigInt Serialization Error**
+   - Issue: Job failed with "Do not know how to serialize a BigInt"
+   - Resolution: Changed `runId: bigint` to `runId: string` and added `.toString()`
+
+### Follow-up Items
+- [ ] Implement Step 4: Graph schema + build job (community_edges, community_portals)
+- [ ] Add backfill endpoint for historical data
+- [ ] Add Prometheus metrics for aggregation job duration and success rate
+- [ ] Create alerts for aggregation failures
+
+### Notes
+- Tested manual aggregation: Job completed successfully in ~24ms
+- Job tracking shows 2 successful runs in `aggregation_job_runs` table
+- API health check passes: MySQL, Redis, TimescaleDB all healthy
+- Next daily run scheduled at next 04:00 UTC
+- No communities in test DB yet, so 0 records processed (expected)
+
+---
+
 ## SESS-2026-01-16-3
 
 **Date:** 2026-01-16
@@ -128,7 +232,7 @@ Implemented Step 2 of the Living Graph execution plan by adding consent tracking
    - Resolution: Ran `prisma db push` and marked migration as applied
 
 ### Follow-up Items
-- [ ] Implement Step 3: Daily aggregation job (community_day_features)
+- [x] Implement Step 3: Daily aggregation job (community_day_features) ✓ SESS-2026-01-16-4
 - [ ] Create consent UI in frontend for users to grant/revoke consent
 - [ ] Add consent API endpoints (GET/POST /api/v1/me/consents)
 - [ ] Implement data retention/purge jobs for analytics_events
