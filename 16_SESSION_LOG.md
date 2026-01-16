@@ -252,6 +252,179 @@ Implemented Step 5 of the Living Graph execution plan by creating the portal sys
 
 ---
 
+## SESS-2026-01-16-7
+
+**Date:** 2026-01-16
+**Duration:** ~30 minutes
+**Focus Area:** Living Graph Step 6 - Admin/Ops Dashboards
+
+### Summary
+Implemented Step 6 of the Living Graph execution plan by creating admin dashboard API endpoints for operational visibility into community health, portal performance, and neighbor stability metrics.
+
+### Changes Made
+
+**uc-api (3 files):**
+
+1. **src/services/adminDashboardService.ts** (new, ~730 lines)
+   - `getCommunityHealth()` - Health overview with engagement metrics
+   - `getCommunityActivity()` - Detailed activity metrics by period
+   - `getPortalPerformance()` - Portal travel stats and metrics
+   - `getNeighborStability()` - Neighbor churn and stability tracking
+   - `getGraphOverview()` - Global Living Graph metrics
+   - `generateExportableSummary()` - Downloadable community report
+   - Health score calculation (healthy/warning/critical)
+   - Activity trend detection (increasing/stable/decreasing)
+
+2. **src/routes/adminDashboardRoutes.ts** (new, ~450 lines)
+   - `GET /v1/admin/communities/:id/health` - Community health overview
+   - `GET /v1/admin/communities/:id/activity` - Activity metrics (day/week/month)
+   - `GET /v1/admin/communities/:id/portal-stats` - Portal performance
+   - `GET /v1/admin/communities/:id/neighbor-stability` - Neighbor stability
+   - `GET /v1/admin/communities/:id/export` - Exportable JSON summary
+   - `GET /v1/admin/communities/:id/alerts` - Active alerts based on thresholds
+   - `GET /v1/admin/graph/overview` - Global graph overview
+   - `GET /v1/admin/graph/runs` - Graph build run history
+
+3. **src/server.ts** (+4 lines)
+   - Import and register admin dashboard routes
+
+**Docker:**
+- Rebuilt and deployed uc-api container
+
+### Decisions Made
+
+1. **Health Score Calculation**
+   - Decision: Based on engagement rate and retreat-to-quiet rate
+   - Critical: <10% engagement OR >50% retreat
+   - Warning: <30% engagement OR >30% retreat
+   - Rationale: Simple heuristics for initial monitoring
+
+2. **BigInt Serialization**
+   - Decision: Convert BigInt IDs to strings in API responses
+   - Rationale: JSON.stringify doesn't support BigInt natively
+
+3. **Period-based Queries**
+   - Decision: Support day/week/month periods for metrics
+   - Rationale: Flexible granularity for different use cases
+
+### Issues Encountered
+
+1. **Empty Response Object**
+   - Issue: Fastify schema validation was stripping unknown properties
+   - Resolution: Removed strict response schema for overview endpoint
+
+2. **BigInt Serialization Error**
+   - Issue: "Do not know how to serialize a BigInt" error
+   - Resolution: Convert BigInt IDs to strings before JSON response
+
+### Follow-up Items
+- [ ] Add bounce/return tracking for portal metrics
+- [ ] Implement diversity score (entropy calculation)
+- [ ] Add onboarding completion tracking
+- [ ] Create frontend dashboard UI
+
+### Notes
+- All endpoints tested and working
+- Graph overview shows last successful run from Step 4
+- No communities exist yet, so community endpoints return 404 (expected)
+- Alerts endpoint provides threshold-based health warnings
+
+---
+
+## SESS-2026-01-16-8
+
+**Date:** 2026-01-16
+**Duration:** ~40 minutes
+**Focus Area:** Living Graph Step 7 - Guardrails & Circuit Breakers
+
+### Summary
+Implemented Step 7 of the Living Graph execution plan by creating guardrails and circuit breakers for the Living Graph. This includes global feature flags, per-community safety overrides, neighbor churn limiters, and k-anon gating. The implementation ensures portals can be disabled instantly and communities can be isolated when needed.
+
+### Changes Made
+
+**uc-api (3 files):**
+
+1. **src/services/guardrailsService.ts** (new, ~520 lines)
+   - `getFeatureFlags()` - Get current feature flag status
+   - `isCommunityGraphEnabled()` - Check if graph build is enabled
+   - `arePortalsEnabled()` - Check if portals are enabled
+   - `isPortalTravelEnabled()` - Check if travel is enabled
+   - `getGuardrailStatus()` - Global guardrail status with metrics
+   - `getCommunityChurnStatus()` - Community-specific churn tracking
+   - `canUpdatePortals()` - Check if community can have portals updated
+   - `meetsKAnonThreshold()` - Check min active members requirement
+   - `getCommunityOverrides()` - Get safety overrides for community
+   - `addSafetyOverride()` - Add new safety override
+   - `removeSafetyOverride()` - Remove safety override
+   - `getCommunitiesWithOverrides()` - List all communities with overrides
+   - `validateGraphBuildAllowed()` - Pre-flight check for graph build
+
+2. **src/services/communityGraphBuildService.ts** (+50 lines modified)
+   - Added guardrails import
+   - Added feature flag check at start of build
+   - Added churn limit enforcement during portal assignment
+   - Added `freeze` override handling
+   - Updated metrics to include churn violations
+
+3. **src/routes/adminDashboardRoutes.ts** (+250 lines)
+   - `GET /v1/admin/guardrails/status` - Global guardrail status
+   - `GET /v1/admin/guardrails/overrides` - All communities with overrides
+   - `GET /v1/admin/communities/:id/churn` - Community churn status
+   - `GET /v1/admin/communities/:id/overrides` - Community overrides
+   - `POST /v1/admin/communities/:id/overrides` - Add safety override
+   - `DELETE /v1/admin/overrides/:overrideId` - Remove override
+
+**uc-system-docs (1 file):**
+
+4. **11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md** (+30 lines)
+   - Added `FEATURE_COMMUNITY_GRAPH`, `FEATURE_PORTALS`, `FEATURE_PORTAL_TRAVEL`, `FEATURE_PORTAL_EXPLORATION_SLOT` feature flags
+   - Added Section 6.4 "Living Graph Configuration (Step 7 Guardrails)"
+   - Documented graph configuration env vars
+   - Documented circuit breaker effects
+   - Documented safety override actions
+
+**Docker:**
+- Rebuilt and deployed uc-api container
+
+### Decisions Made
+
+1. **Feature Flags Default to True**
+   - Decision: FEATURE_COMMUNITY_GRAPH, FEATURE_PORTALS default to true
+   - Rationale: Enables graph by default; set to false to disable
+
+2. **Churn Limit of 2 per Week**
+   - Decision: Max 2 portal changes per community per 7 days
+   - Rationale: Prevents "airport effect" of unstable neighborhoods
+
+3. **Four Override Actions**
+   - Decision: block_all, block_neighbor, force_neighbor, freeze
+   - Rationale: Covers all safety scenarios while remaining simple
+
+4. **Graph Build Skip on Feature Flag**
+   - Decision: If FEATURE_COMMUNITY_GRAPH=false, job returns success with 0 work
+   - Rationale: Clean shutdown without error states
+
+### Issues Encountered
+
+1. **Prisma Relation Name**
+   - Issue: Used wrong relation name for community lookup
+   - Resolution: Changed from auto-generated name to explicit `community` relation
+
+### Follow-up Items
+- [ ] Add tabletop exercises for circuit breaker testing
+- [ ] Implement hysteresis for add/remove thresholds
+- [ ] Add mutuality preference (both communities should rank each other)
+- [ ] Create admin UI for managing overrides
+
+### Notes
+- All 6 new endpoints tested and working
+- Feature flags read from environment at startup
+- Churn tracking uses portal history comparison
+- Safety overrides stored in community_graph_overrides table (created in Step 4)
+- Graph build now enforces all guardrails before processing
+
+---
+
 ## SESS-2026-01-16-4
 
 **Date:** 2026-01-16

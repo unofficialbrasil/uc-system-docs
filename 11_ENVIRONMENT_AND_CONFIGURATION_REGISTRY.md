@@ -225,6 +225,10 @@ openssl rand -hex 16
 | `FEATURE_MAINTENANCE_MODE` | Enable maintenance mode | `false` | All |
 | `FEATURE_LIVING_GRAPH` | Enable Living Graph portal discovery | `false` | prod (pilot), staging |
 | `FEATURE_GRAPH_ADVANCED` | Enable Louvain/Node2Vec algorithms | `false` | None (gated) |
+| `FEATURE_COMMUNITY_GRAPH` | Enable graph job outputs to be consumed | `true` | All |
+| `FEATURE_PORTALS` | Enable portals rendering in world | `true` | All |
+| `FEATURE_PORTAL_TRAVEL` | Enable cross-community travel flow | `true` | All |
+| `FEATURE_PORTAL_EXPLORATION_SLOT` | Enable 1 exploration/diversity slot | `true` | All |
 
 ### 4.2 Feature Flag Configuration
 
@@ -586,6 +590,33 @@ const XP_SOURCES = {
 | `WORLD_IDLE_TIMEOUT_MINUTES` | Auto-disconnect after idle | `15` |
 | `WORLD_MAP_WIDTH` | Map width in tiles | `80` |
 | `WORLD_MAP_HEIGHT` | Map height in tiles | `92` |
+
+### 6.4 Living Graph Configuration (Step 7 Guardrails)
+
+| Variable | Description | Default | Range |
+|----------|-------------|---------|-------|
+| `COMMUNITY_GRAPH_WINDOW_DAYS` | Rolling window for graph calculations | `28` | 7-90 |
+| `COMMUNITY_GRAPH_ALPHA` | Social affinity weight (α) | `0.40` | 0-1 |
+| `COMMUNITY_GRAPH_BETA` | Interest affinity weight (β) | `0.60` | 0-1 |
+| `COMMUNITY_GRAPH_MIN_ACTIVE` | K-anon threshold (min active members) | `30` | 10-100 |
+| `COMMUNITY_GRAPH_CHURN_MAX_WEEKLY` | Max portal changes per week | `2` | 1-6 |
+
+**Circuit Breakers:**
+
+| Variable | Description | Effect when `false` |
+|----------|-------------|---------------------|
+| `FEATURE_COMMUNITY_GRAPH` | Master switch for graph build job | Graph job skipped entirely |
+| `FEATURE_PORTALS` | Master switch for portal rendering | Portals hidden in world UI |
+| `FEATURE_PORTAL_TRAVEL` | Switch for cross-community travel | Travel blocked at server |
+
+**Safety Override Actions:**
+
+| Action | Description | Effect |
+|--------|-------------|--------|
+| `block_all` | Block all portals for a community | All 6 slots empty |
+| `block_neighbor` | Block specific neighbor | Neighbor excluded from assignment |
+| `force_neighbor` | Force specific neighbor | Neighbor assigned regardless of algorithm |
+| `freeze` | Freeze portal assignments | Keep previous assignments unchanged |
 
 ---
 
