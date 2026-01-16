@@ -1,8 +1,8 @@
 # Background Jobs and Async Processing
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -45,13 +45,14 @@ All background jobs in the system are managed through BullMQ with Redis as the b
 
 | Job Name | Queue | Trigger | Priority | Concurrency |
 |----------|-------|---------|----------|-------------|
-| `daily-missions-assignment` | gamification | Cron (00:01 UTC) | High | 1 |
-| `streak-check` | gamification | Cron (00:30 UTC) | High | 1 |
-| `weekly-ranking-reset` | gamification | Cron (Sun 00:00 UTC) | Medium | 1 |
-| `session-cleanup` | maintenance | Cron (03:00 UTC) | Low | 1 |
-| `event-aggregation` | analytics | Cron (01:00 UTC) | Low | 1 |
-| `data-anonymization` | compliance | Cron (02:00 UTC) | Medium | 1 |
-| `backup-database` | maintenance | Cron (03:00 UTC) | Critical | 1 |
+| `daily-missions-assignment` | gamification | Cron (00:01 America/Sao_Paulo) | High | 1 |
+| `streak-check` | gamification | Cron (00:30 America/Sao_Paulo) | High | 1 |
+| `weekly-ranking-reset` | gamification | Cron (Sun 00:00 America/Sao_Paulo) | Medium | 1 |
+| `daily-feature-aggregation` | analytics | Cron (01:00 America/Sao_Paulo) | Medium | 1 |
+| `community-graph-build` | analytics | Cron (04:15 America/Sao_Paulo) | Medium | 1 |
+| `session-cleanup` | maintenance | Cron (03:00 America/Sao_Paulo) | Low | 1 |
+| `data-anonymization` | compliance | Cron (02:00 America/Sao_Paulo) | Medium | 1 |
+| `backup-database` | maintenance | Cron (03:00 America/Sao_Paulo) | Critical | 1 |
 | `webhook-dispatch` | webhooks | Event-driven | High | 5 |
 | `notification-send` | notifications | Event-driven | Medium | 10 |
 | `xp-calculation` | gamification | Event-driven | High | 3 |
@@ -103,16 +104,19 @@ const dailyMissionsJob: JobDefinition = {
 
 ### 2.1 Cron Schedule Registry
 
+> **Timezone:** All scheduled jobs run in **America/Sao_Paulo** timezone to align with Brazilian user activity patterns.
+
 | Schedule | Cron Expression | Timezone | Jobs |
 |----------|-----------------|----------|------|
-| Midnight Daily | `0 0 * * *` | UTC | streak-check, session-cleanup |
-| Early Morning | `1 0 * * *` | UTC | daily-missions-assignment |
-| Post-Midnight | `0 1 * * *` | UTC | event-aggregation |
-| Pre-Dawn | `0 2 * * *` | UTC | data-anonymization |
-| Backup Window | `0 3 * * *` | UTC | backup-database |
-| Weekly Reset | `0 0 * * 0` | UTC | weekly-ranking-reset |
-| Hourly Health | `0 * * * *` | UTC | health-check |
-| Every 5 Minutes | `*/5 * * * *` | UTC | queue-metrics |
+| Midnight Daily | `0 0 * * *` | America/Sao_Paulo | streak-check |
+| Early Morning | `1 0 * * *` | America/Sao_Paulo | daily-missions-assignment |
+| Post-Midnight | `0 1 * * *` | America/Sao_Paulo | daily-feature-aggregation |
+| Pre-Dawn | `0 2 * * *` | America/Sao_Paulo | data-anonymization |
+| Backup Window | `0 3 * * *` | America/Sao_Paulo | backup-database, session-cleanup |
+| Graph Build | `15 4 * * *` | America/Sao_Paulo | community-graph-build |
+| Weekly Reset | `0 0 * * 0` | America/Sao_Paulo | weekly-ranking-reset |
+| Hourly Health | `0 * * * *` | America/Sao_Paulo | health-check |
+| Every 5 Minutes | `*/5 * * * *` | America/Sao_Paulo | queue-metrics |
 
 ### 2.2 Scheduler Configuration
 
@@ -196,10 +200,10 @@ async function initializeScheduler(queue: Queue): Promise<void> {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    DAILY JOB SEQUENCE (UTC)                         │
+│              DAILY JOB SEQUENCE (America/Sao_Paulo)                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  00:00 ──┬── Day boundary                                           │
+│  00:00 ──┬── Day boundary (São Paulo time)                          │
 │          │                                                           │
 │  00:01 ──┼── daily-missions-assignment                              │
 │          │   └── Must complete before user activity                 │
@@ -208,19 +212,21 @@ async function initializeScheduler(queue: Queue): Promise<void> {
 │          │   └── Depends on: day boundary passed                    │
 │          │   └── Updates: streaks, milestones                       │
 │          │                                                           │
-│  01:00 ──┼── event-aggregation                                      │
+│  01:00 ──┼── daily-feature-aggregation                              │
 │          │   └── Processes: previous day events                     │
-│          │   └── Outputs: daily aggregates                          │
+│          │   └── Outputs: community_day_features                    │
 │          │                                                           │
 │  02:00 ──┼── data-anonymization                                     │
 │          │   └── Depends on: aggregation complete                   │
 │          │   └── Anonymizes: events > 90 days                       │
 │          │                                                           │
-│  03:00 ──┼── backup-database                                        │
+│  03:00 ──┼── backup-database + session-cleanup                      │
 │          │   └── Runs in low-traffic window                         │
 │          │                                                           │
-│  03:00 ──┴── session-cleanup                                        │
-│              └── Removes: expired sessions                          │
+│  04:15 ──┴── community-graph-build                                  │
+│              └── Depends on: daily-feature-aggregation complete     │
+│              └── Outputs: community_graph_edges,                    │
+│                           community_portal_assignments               │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```

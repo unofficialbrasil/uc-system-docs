@@ -1,8 +1,8 @@
 # Security and Authorization Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -324,6 +324,7 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 |------------|-------------|-------|
 | `community:view` | View community details | All |
 | `community:leave` | Leave the community | All |
+| `community:visit` | Visit as non-member (via portal) | Visitor |
 | `community:edit_settings` | Modify community settings | Admin, Owner |
 | `community:delete` | Delete the community | Owner |
 | `community:transfer_ownership` | Transfer to another member | Owner |
@@ -342,10 +343,54 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 | `gamification:reset_missions` | Reset member missions | Admin, Owner |
 | `world:connect` | Connect to UC World | All |
 | `world:move` | Move avatar in world | All |
+| `world:portal_travel` | Travel through portals | All (rate-limited) |
 | `world:kick_user` | Kick user from world | Moderator+ |
 | `profile:view_own` | View own profile | All |
 | `profile:edit_own` | Edit own profile | All |
 | `webhooks:configure` | Setup webhook integrations | Owner |
+
+### 3.3 Visitor Mode (Portal Travel)
+
+When a user travels to another community via portal, they enter **Visitor Mode**:
+
+| Aspect | Visitor Behavior | Member Behavior |
+|--------|------------------|-----------------|
+| World Access | Central Hub only | All zones |
+| XP Earning | None | Normal |
+| Chat | View only | Full participation |
+| Duration | 5 minutes max | Unlimited |
+| Rate Limit | 3 travels/hour | N/A |
+
+```typescript
+// Visitor authorization check
+async function authorizeVisitorAccess(
+  identityId: number,
+  targetCommunityId: number
+): Promise<{ allowed: boolean; reason?: string }> {
+  // 1. Check if already a member
+  const membership = await getMembership(identityId, targetCommunityId);
+  if (membership) {
+    return { allowed: true }; // Members always allowed
+  }
+
+  // 2. Check rate limit (3 portal travels per hour)
+  const travelCount = await redis.incr(`portal:travel:${identityId}`);
+  if (travelCount === 1) {
+    await redis.expire(`portal:travel:${identityId}`, 3600);
+  }
+  if (travelCount > 3) {
+    return { allowed: false, reason: 'RATE_LIMITED' };
+  }
+
+  // 3. Check community allows visitors
+  const community = await getCommunity(targetCommunityId);
+  if (community.visibility === 'private') {
+    return { allowed: false, reason: 'PRIVATE_COMMUNITY' };
+  }
+
+  return { allowed: true };
+}
+```
 
 ---
 

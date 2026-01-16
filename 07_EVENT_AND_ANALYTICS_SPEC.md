@@ -1,8 +1,8 @@
 # Event and Analytics Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -80,10 +80,20 @@ Examples:
 | `world.session.ended` | Disconnected | `{ duration_seconds, community_id }` | Server |
 | `world.zone.entered` | Entered zone | `{ zone_type, from_zone, community_id }` | Server |
 | `world.zone.exited` | Left zone | `{ zone_type, duration_seconds, community_id }` | Server |
-| `world.portal.activated` | Portal interaction | `{ portal_direction, community_id }` | Server |
+| `world.portal_travel` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, travel_reason }` | Server |
 | `world.presence.updated` | Position changed | `{ zone_type, community_id }` | Server (sampled) |
 
-### 2.5 Webhook Events
+### 2.5 WhatsApp Activity Events (Living Graph)
+
+| Event Name | Trigger | Properties | Source |
+|------------|---------|------------|--------|
+| `whatsapp.message_sent` | User sends message to group | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.reaction_added` | User reacts to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.reply_sent` | User replies to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+
+> **Consent Requirement:** WhatsApp activity events are ONLY collected for users who have consented (`consents.whatsapp_activity = true`). Events are stored in aggregate form (daily buckets) for graph computation, not individual message content.
+
+### 2.6 Webhook Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -93,7 +103,7 @@ Examples:
 | `webhook.retried` | Retry attempt | `{ source, attempt_number }` | Webhooks |
 | `webhook.dead_lettered` | Max retries exceeded | `{ source, event_type }` | Webhooks |
 
-### 2.6 System Events
+### 2.7 System Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|

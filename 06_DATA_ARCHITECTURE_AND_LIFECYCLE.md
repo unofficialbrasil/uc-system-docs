@@ -1,8 +1,8 @@
 # Data Architecture and Lifecycle
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -32,6 +32,13 @@
 │  │ • rooms         │  │ • api_keys      │  │ • reports       │             │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
 │                                                                              │
+│  ┌─────────────────────────────────────────────────────────────┐            │
+│  │                      LIVING GRAPH                            │            │
+│  │                                                              │            │
+│  │ • community_day_features  • community_graph_edges            │            │
+│  │ • community_portal_assignments                               │            │
+│  └─────────────────────────────────────────────────────────────┘            │
+│                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,6 +52,7 @@
 | UC World | World Server | Real-time | Low |
 | Integration | Webhook Service | Write-heavy | Medium |
 | Analytics | Analytics Service | Read-heavy | Low (aggregated) |
+| Living Graph | Graph Build Job | Daily batch | Low (aggregated) |
 
 ---
 
@@ -292,6 +300,60 @@ CREATE TABLE analytics_aggregates (
     computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE KEY uk_aggregate (aggregate_type, period_start, dimensions(255))
+);
+
+-- Living Graph: Daily community feature aggregates
+CREATE TABLE community_day_features (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    community_id INT NOT NULL,
+    feature_date DATE NOT NULL,
+    dau INT DEFAULT 0,                       -- Daily active users
+    wau INT DEFAULT 0,                       -- Weekly active users (rolling 7d)
+    missions_completed INT DEFAULT 0,
+    portal_travels_in INT DEFAULT 0,         -- Visitors from other communities
+    portal_travels_out INT DEFAULT 0,        -- Members traveling to other communities
+    wa_messages INT DEFAULT 0,               -- WhatsApp messages (consent-gated)
+    wa_reactions INT DEFAULT 0,              -- WhatsApp reactions (consent-gated)
+    wa_replies INT DEFAULT 0,                -- WhatsApp replies (consent-gated)
+    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_community_date (community_id, feature_date),
+    INDEX idx_feature_date (feature_date)
+);
+
+-- Living Graph: Community similarity edges
+CREATE TABLE community_graph_edges (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    source_community_id INT NOT NULL,
+    target_community_id INT NOT NULL,
+    edge_weight DECIMAL(10,6) NOT NULL,      -- Similarity score (0-1)
+    edge_type ENUM('member_overlap', 'activity_pattern', 'content_similarity') NOT NULL,
+    valid_from DATE NOT NULL,                -- Edge validity period
+    valid_to DATE NOT NULL,
+    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (source_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_edge (source_community_id, target_community_id, edge_type, valid_from),
+    INDEX idx_source_weight (source_community_id, edge_weight DESC)
+);
+
+-- Living Graph: Portal assignments (which community appears at which portal)
+CREATE TABLE community_portal_assignments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    community_id INT NOT NULL,               -- The community being assigned a portal
+    portal_direction ENUM('N', 'NE', 'SE', 'S', 'SW', 'NW') NOT NULL,
+    assigned_community_id INT NOT NULL,      -- The community that appears at this portal
+    assignment_reason VARCHAR(100) NOT NULL, -- e.g., "member_overlap:0.45"
+    valid_from DATE NOT NULL,
+    valid_to DATE NOT NULL,
+    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_portal (community_id, portal_direction, valid_from),
+    INDEX idx_valid_dates (valid_from, valid_to)
 );
 ```
 

@@ -1,8 +1,8 @@
 # Risk Register
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -348,6 +348,96 @@ MySQL database corruption causing data loss or inconsistency.
 
 ---
 
+### RSK-011: Graph Recommendation Leads to Poor Matches
+**Category:** Product
+**Probability:** Medium (3)
+**Impact:** Medium (3)
+**Risk Score:** 9 (High)
+**Owner:** Product Owner
+**Status:** Open
+
+**Description:**
+Living Graph algorithm recommends communities that users find irrelevant or low-quality, damaging trust in the feature.
+
+**Trigger Conditions:**
+- Users report portal destinations as unhelpful
+- Low conversion rate (travel → join) below 5%
+- Negative feedback in user surveys
+
+**Mitigation Strategy:**
+1. Start with simple member_overlap metric (high signal)
+2. Require minimum community health score for recommendations
+3. Explain why each portal leads where it does
+4. Track travel→join conversion as primary metric
+5. A/B test algorithm changes before rollout
+
+**Contingency Plan:**
+- Fall back to curated/static portal assignments
+- Implement "never show again" user preference
+- Reduce portal count per community
+
+---
+
+### RSK-012: Portal Abuse (Spam Traveling)
+**Category:** Security
+**Probability:** Low (2)
+**Impact:** Medium (3)
+**Risk Score:** 6 (Medium)
+**Owner:** Engineering Lead
+**Status:** Open
+
+**Description:**
+Bad actors use portal travel to spam or harass users across multiple communities.
+
+**Trigger Conditions:**
+- Same user travels to many communities rapidly
+- Reports of harassment from portal visitors
+- Coordinated abuse campaigns
+
+**Mitigation Strategy:**
+1. Rate limit: 3 portal travels per hour per user
+2. Visitor mode restricts actions (view-only chat, no XP)
+3. 5-minute max visit duration
+4. Community admins can disable visitors
+5. Track abuse signals (quick exits, reports)
+
+**Contingency Plan:**
+- Increase rate limits or add cooldowns
+- Implement visitor allowlist/blocklist
+- Temporarily disable portal travel feature
+
+---
+
+### RSK-013: Consent Fatigue Leading to Opt-Out
+**Category:** Product
+**Probability:** Medium (3)
+**Impact:** High (4)
+**Risk Score:** 12 (High)
+**Owner:** Product Owner
+**Status:** Open
+
+**Description:**
+Users overwhelmed by consent requests opt out of data collection, reducing graph quality and feature effectiveness.
+
+**Trigger Conditions:**
+- WhatsApp activity consent rate below 50%
+- Users report confusion about data usage
+- Graph accuracy degrades due to insufficient data
+
+**Mitigation Strategy:**
+1. Explain value exchange clearly (better recommendations)
+2. Single, well-designed consent screen
+3. Collect only aggregate metrics, not message content
+4. Allow granular consent (activity yes, content no)
+5. Make consent optional (feature works with platform data only)
+
+**Contingency Plan:**
+- Fall back to platform-only features (login, world activity)
+- Remove WhatsApp activity requirement
+- Simplify to member overlap only
+
+---
+
 ## Risk Matrix
 
 ```
@@ -404,7 +494,10 @@ Probability: Minimal(1) Low(2) Medium(3) High(4) Critical(5)
 | RSK-008 | Competitor with Aggressive Tactics | Market | Medium | Medium | 9 | Open |
 | RSK-009 | WhatsApp Policy Change | Platform | Low | Critical | 10 | Open |
 | RSK-010 | Database Corruption | Technical | Minimal | Critical | 5 | Open |
+| RSK-011 | Graph Recommendation Poor Matches | Product | Medium | Medium | 9 | Open |
+| RSK-012 | Portal Abuse (Spam Traveling) | Security | Low | Medium | 6 | Open |
+| RSK-013 | Consent Fatigue Leading to Opt-Out | Product | Medium | High | 12 | Open |
 
 ---
 
-*Next Risk ID: RSK-011*
+*Next Risk ID: RSK-014*

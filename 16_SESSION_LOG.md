@@ -41,6 +41,97 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-16-1
+
+**Date:** 2026-01-16
+**Duration:** ~1.5 hours
+**Focus Area:** Living Graph Execution Plan & Canonical Document Updates
+
+### Summary
+Executed startup checklist, fixed system issues (frontend TypeError, swap usage, Docker cleanup), and updated all canonical documentation files to align with the Living Graph execution plan (19_EXECUTION_PLAN.md).
+
+### Changes Made
+
+**System Fixes:**
+- Rebuilt frontend container to fix `clientModules` TypeError
+- Reclaimed swap (0MB, was 1686MB)
+- Cleaned Docker build cache (~33GB freed)
+- Committed untracked `FINAL_EXECUTION_PLAN.md` as `19_EXECUTION_PLAN.md`
+
+**Canonical Document Updates (7 files):**
+
+1. **07_EVENT_AND_ANALYTICS_SPEC.md** (v1.1.0)
+   - Added WhatsApp activity events (message_sent, reaction_added, reply_sent)
+   - Updated world.portal.activated → world.portal_travel with destination_community_id
+   - Added consent requirement note for WhatsApp events
+
+2. **08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md** (v1.1.0)
+   - Changed all cron jobs from UTC to America/Sao_Paulo timezone
+   - Added `daily-feature-aggregation` job (01:00)
+   - Added `community-graph-build` job (04:15)
+   - Updated schedule dependencies diagram
+
+3. **11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md** (v1.1.0)
+   - Added `FEATURE_LIVING_GRAPH` flag (default: false)
+   - Added `FEATURE_GRAPH_ADVANCED` flag (default: false, gated)
+
+4. **06_DATA_ARCHITECTURE_AND_LIFECYCLE.md** (v1.1.0)
+   - Added Living Graph domain to overview diagram
+   - Added 3 new tables: `community_day_features`, `community_graph_edges`, `community_portal_assignments`
+   - Updated domain ownership table
+
+5. **09_SECURITY_AND_AUTHORIZATION_SPEC.md** (v1.1.0)
+   - Added `community:visit` permission for portal visitors
+   - Added `world:portal_travel` permission (rate-limited)
+   - Added Visitor Mode specification (5 min max, hub only, view-only chat)
+   - Added visitor authorization code example
+
+6. **13_RISK_REGISTER.md** (v1.1.0)
+   - Added RSK-011: Graph Recommendation Poor Matches (Score: 9)
+   - Added RSK-012: Portal Abuse/Spam Traveling (Score: 6)
+   - Added RSK-013: Consent Fatigue Leading to Opt-Out (Score: 12)
+   - Updated risk index table
+
+7. **01_SYSTEM_CANONICAL_INDEX.md** (v2.1.0)
+   - Added 19_EXECUTION_PLAN.md to document registry
+
+### Decisions Made
+
+1. **Timezone Standardization**
+   - Decision: All cron jobs use America/Sao_Paulo, not UTC
+   - Rationale: Align with Brazilian user activity patterns
+
+2. **Visitor Mode Restrictions**
+   - Decision: Visitors limited to central hub, 5 min max, view-only
+   - Rationale: Prevent abuse while allowing discovery
+
+3. **Consent-Gated WhatsApp Events**
+   - Decision: WhatsApp activity only collected with explicit consent
+   - Rationale: LGPD compliance, user trust
+
+### Issues Encountered
+
+1. **Frontend clientModules Error**
+   - Issue: TypeError in Next.js related to cache
+   - Resolution: Rebuilt container with `--no-cache`
+
+2. **Elevated Swap Usage**
+   - Issue: Swap at 70% after 7 days uptime
+   - Resolution: Dropped caches, ran swapoff/swapon
+
+### Follow-up Items
+- [ ] Implement Step 0: Reality audit of zone IDs
+- [ ] Implement Step 1: Event taxonomy upgrade in uc-webhooks
+- [ ] Implement Step 2: Consent-gated event ingestion
+- [ ] Create database migrations for Living Graph tables
+
+### Notes
+- Execution plan defines 10 steps (0-9) for Living Graph implementation
+- Step 8 (Pilot) targets Lendas VIP satellites as A/B test
+- All canonical docs now aligned with execution plan requirements
+
+---
+
 ## SESS-2026-01-15-2
 
 **Date:** 2026-01-15

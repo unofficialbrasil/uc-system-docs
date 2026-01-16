@@ -1,8 +1,8 @@
 # Environment and Configuration Registry
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-16
+**Version:** 1.1.0
 
 ---
 
@@ -223,6 +223,8 @@ openssl rand -hex 16
 | `FEATURE_ADMIN_DASHBOARD` | Enable admin dashboard | `true` | All |
 | `FEATURE_INVITE_SYSTEM` | Enable community invites | `true` | All |
 | `FEATURE_MAINTENANCE_MODE` | Enable maintenance mode | `false` | All |
+| `FEATURE_LIVING_GRAPH` | Enable Living Graph portal discovery | `false` | prod (pilot), staging |
+| `FEATURE_GRAPH_ADVANCED` | Enable Louvain/Node2Vec algorithms | `false` | None (gated) |
 
 ### 4.2 Feature Flag Configuration
 
