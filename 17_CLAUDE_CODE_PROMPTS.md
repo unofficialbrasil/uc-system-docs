@@ -1,11 +1,11 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-15
-**Version:** 6.0
+**Last Updated:** 2026-01-16
+**Version:** 6.1
 
 ---
 
-## Files Registry (28 Files Total)
+## Files Registry (29 Files Total)
 
 ### Repository Files (10 files)
 
@@ -17,7 +17,7 @@
 | uc-world | `/srv/unofficial/prod/app/uc-world/CLAUDE.md` | `/srv/unofficial/prod/app/uc-world/README.md` |
 | uc-system-docs | `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` | `/srv/unofficial/prod/app/uc-system-docs/README.md` |
 
-### System Documentation (18 files)
+### System Documentation (19 files)
 
 Location: `/srv/unofficial/prod/app/uc-system-docs/`
 
@@ -41,6 +41,7 @@ Location: `/srv/unofficial/prod/app/uc-system-docs/`
 | 16 | `16_SESSION_LOG.md` |
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` |
+| 19 | `19_EXECUTION_PLAN.md` |
 
 ---
 
@@ -53,7 +54,7 @@ Hi Claude, let's start a development session. Execute the COMPLETE startup check
 
 ## PHASE 1: READ ALL FILES (MANDATORY - NO EXCEPTIONS)
 
-You MUST read ALL 28 files to have full context. No exceptions.
+You MUST read ALL 29 files to have full context. No exceptions.
 
 ### 1.1 Repository CLAUDE.md Files (5 files)
 Read each file completely:
@@ -91,6 +92,7 @@ Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `16_SESSION_LOG.md`
 - `17_CLAUDE_CODE_PROMPTS.md`
 - `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md`
+- `19_EXECUTION_PLAN.md`
 
 ## PHASE 2: VPS & GITHUB ACCESS CHECK
 
@@ -939,7 +941,7 @@ After completing ALL phases, provide this summary:
 ║ FILES LOADED:                                                    ║
 ║   ✓ Repository files: 10/10                                      ║
 ║   ✓ System files: 18/18                                          ║
-║   ✓ Total context: 28 files                                      ║
+║   ✓ Total context: 29 files                                      ║
 ║                                                                  ║
 ║ INFRASTRUCTURE:                                                  ║
 ║   • VPS: [🟢 Connected / 🔴 Disconnected]                        ║
@@ -1097,6 +1099,7 @@ Location: `/srv/unofficial/prod/app/uc-system-docs/`
 | 16 | `16_SESSION_LOG.md` | **ALWAYS** add session entry |
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` | Procedures changed |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research updated |
+| 19 | `19_EXECUTION_PLAN.md` | Execution steps changed |
 
 ### Session Log Entry Template (16_SESSION_LOG.md)
 
@@ -1519,7 +1522,7 @@ Provide this final summary:
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-Session closed. All 28 files reviewed/updated. Context preserved.
+Session closed. All 29 files reviewed/updated. Context preserved.
 ```
 ```
 
@@ -1584,4 +1587,3 @@ Session closed. All 28 files reviewed/updated. Context preserved.
 
 *Version 6.0 - 2026-01-15 - Added comprehensive verification phases (DB, Queue, E2E, Security, Observability) and GO/NO-GO gates*
 
-<!-- Last Reviewed: 2026-01-16 - No updates needed -->
