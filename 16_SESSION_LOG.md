@@ -41,6 +41,110 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-16-5
+
+**Date:** 2026-01-16
+**Duration:** ~45 minutes
+**Focus Area:** Living Graph Step 4 - Community Graph Build
+
+### Summary
+Implemented Step 4 of the Living Graph execution plan by creating the community graph build job that computes edges between communities and assigns portal neighbors. The algorithm uses member overlap and portal travel to calculate edge weights, then assigns up to 6 portal slots per community with explainability reason codes.
+
+### Changes Made
+
+**uc-api (6 files):**
+
+1. **prisma/schema.prisma** (+80 lines)
+   - Added `community_graph_runs` model for tracking graph build executions
+   - Added `community_edges` model for weighted community edges
+   - Added `community_portals` model for portal slot assignments
+   - Added `community_graph_overrides` model for safety overrides
+   - Added relation fields to `communities` and `identities` models
+
+2. **prisma/migrations/20260116_add_living_graph_step4/migration.sql** (new)
+   - CREATE TABLE community_graph_runs
+   - CREATE TABLE community_edges with unique (period_start, community_a, community_b)
+   - CREATE TABLE community_portals with unique (period_start, community_id, slot)
+   - CREATE TABLE community_graph_overrides
+
+3. **src/services/communityGraphBuildService.ts** (new, ~700 lines)
+   - `runCommunityGraphBuild()` - Main graph build function
+   - `getEligibleCommunities()` - Filter by MIN_ACTIVE (30 WAU default)
+   - `computeCandidateEdges()` - Calculate edges from overlap + travel
+   - `getMemberOverlap()` - Shared members via user_profiles
+   - `getPortalTravelCounts()` - Portal traversals in 28-day window
+   - `computeSocialAffinity()` - Jaccard-like coefficient
+   - `computeInterestAffinity()` - Cosine similarity of activity vectors
+   - `assignPortals()` - 4 stable + 1 diversity + 1 empty slots
+   - `generateReasonCodes()` - Human-readable explainability
+   - `generateReasonDetails()` - Privacy-safe ranges for UI
+
+4. **src/infra/queues/analyticsQueue.ts** (+45 lines)
+   - Added `scheduleCommunityGraphBuild()` - 04:15 UTC schedule
+   - Added `triggerManualGraphBuild()` - Manual trigger for testing
+
+5. **src/workers/analyticsWorker.ts** (+25 lines)
+   - Added import for `runCommunityGraphBuild`
+   - Added `community-graph-build` job handler
+   - Updated logging to include edgesCreated and portalsAssigned
+
+6. **src/server.ts** (+5 lines)
+   - Import `scheduleCommunityGraphBuild`
+   - Schedule graph build on startup
+
+**Database:**
+- Applied migration for 4 new tables
+- Graph run tracked in community_graph_runs
+
+**Git Commit:**
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | 126daa6 | feat: Step 4 - Community graph build for Living Graph |
+
+### Decisions Made
+
+1. **Edge Weight Formula**
+   - Decision: Weight = α*socialAffinity + β*interestAffinity (default α=0.40, β=0.60)
+   - Rationale: Balances member overlap with activity similarity
+
+2. **Portal Slot Allocation**
+   - Decision: 4 stable + 1 diversity + 1 empty = 6 total slots
+   - Rationale: Provides stable neighbors while encouraging exploration
+
+3. **Reason Code System**
+   - Decision: Generate codes like "shared_members_high", "frequent_travel", "similar_activity_patterns"
+   - Rationale: Explainability required by Step 4 DOD
+
+4. **Privacy-Safe Ranges**
+   - Decision: Categorize counts into ranges (<5, 5-9, 10-19, 20-49, 50-99, 100+)
+   - Rationale: k-anonymity protection for displayed reason details
+
+5. **Schedule Timing**
+   - Decision: Run at 04:15 UTC (15 min after aggregation)
+   - Rationale: Ensures aggregated data is ready before graph build
+
+### Issues Encountered
+
+1. **Prisma Relations for Graph Tables**
+   - Issue: Needed to add relation fields to communities model for edges/portals
+   - Resolution: Added 6 relation arrays for EdgeCommunityA/B, PortalCommunity/Neighbor, OverrideCommunity/Neighbor
+
+### Follow-up Items
+- [ ] Implement Step 5: Portal rendering + travel gating + explanation UI
+- [ ] Add neighbor stability/churn limiter (currently not enforced)
+- [ ] Add Prometheus metrics for graph build job
+- [ ] Create admin endpoint to view/manage graph overrides
+
+### Notes
+- Tested manual graph build: Job completed in ~65ms
+- Graph run tracked: status=success, 0 edges/portals (no eligible communities yet)
+- Both analytics jobs scheduled: aggregation at 04:00, graph at 04:15 UTC
+- Config parameters available via env vars (COMMUNITY_GRAPH_*)
+- Algorithm handles edge case of <2 eligible communities gracefully
+
+---
+
 ## SESS-2026-01-16-4
 
 **Date:** 2026-01-16
