@@ -618,6 +618,60 @@ const XP_SOURCES = {
 | `force_neighbor` | Force specific neighbor | Neighbor assigned regardless of algorithm |
 | `freeze` | Freeze portal assignments | Keep previous assignments unchanged |
 
+### 6.5 Scale & Advanced Graph Configuration (Step 9)
+
+**Scale Thresholds:**
+
+| Variable | Description | Default | Range |
+|----------|-------------|---------|-------|
+| `SCALE_CPU_WARNING` | CPU % warning threshold | `70` | 50-90 |
+| `SCALE_CPU_CRITICAL` | CPU % critical threshold | `85` | 70-95 |
+| `SCALE_MEMORY_WARNING` | Memory % warning threshold | `75` | 50-90 |
+| `SCALE_MEMORY_CRITICAL` | Memory % critical threshold | `90` | 70-95 |
+| `SCALE_DB_CONN_WARNING` | DB connections warning threshold | `80` | 50-120 |
+| `SCALE_DB_CONN_CRITICAL` | DB connections critical threshold | `120` | 80-200 |
+| `SCALE_QUEUE_WARNING` | Queue depth warning threshold | `100` | 50-500 |
+| `SCALE_QUEUE_CRITICAL` | Queue depth critical threshold | `500` | 100-1000 |
+
+**Scale Readiness Requirements:**
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SCALE_MIN_STABLE_DAYS` | Min consecutive stable days before scale | `7` |
+| `SCALE_MAX_FAILURES` | Max graph build failures allowed in 7 days | `2` |
+| `SCALE_MIN_PILOT` | Min active pilot communities required | `3` |
+
+**Louvain Clustering (Optional, Gated):**
+
+| Variable | Description | Default | Notes |
+|----------|-------------|---------|-------|
+| `FEATURE_LOUVAIN_CLUSTERING` | Enable Louvain community detection | `false` | Requires stability metrics pass |
+| `LOUVAIN_RESOLUTION` | Louvain resolution parameter | `1.0` | Higher = more clusters |
+| `LOUVAIN_MIN_SIZE` | Minimum cluster size | `3` | Communities per cluster |
+
+**Node2Vec Embeddings (Optional, Gated):**
+
+| Variable | Description | Default | Notes |
+|----------|-------------|---------|-------|
+| `FEATURE_NODE2VEC_EMBEDDINGS` | Enable Node2Vec infrastructure | `false` | Requires governance gate |
+| `NODE2VEC_DIMS` | Embedding dimensions | `64` | 32-256 |
+| `NODE2VEC_WALK_LEN` | Random walk length | `10` | 5-30 |
+| `NODE2VEC_NUM_WALKS` | Number of walks per node | `80` | 20-200 |
+| `NODE2VEC_P` | Return parameter (BFS vs DFS) | `1.0` | 0.25-4.0 |
+| `NODE2VEC_Q` | In-out parameter (local vs global) | `1.0` | 0.25-4.0 |
+
+**Go/No-Go Gates for Advanced Graph:**
+
+- **FEATURE_LOUVAIN_CLUSTERING=true** requires:
+  - Scale readiness score ≥ 80%
+  - Pilot health check passing
+  - At least 50 eligible graph edges
+
+- **FEATURE_NODE2VEC_EMBEDDINGS=true** requires:
+  - Louvain clustering stable
+  - Privacy risk assessment complete
+  - Explicit governance approval (DEC entry)
+
 ---
 
 ## 7. Configuration Validation

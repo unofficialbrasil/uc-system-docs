@@ -425,6 +425,100 @@ Implemented Step 7 of the Living Graph execution plan by creating guardrails and
 
 ---
 
+## SESS-2026-01-16-10
+
+**Date:** 2026-01-16
+**Duration:** ~30 minutes
+**Focus Area:** Living Graph Step 9 - Scale Rollout + Advanced Graph
+
+### Summary
+Implemented Step 9 of the Living Graph execution plan by creating the scale monitoring infrastructure and advanced graph algorithms (Louvain clustering, Node2Vec embeddings). All advanced features are gated behind feature flags with explicit Go/No-Go requirements. The system provides comprehensive scale readiness assessment for expanding to 1,000+ communities.
+
+### Changes Made
+
+**uc-api (2 files):**
+
+1. **src/services/scaleService.ts** (new, ~720 lines)
+   - `getScaleMetrics()` - CPU, memory, DB connections, queue depth monitoring
+   - `assessScaleReadiness()` - 6-point scale readiness assessment
+   - `getScaleOverview()` - Complete scale status for admin dashboard
+   - `runLouvainClustering()` - Louvain community detection algorithm
+   - `getLouvainClusters()` - Get latest clustering results
+   - `getNode2VecConfig()` - Node2Vec configuration status
+   - `checkNode2VecReadiness()` - Node2Vec prerequisites check
+   - `generateRandomWalks()` - Biased random walks for Node2Vec
+   - Scale thresholds configurable via environment variables
+
+2. **src/routes/adminDashboardRoutes.ts** (+200 lines)
+   - `GET /v1/admin/scale/overview` - Complete scale overview
+   - `GET /v1/admin/scale/metrics` - System scale metrics
+   - `GET /v1/admin/scale/readiness` - Scale readiness assessment
+   - `GET /v1/admin/scale/config` - Current scale configuration
+   - `GET /v1/admin/scale/louvain/clusters` - Louvain clustering results
+   - `POST /v1/admin/scale/louvain/run` - Trigger Louvain clustering
+   - `GET /v1/admin/scale/node2vec/status` - Node2Vec status and readiness
+   - `POST /v1/admin/scale/node2vec/walk` - Generate random walks for testing
+
+**uc-system-docs (1 file):**
+
+3. **11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md** (+60 lines)
+   - Added Section 6.5 "Scale & Advanced Graph Configuration (Step 9)"
+   - Scale thresholds (CPU, memory, DB, queue)
+   - Scale readiness requirements
+   - Louvain clustering parameters
+   - Node2Vec embedding parameters
+   - Go/No-Go gates for advanced features
+
+**Docker:**
+- Rebuilt and deployed uc-api container
+
+### Decisions Made
+
+1. **Feature Flags Default to False**
+   - Decision: FEATURE_LOUVAIN_CLUSTERING and FEATURE_NODE2VEC_EMBEDDINGS default to false
+   - Rationale: Advanced algorithms require explicit opt-in after stability proof
+
+2. **Scale Readiness Score**
+   - Decision: 6-point assessment (System Resources, Graph Stability, Pilot Communities, Pilot Health, Guardrails, DB Capacity)
+   - Rationale: Comprehensive check before scaling to 1,000+ communities
+
+3. **Louvain In-Process Implementation**
+   - Decision: Implement simplified Louvain in TypeScript rather than external Python service
+   - Rationale: Avoids infrastructure complexity; sufficient for current scale
+
+4. **Node2Vec Infrastructure Only**
+   - Decision: Provide random walk generation but not full embedding training
+   - Rationale: Full ML pipeline requires external infrastructure (future optimization)
+
+5. **Scale Thresholds**
+   - Decision: CPU warning 70%, critical 85%; Memory warning 75%, critical 90%
+   - Rationale: Conservative defaults with room for spikes
+
+### Issues Encountered
+
+1. **TypeScript Type Mismatch**
+   - Issue: PilotGoNoGo decision type comparison used 'stop' instead of 'no-go'
+   - Resolution: Fixed to use correct union type value
+
+2. **Prisma Schema Field Name**
+   - Issue: Used non-existent `records_processed` field in aggregation_job_runs
+   - Resolution: Changed to `communities_processed` and `records_created`
+
+### Follow-up Items
+- [ ] Test Louvain clustering with real graph data when available
+- [ ] Implement full Node2Vec embedding pipeline (requires ML infrastructure)
+- [ ] Add Prometheus metrics for scale monitoring
+- [ ] Create alerting rules for scale thresholds
+
+### Notes
+- All scale endpoints tested and working
+- Scale readiness score: 83% (only failing: 0 active pilot communities)
+- Louvain and Node2Vec properly gated behind feature flags
+- System resources all healthy: CPU 10%, Memory 44%, DB 1/151 connections
+- Ready for production scaling once pilot communities are active
+
+---
+
 ## SESS-2026-01-16-9
 
 **Date:** 2026-01-16
