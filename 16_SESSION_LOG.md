@@ -41,6 +41,91 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-17-3
+
+**Date:** 2026-01-17
+**Duration:** ~2 hours
+**Focus Area:** Login/Signup PT-BR Localization and Auth Fixes
+
+### Summary
+Localized login and signup pages to Portuguese (Brazil), added UX improvements, and fixed email verification flow that was blocking user logins.
+
+### Changes Made
+
+**Frontend (unofficial-communities):**
+1. `src/app/signup/page.tsx`
+   - Translated all labels/errors/placeholders to Portuguese
+   - Changed layout from two-column to single centered card
+   - Changed First Name/Last Name to Nome/Sobrenome
+   - Removed Google/X social login buttons
+   - Changed date input from calendar to text (dd/mm/aaaa format)
+   - Added password visibility toggle (eye icon)
+   - Added autofill styling fix (prevents white background)
+   - Added password strength hint
+
+2. `src/app/login/LoginClient.tsx`
+   - Translated to Portuguese ("Entrar", "Senha", etc.)
+   - Simplified layout (removed admin messaging)
+   - Added password visibility toggle
+   - Fixed placeholder to "voce@exemplo.com"
+
+3. `src/app/api/v1/auth/login/route.ts`
+   - Removed v1/auth/login call (was admin-only)
+   - Session now created directly from v37 login response
+
+**Backend (uc-api):**
+4. `src/routes/auth/authRoutes.ts`
+   - Added `email_verified_at: new Date()` on signup
+   - New users are now auto-verified (email verification is P1)
+
+**Database:**
+5. Ran SQL to auto-verify existing users:
+   `UPDATE auth_credentials SET email_verified_at = NOW() WHERE email_verified_at IS NULL;`
+
+### Decisions Made
+
+1. **Auto-verify emails on signup**
+   - Decision: Set email_verified_at during account creation
+   - Rationale: Email verification is P1, users need to access platform now
+
+2. **Remove v1 login call from BFF**
+   - Decision: Only use v37/auth/login for regular users
+   - Rationale: v1/auth/login has admin allowlist check that blocks regular users
+
+3. **Text date input instead of calendar**
+   - Decision: Use text input with dd/mm/aaaa format
+   - Rationale: Native calendar picker had white styling issues on dark theme
+
+### Issues Encountered
+
+1. **Users couldn't login after signup**
+   - Problem: `EMAIL_NOT_VERIFIED` error blocking login
+   - Root cause: Signup didn't set `email_verified_at` on auth_credentials
+   - Solution: Added auto-verify on signup, updated existing users
+
+2. **Admin access denied error**
+   - Problem: BFF login called v1/auth/login which checks admin allowlist
+   - Solution: Removed v1 call, use only v37 login for session creation
+
+### Follow-up Items
+- [ ] Configure email provider (Resend/SendGrid) for production emails
+- [ ] Enable proper email verification flow when ready
+- [ ] Implement password reset ("Esqueci minha senha")
+- [ ] Localize other pages (dashboard, profile, settings)
+
+### Notes
+- All changes committed and pushed to origin
+- Services running healthy (Frontend, API, World)
+- Webhooks service showing unhealthy (may need investigation)
+
+### Metrics at Close
+- Disk: 26%
+- Memory: 43%
+- Load: 0.50
+- Services: 3/4 healthy (Webhooks down)
+
+---
+
 ## SESS-2026-01-17-2
 
 **Date:** 2026-01-17
