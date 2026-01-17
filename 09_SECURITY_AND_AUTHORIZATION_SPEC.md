@@ -1,8 +1,8 @@
 # Security and Authorization Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 1.1.0
+**Last Updated:** 2026-01-17
+**Version:** 1.2.0
 
 ---
 
@@ -170,6 +170,12 @@ async function validateSession(token: string): Promise<Identity | null> {
 │         │ Active                                                     │
 │         ▼                                                            │
 │  ┌──────────────┐                                                   │
+│  │ 2A. Age      │──▶ Under 18? ──▶ 403 Forbidden (age_blocked)     │
+│  │   Verification│──▶ Level Low? ──▶ 403 (age_verification_needed) │
+│  └──────┬───────┘                                                   │
+│         │ Adult (18+)                                               │
+│         ▼                                                            │
+│  ┌──────────────┐                                                   │
 │  │ 3. Resource  │──▶ No Access? ──▶ 403 Forbidden                  │
 │  │   Permission │                                                    │
 │  └──────┬───────┘                                                   │
@@ -186,19 +192,86 @@ async function validateSession(token: string): Promise<Identity | null> {
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+### 2.1A Age Verification Authorization (Adult-by-Design)
+
+Age verification is enforced as step 2A in the authorization pipeline. This applies to all authenticated routes except `/api/age/*`.
+
+```typescript
+// Age verification check in authorization pipeline
+async function checkAgeAuthorization(
+  identity: Identity,
+  endpoint: string,
+  feature?: string
+): Promise<{ allowed: boolean; error?: string; action?: string }> {
+  // Skip for age-related endpoints
+  if (endpoint.startsWith('/api/age/')) {
+    return { allowed: true };
+  }
+
+  // Skip if age gating disabled
+  if (!FEATURE_AGE_GATE_SIGNUP) {
+    return { allowed: true };
+  }
+
+  // Check if user has age data
+  if (!identity.age_band || identity.age_assurance_level === 0) {
+    return {
+      allowed: false,
+      error: 'age_verification_required',
+      action: 'redirect_to_gate_a'
+    };
+  }
+
+  // Check if user is adult
+  if (['under_13', '13_17'].includes(identity.age_band)) {
+    return {
+      allowed: false,
+      error: 'age_blocked',
+      action: 'show_minor_message'
+    };
+  }
+
+  // Check feature-specific requirements (Gate C)
+  if (feature && FEATURE_AGE_GATE_FEATURES) {
+    const config = FEATURE_GATES[feature];
+    if (config && identity.age_assurance_level < config.minLevel) {
+      return {
+        allowed: false,
+        error: 'elevated_verification_required',
+        action: 'redirect_to_gate_b'
+      };
+    }
+  }
+
+  return { allowed: true };
+}
+```
+
+**Age-Gated Features:**
+
+| Feature | Min Level | Description |
+|---------|-----------|-------------|
+| Dashboard access | 1 | Basic age declaration required |
+| Direct messaging | 1 | Adult status confirmed |
+| Community creation | 2 | Revalidated via Gate B |
+| Moderator role | 2 | Revalidated via Gate B |
+| Monetization | 3 | ID verification required |
+
 ### 2.2 Endpoint Authorization Matrix
 
-| Endpoint Pattern | Auth Required | Roles Allowed | Rate Limit |
-|-----------------|---------------|---------------|------------|
-| `GET /api/health` | No | Any | None |
-| `POST /api/auth/*` | No | Any | 10/min |
-| `GET /api/communities` | Yes | Any Member | 60/min |
-| `POST /api/communities` | Yes | Any Authenticated | 5/hour |
-| `PUT /api/communities/:id` | Yes | Owner, Admin | 30/min |
-| `DELETE /api/communities/:id` | Yes | Owner Only | 1/hour |
-| `GET /api/gamification/*` | Yes | Self Only | 120/min |
-| `POST /api/admin/*` | Yes | System Admin | 30/min |
-| `GET /api/internal/*` | Service Auth | Internal Services | None |
+| Endpoint Pattern | Auth Required | Roles Allowed | Age Level | Rate Limit |
+|-----------------|---------------|---------------|-----------|------------|
+| `GET /api/health` | No | Any | None | None |
+| `POST /api/auth/*` | No | Any | None | 10/min |
+| `POST /api/age/*` | Yes | Self Only | 0+ | 10/min |
+| `GET /api/communities` | Yes | Any Member | 1+ | 60/min |
+| `POST /api/communities` | Yes | Any Authenticated | 2+ | 5/hour |
+| `PUT /api/communities/:id` | Yes | Owner, Admin | 2+ | 30/min |
+| `DELETE /api/communities/:id` | Yes | Owner Only | 2+ | 1/hour |
+| `POST /api/messages` | Yes | Members | 1+ | 60/min |
+| `GET /api/gamification/*` | Yes | Self Only | 1+ | 120/min |
+| `POST /api/admin/*` | Yes | System Admin | 2+ | 30/min |
+| `GET /api/internal/*` | Service Auth | Internal Services | N/A | None |
 
 ### 2.3 Resource-Level Authorization
 
@@ -921,4 +994,4 @@ CREATE TABLE security_audit_log (
 
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Section 2.1A: Age Verification Authorization, updated Endpoint Matrix with Age Level column -->

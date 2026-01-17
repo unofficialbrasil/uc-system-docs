@@ -1,8 +1,8 @@
 # Background Jobs and Async Processing
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 1.1.0
+**Last Updated:** 2026-01-17
+**Version:** 1.2.0
 
 ---
 
@@ -57,6 +57,10 @@ All background jobs in the system are managed through BullMQ with Redis as the b
 | `notification-send` | notifications | Event-driven | Medium | 10 |
 | `xp-calculation` | gamification | Event-driven | High | 3 |
 | `world-state-sync` | world | Event-driven | High | 2 |
+| `age-revalidation-prompt` | age | Cron (08:00 America/Sao_Paulo) | Medium | 1 |
+| `minor-detection-scan` | age | Cron (04:00 America/Sao_Paulo) | Medium | 1 |
+| `age-data-cleanup` | age | Cron (Sun 02:00 America/Sao_Paulo) | Low | 1 |
+| `minor-case-review` | age | Event-driven | High | 2 |
 
 ### 1.3 Job Definitions
 
@@ -1056,4 +1060,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added age queue jobs (Section 1.2) -->

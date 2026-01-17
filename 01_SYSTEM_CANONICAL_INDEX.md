@@ -1,8 +1,8 @@
 # System Canonical Index
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 2.1.0
+**Last Updated:** 2026-01-17
+**Version:** 2.2.0
 **Maintainer:** Engineering Team
 
 ---
@@ -25,7 +25,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 
 ---
 
-## 2. Document Registry (19 Files)
+## 2. Document Registry (20 Files)
 
 | # | Document | Purpose | Status |
 |---|----------|---------|--------|
@@ -48,6 +48,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` | Session prompts for Claude Code | Active |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research reference (studies) | Active |
 | 19 | `19_EXECUTION_PLAN.md` | System execution plan and implementation guide | Active |
+| 20 | `20_ADULT_BY_DESIGN_SPEC.md` | 18+ age verification and enforcement policy | Active |
 
 ---
 
@@ -149,6 +150,4 @@ For audit trail:
 *This document is the entry point for understanding the Unofficial Communities system.*
 *All other documents in this folder are discoverable from here.*
 
-<!-- Last Updated: 2026-01-17 -->
-
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added 20_ADULT_BY_DESIGN_SPEC.md to registry -->

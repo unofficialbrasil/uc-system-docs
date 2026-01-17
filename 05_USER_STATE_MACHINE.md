@@ -1,8 +1,8 @@
 # User State Machine
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-17
+**Version:** 1.1.0
 
 ---
 
@@ -332,6 +332,113 @@ CREATE TABLE onboarding_progress (
 
 ---
 
+## 4A. Age Assurance States
+
+### 4A.1 State Diagram
+
+```
+              ┌─────────────────┐
+              │                 │
+              │  UNVERIFIED     │  assurance_level = 0
+              │  (no DOB data)  │
+              │                 │
+              └────────┬────────┘
+                       │
+                       │ gate_a_presented
+                       ▼
+              ┌─────────────────┐
+              │                 │
+              │  PENDING_AGE    │  (transient state)
+              │  (Gate A shown) │
+              │                 │
+              └────────┬────────┘
+                       │
+       ┌───────────────┼───────────────┐
+       │               │               │
+       │ age_confirmed │ age_blocked   │ gate_abandoned
+       │ (18+)         │ (under 18)    │
+       ▼               ▼               ▼
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│ SELF_       │ │ BLOCKED     │ │ UNVERIFIED  │
+│ DECLARED    │ │ (terminal)  │ │ (restart)   │
+│ level = 1   │ │             │ │             │
+└──────┬──────┘ └─────────────┘ └─────────────┘
+       │
+       │ risk_trigger
+       ▼
+┌─────────────────┐
+│  PENDING_RECHECK │  (Gate B shown)
+│                 │
+└────────┬────────┘
+         │
+┌────────┼────────┐
+│        │        │
+│ passed │ failed │
+│        │        │
+▼        ▼        ▼
+┌─────────────┐ ┌─────────────┐
+│ REVALIDATED │ │ FLAGGED     │
+│ level = 2   │ │ T&S review  │
+└──────┬──────┘ └─────────────┘
+       │
+       │ verification_requested
+       ▼
+┌─────────────────┐
+│  PENDING_       │  (ID verification)
+│  VERIFICATION   │
+└────────┬────────┘
+         │
+┌────────┼────────┐
+│        │        │
+│ passed │ failed │
+▼        ▼        ▼
+┌─────────────┐ ┌─────────────┐
+│  VERIFIED   │ │ REVALIDATED │
+│  level = 3  │ │ (no change) │
+└─────────────┘ └─────────────┘
+```
+
+### 4A.2 State Definitions
+
+| State | Assurance Level | Description | Allowed Actions |
+|-------|-----------------|-------------|-----------------|
+| UNVERIFIED | 0 | No DOB data collected | View landing page only |
+| PENDING_AGE | - | Gate A in progress | Submit DOB |
+| SELF_DECLARED | 1 | User-entered DOB | Full platform access |
+| PENDING_RECHECK | - | Gate B in progress | Submit DOB |
+| REVALIDATED | 2 | Confirmed via Gate B | + High-value features |
+| PENDING_VERIFICATION | - | ID verification in progress | Wait for result |
+| VERIFIED | 3 | ID-verified | + Monetization |
+| BLOCKED | - | Under-18 detected | None (terminal) |
+| FLAGGED | - | T&S review pending | Limited access |
+
+### 4A.3 Transition Rules
+
+| From | To | Event | Conditions | Side Effects |
+|------|-----|-------|------------|--------------|
+| UNVERIFIED | PENDING_AGE | `gate_a_presented` | Onboarding complete | Show Gate A UI |
+| PENDING_AGE | SELF_DECLARED | `age_confirmed` | DOB shows 18+ | Store DOB, emit event |
+| PENDING_AGE | BLOCKED | `age_blocked` | DOB shows under-18 | Emit event, show message |
+| PENDING_AGE | UNVERIFIED | `gate_abandoned` | User closes/cancels | No storage |
+| SELF_DECLARED | PENDING_RECHECK | `risk_trigger` | Risk signal detected | Show Gate B UI |
+| PENDING_RECHECK | REVALIDATED | `passed` | DOB matches or ±1 year | Update level to 2 |
+| PENDING_RECHECK | FLAGGED | `failed` | Major mismatch or now minor | Suspend, create T&S case |
+| REVALIDATED | PENDING_VERIFICATION | `verification_requested` | Monetization requested | Initiate ID check |
+| PENDING_VERIFICATION | VERIFIED | `passed` | ID valid, matches DOB | Update level to 3 |
+| PENDING_VERIFICATION | REVALIDATED | `failed` | ID check failed | Keep level 2 |
+
+### 4A.4 Age Band Classification
+
+| Age Range | Age Band | Adult Status |
+|-----------|----------|--------------|
+| 0-12 | `under_13` | Minor (hard block) |
+| 13-17 | `13_17` | Minor (soft block) |
+| 18-24 | `18_24` | Adult |
+| 25-34 | `25_34` | Adult |
+| 35+ | `35_plus` | Adult |
+
+---
+
 ## 5. Gamification States
 
 ### 5.1 Streak State Machine
@@ -526,4 +633,4 @@ Level 10 (Lenda Suprema)
 
 *This document defines all valid state transitions. Any transition not explicitly listed is forbidden.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Section 4A: Age Assurance States -->

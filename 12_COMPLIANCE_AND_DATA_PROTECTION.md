@@ -1,8 +1,8 @@
 # Compliance and Data Protection
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-17
+**Version:** 1.1.0
 
 ---
 
@@ -64,6 +64,12 @@
 | UC World Position | Feature functionality | Contract (V) | Session only |
 | Analytics Events | Service improvement | Legitimate Interest (IX) | 90 days |
 | Security Logs | Legal compliance | Legal Obligation (II) | 2 years |
+| Date of Birth | Age verification (18+ enforcement) | Legitimate Interest (IX) | Account lifetime + 1 year |
+| Age Band | Age classification | Legitimate Interest (IX) | Account lifetime |
+| Age Assurance Level | Verification status | Legitimate Interest (IX) | Account lifetime |
+| Age Verification Logs | Compliance audit | Legal Obligation (II) | 2 years |
+| Minor Detection Cases | Child safety | Legal Obligation (II) | 5 years |
+| ID Verification Docs | Enhanced verification | Consent (I) | 30 days post-verification |
 
 ### 2.2 Data Processing Principles (Art. 6)
 
@@ -93,6 +99,52 @@
 | **Information** | Privacy policy, data usage disclosure | Immediate |
 | **Revocation** | Consent withdrawal mechanism | Immediate |
 | **Opposition** | Opt-out of non-essential processing | Immediate |
+
+### 2.4 Age Verification Compliance (Adult-by-Design)
+
+The platform enforces an 18+ age requirement through a tiered verification system.
+
+**Legitimate Interest Justification (Art. 7, IX):**
+
+The collection of date of birth and age-related data is based on legitimate interest for:
+1. **Platform Safety**: Maintaining an adult-only environment
+2. **Legal Compliance**: Age-gating mature content discussions
+3. **Child Protection**: Preventing minors from accessing inappropriate content
+4. **Brand Safety**: Ensuring partners operate in a verified adult space
+
+**Balancing Test:**
+
+| Factor | Assessment |
+|--------|------------|
+| Controller Interest | High - Legal obligation and brand protection |
+| Data Subject Impact | Low - DOB is minimally invasive |
+| Reasonable Expectation | Yes - Users expect age gates on adult platforms |
+| Safeguards | Strong - Encryption, limited access, purpose limitation |
+
+**Age Data Rights:**
+
+| Right | Implementation |
+|-------|----------------|
+| Access | Include DOB in data export (masked: YYYY-**-**) |
+| Correction | Allow DOB correction with T&S review |
+| Deletion | Delete with account; anonymize in analytics |
+| Opposition | Cannot opt out (legal requirement for access) |
+
+**Minor Detection and Handling:**
+
+| Scenario | Action | Retention |
+|----------|--------|-----------|
+| Self-declared minor (Gate A) | Block access, no account created | 24 hours (for rate limiting) |
+| Suspected minor (behavioral) | Flag for T&S review | Case lifetime |
+| Confirmed minor | Suspend account, delete PII | 5 years (case record only) |
+| Confirmed adult after review | Clear flag, continue service | Case archived |
+
+**Transparency Requirements:**
+
+- Privacy policy must disclose age data collection
+- Gate A must include clear consent text
+- Users must understand age data is required (not optional)
+- Blocking message must explain without shaming
 
 ---
 
@@ -858,4 +910,4 @@ const stats = await db.gamification.aggregate({
 
 *This document defines compliance requirements. All features must undergo privacy review before launch.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added age data to Legal Basis table (Section 2.1) and Age Verification Compliance section (Section 2.4) -->

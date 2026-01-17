@@ -1,7 +1,7 @@
 # Decision Log
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-17
 **Version:** 1.0.0
 
 ---
@@ -421,6 +421,63 @@ Option 3: Prometheus + Grafana stack:
 
 ---
 
-*Next Decision ID: DEC-0011*
+### DEC-0011: Adult-by-Design (18+) Policy
+**Date:** 2026-01-17
+**Status:** Accepted
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+#### Context
+The platform needed to establish clear age requirements to maintain a safe, mature environment for brand-focused communities. The challenge was balancing legal compliance (LGPD, child protection) with user experience and avoiding the stigma of being labeled an "adult content" platform.
+
+#### Options Considered
+1. **No Age Restriction** - Open platform, no verification
+2. **Public 18+ Marketing** - Explicit "adults only" branding
+3. **Adult-by-Design (Quiet Enforcement)** - De facto 18+ with subtle enforcement
+4. **Third-Party Verification** - External ID verification for all users
+
+#### Decision
+Option 3: Adult-by-Design with tiered assurance levels. Key elements:
+- **External positioning:** "High-signal, moderated, brand-safe communities" (no 18+ branding)
+- **Internal policy:** Mandatory age verification at signup (Gate A)
+- **Progressive enforcement:** Self-declared DOB → Risk-based recheck → ID verification
+- **Feature gating:** Higher assurance levels for sensitive features
+
+#### Trade-offs
+- More friction in signup flow (DOB collection)
+- Trust & Safety workload for minor detection
+- Cannot market to younger demographics
+- Need for ongoing monitoring and adjustment
+
+#### Rejected Alternatives
+- No Age Restriction: Legal risk, brand safety concerns, not suitable for mature discussions
+- Public 18+ Marketing: Stigma, app store complications, partner concerns
+- Third-Party Verification: High friction, cost, privacy concerns for all users
+
+#### Revisit Criteria
+- If false positive rate exceeds 0.5%
+- If signup abandonment increases >15%
+- If legal requirements change (e.g., stricter age verification laws)
+- If entering markets with different age regulations
+
+---
+
+## Decision Index
+
+| ID | Title | Date | Status |
+|----|-------|------|--------|
+| DEC-0001 | System Documentation Location | 2026-01-14 | Accepted |
+| DEC-0002 | Three.js Migration from Phaser 3 | 2026-01-12 | Accepted |
+| DEC-0003 | Hexagonal Community Layout | 2026-01-13 | Accepted |
+| DEC-0004 | Redis for Session Storage | 2025-12-XX | Accepted |
+| DEC-0005 | Fastify over Express | 2025-XX-XX | Accepted |
+| DEC-0006 | Colyseus for Multiplayer | 2025-XX-XX | Accepted |
+| DEC-0007 | Behavioral Science Framework Integration | 2025-XX-XX | Accepted |
+| DEC-0008 | LGPD-First Data Architecture | 2025-XX-XX | Accepted |
+| DEC-0009 | Monorepo vs Multi-Repo | 2025-XX-XX | Accepted |
+| DEC-0010 | Prometheus + Grafana for Monitoring | 2026-01-11 | Accepted |
+| DEC-0011 | Adult-by-Design (18+) Policy | 2026-01-17 | Accepted |
+
+---
+
+*Next Decision ID: DEC-0012*
+
+<!-- Last Updated: 2026-01-17 - Added DEC-0011: Adult-by-Design Policy -->

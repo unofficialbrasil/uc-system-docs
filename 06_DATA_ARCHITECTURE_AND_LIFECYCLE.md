@@ -1,8 +1,8 @@
 # Data Architecture and Lifecycle
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 1.1.0
+**Last Updated:** 2026-01-17
+**Version:** 1.2.0
 
 ---
 
@@ -67,6 +67,15 @@ CREATE TABLE identities (
     phone VARCHAR(20) UNIQUE NOT NULL,      -- PII: Hashed on deletion
     phone_verified_at TIMESTAMP NULL,
     email VARCHAR(255) NULL,                 -- PII: Deleted on account deletion
+
+    -- Age verification fields (Adult-by-Design)
+    date_of_birth DATE NULL,                 -- PII: Stored for age verification
+    birth_year SMALLINT NULL,                -- Derived from DOB for analytics
+    age_band ENUM('under_13', '13_17', '18_24', '25_34', '35_plus') NULL,
+    age_assurance_level TINYINT DEFAULT 0,   -- 0=none, 1=self-declared, 2=revalidated, 3=verified
+    age_declared_at TIMESTAMP NULL,          -- When user first declared DOB
+    age_last_verified_at TIMESTAMP NULL,     -- When last revalidation occurred
+
     status ENUM('pending', 'active', 'suspended', 'deleted', 'banned') DEFAULT 'pending',
     suspended_at TIMESTAMP NULL,
     suspended_reason TEXT NULL,
@@ -75,7 +84,8 @@ CREATE TABLE identities (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     INDEX idx_status (status),
-    INDEX idx_phone (phone)
+    INDEX idx_phone (phone),
+    INDEX idx_age (age_band, age_assurance_level)
 );
 
 -- User profile (separate from identity for privacy)
@@ -233,6 +243,44 @@ CREATE TABLE completed_missions (
     FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
     FOREIGN KEY (mission_id) REFERENCES daily_missions(id) ON DELETE CASCADE,
     UNIQUE KEY uk_completion (identity_id, mission_id)
+);
+```
+
+### 2.3A Trust & Safety Domain (Age Verification)
+
+```sql
+-- Possible minor detection cases
+CREATE TABLE possible_minor_cases (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    identity_id INT NOT NULL,
+    detection_signals JSON NOT NULL,         -- Array of signal types
+    risk_score TINYINT NOT NULL,             -- 0-100 risk score
+    status ENUM('pending', 'confirmed_adult', 'confirmed_minor', 'inconclusive') DEFAULT 'pending',
+    assigned_to INT NULL,                    -- T&S staff identity_id
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL,
+    resolution_action ENUM('none', 'age_recheck', 'suspend', 'ban') NULL,
+    resolution_notes TEXT NULL,
+
+    FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_to) REFERENCES identities(id),
+    INDEX idx_status (status, created_at),
+    INDEX idx_identity (identity_id)
+);
+
+-- Age verification audit log
+CREATE TABLE age_verification_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    identity_id INT NOT NULL,
+    action ENUM('gate_a_passed', 'gate_a_blocked', 'gate_b_passed', 'gate_b_failed', 'gate_c_blocked', 'level_upgraded') NOT NULL,
+    previous_level TINYINT NULL,
+    new_level TINYINT NULL,
+    trigger_reason VARCHAR(100) NULL,
+    metadata JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    INDEX idx_identity_time (identity_id, created_at)
 );
 ```
 
@@ -451,6 +499,10 @@ CREATE TABLE community_portal_assignments (
 | Analytics aggregates | 5 years | Archive | Business need |
 | Audit logs | 2 years | Archive | Legal requirement |
 | Backups | 30 days | Delete | Disaster recovery |
+| Age data (DOB) | Account lifetime + 1 year | Anonymize | Legitimate interest (safety) |
+| Age verification logs | 2 years | Archive | Legal requirement |
+| Possible minor cases | 5 years (resolved) | Archive | Legal requirement |
+| ID verification docs | 30 days after verification | Delete | Minimization |
 
 ### 5.2 Retention Implementation
 
@@ -666,4 +718,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added age fields to identities, Section 2.3A T&S Domain, age retention rules -->

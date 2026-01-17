@@ -41,6 +41,113 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-17-2
+
+**Date:** 2026-01-17
+**Duration:** ~2 hours
+**Focus Area:** Adult-by-Design (18+) Policy Implementation
+
+### Summary
+Implemented comprehensive Adult-by-Design (18+) policy documentation across the system documentation. Created a new specification document and updated 11 existing documents to incorporate age verification, enforcement gates, feature gating, compliance requirements, and phased rollout configuration.
+
+### Changes Made
+
+**New Documents (1 file):**
+
+1. **20_ADULT_BY_DESIGN_SPEC.md** (new, ~700 lines)
+   - Complete specification for 18+ age verification policy
+   - Three-tier gate system (Gate A: signup, Gate B: risk-based, Gate C: features)
+   - Age assurance levels (0-3) with definitions
+   - Data model for age fields
+   - T&S integration for minor detection
+   - Rollout plan and success metrics
+   - Implementation checklist
+
+**Updated Documents (11 files):**
+
+2. **01_SYSTEM_CANONICAL_INDEX.md** (v2.1.0 → v2.2.0)
+   - Added 20_ADULT_BY_DESIGN_SPEC.md to document registry
+   - Updated count from 19 to 20 files
+
+3. **02_PRODUCT_BLUEPRINT.md** (v1.0.0 → v1.1.0)
+   - Added Section 3.4: Adult-by-Design (18+) Policy
+   - Added age assurance levels table
+   - Added enforcement gates summary
+
+4. **04_SYSTEM_ALGORITHM_AND_LIFECYCLE_SPEC.md** (v1.0.0 → v1.1.0)
+   - Added Section 5A: Age Verification Gates
+   - Gate A flow diagram with decision logic
+   - Gate B risk triggers and revalidation flow
+   - Gate C feature gating implementation
+
+5. **05_USER_STATE_MACHINE.md** (v1.0.0 → v1.1.0)
+   - Added Section 4A: Age Assurance States
+   - State diagram for age verification lifecycle
+   - Transition rules table
+   - Age band classification
+
+6. **06_DATA_ARCHITECTURE_AND_LIFECYCLE.md** (v1.1.0 → v1.2.0)
+   - Added age fields to identities table schema
+   - Added Section 2.3A: Trust & Safety Domain
+   - Added possible_minor_cases table schema
+   - Added age_verification_log table schema
+   - Updated retention schedule with age data
+
+7. **07_EVENT_AND_ANALYTICS_SPEC.md** (v1.1.0 → v1.2.0)
+   - Added Section 2.6: Age Verification Events
+   - 10 new events (gate_presented, declared, blocked, revalidated, etc.)
+
+8. **08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md** (v1.1.0 → v1.2.0)
+   - Added 4 age-related jobs to Job Catalog
+   - age-revalidation-prompt, minor-detection-scan, age-data-cleanup, minor-case-review
+
+9. **09_SECURITY_AND_AUTHORIZATION_SPEC.md** (v1.1.0 → v1.2.0)
+   - Updated authorization pipeline diagram with Age Verification step
+   - Added Section 2.1A: Age Verification Authorization
+   - Updated Endpoint Authorization Matrix with Age Level column
+
+10. **11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md** (v1.1.0 → v1.2.0)
+    - Added 4 age-related feature flags to registry
+    - Added Section 6.6: Age Gate Configuration
+    - Age verification parameters, thresholds, Go/No-Go gates
+
+11. **12_COMPLIANCE_AND_DATA_PROTECTION.md** (v1.0.0 → v1.1.0)
+    - Added age data to Legal Basis table (Section 2.1)
+    - Added Section 2.4: Age Verification Compliance
+    - Legitimate interest justification, balancing test, minor handling
+
+12. **15_DECISION_LOG.md**
+    - Added DEC-0011: Adult-by-Design (18+) Policy
+    - Updated Decision Index
+
+### Decisions Made
+
+1. **DEC-0011: Adult-by-Design (18+) Policy**
+   - Decision: Quiet enforcement, not public 18+ marketing
+   - External positioning: "High-signal, moderated, brand-safe communities"
+   - Three-tier gate system with progressive assurance levels
+   - See 15_DECISION_LOG.md for full details
+
+### Issues Encountered
+None - documentation-only session.
+
+### Follow-up Items
+- [ ] Implement database migration for age fields (20_ADULT_BY_DESIGN_SPEC.md Appendix A)
+- [ ] Implement Gate A UI component in unofficial-communities
+- [ ] Implement age verification API endpoints in uc-api
+- [ ] Configure FEATURE_AGE_GATE_SIGNUP=true in production
+- [ ] Update Terms of Service with age requirements
+- [ ] Update Privacy Policy with age data collection disclosure
+- [ ] Train T&S team on minor detection procedures
+
+### Notes
+- This session focused on documentation updates to establish the policy
+- Implementation will follow in subsequent sessions
+- All documentation now references 20_ADULT_BY_DESIGN_SPEC.md as authoritative source
+- Feature flags designed for phased rollout (signup first, then risk, then features)
+
+---
+
 ## SESS-2026-01-17-1
 
 **Date:** 2026-01-17

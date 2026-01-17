@@ -1,8 +1,8 @@
 # Product Blueprint
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-17
+**Version:** 1.1.0
 
 ---
 
@@ -84,6 +84,36 @@ Every feature must support at least one psychological need:
 | Increases clarity and user agency | Depends on behavioral addiction loops |
 | Scales across communities | Cannot be explained transparently |
 | Generates insights via aggregation | Would be unacceptable if disclosed publicly |
+
+### 3.4 Adult-by-Design (18+) Policy
+
+**Position:** The platform operates as a de facto 18+ service with quiet enforcement, not public marketing.
+
+| Aspect | Approach |
+|--------|----------|
+| External Messaging | "High-signal, moderated, brand-safe communities" |
+| Age Enforcement | Quiet gates at signup and risk points |
+| Content Policy | Adult-friendly discussion, not adult content |
+| Minor Protection | Priority T&S handling, immediate suspension |
+
+**Age Assurance Levels:**
+
+| Level | Source | Description |
+|-------|--------|-------------|
+| 0 | None | No age data collected |
+| 1 | Self-Declared | User-entered DOB at signup |
+| 2 | Risk-Based | Revalidation at high-risk triggers |
+| 3 | Verified | ID verification for monetization |
+
+**Enforcement Gates:**
+
+| Gate | Trigger | Action |
+|------|---------|--------|
+| Gate A | Account activation | Require DOB, block if under 18 |
+| Gate B | Risk triggers (dormant, flagged) | Revalidate DOB |
+| Gate C | High-risk features | Require elevated assurance level |
+
+See `20_ADULT_BY_DESIGN_SPEC.md` for complete specification.
 
 ---
 
@@ -263,4 +293,4 @@ Current Phase: **Foundation** (UC World Phase 1)
 
 *This document defines what we build and why. Implementation details live in SYSTEM_ALGORITHM_AND_LIFECYCLE_SPEC.md and repository CLAUDE.md files.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Adult-by-Design policy (Section 3.4) -->

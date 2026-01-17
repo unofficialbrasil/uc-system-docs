@@ -1,8 +1,8 @@
 # Event and Analytics Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 1.1.0
+**Last Updated:** 2026-01-17
+**Version:** 1.2.0
 
 ---
 
@@ -93,7 +93,22 @@ Examples:
 
 > **Consent Requirement:** WhatsApp activity events are ONLY collected for users who have consented (`consents.whatsapp_activity = true`). Events are stored in aggregate form (daily buckets) for graph computation, not individual message content.
 
-### 2.6 Webhook Events
+### 2.6 Age Verification Events (Adult-by-Design)
+
+| Event Name | Trigger | Properties | Source |
+|------------|---------|------------|--------|
+| `age.gate_presented` | Gate shown to user | `{ gate: 'A'|'B'|'C', trigger }` | Frontend |
+| `age.declared` | User submits DOB (Gate A) | `{ age_band, assurance_level }` | API |
+| `age.blocked` | User blocked (under 18) | `{ age_band, gate: 'A'|'B' }` | API |
+| `age.revalidated` | Gate B completed | `{ matched, discrepancy_days, new_level }` | API |
+| `age.feature_blocked` | Gate C denied access | `{ feature, reason, required_level }` | API |
+| `age.minor_flagged` | T&S case created | `{ signal_type, risk_score }` | API |
+| `age.case_resolved` | T&S case resolved | `{ case_id, outcome, action_taken }` | API |
+| `age.appeal_opened` | User appeals block | `{ case_id }` | API |
+| `age.appeal_resolved` | Appeal completed | `{ case_id, outcome }` | API |
+| `age.level_upgraded` | Assurance level increased | `{ old_level, new_level, reason }` | API |
+
+### 2.7 Webhook Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -103,7 +118,7 @@ Examples:
 | `webhook.retried` | Retry attempt | `{ source, attempt_number }` | Webhooks |
 | `webhook.dead_lettered` | Max retries exceeded | `{ source, event_type }` | Webhooks |
 
-### 2.7 System Events
+### 2.8 System Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -502,4 +517,4 @@ async function trackEvent(event: BaseEvent, identityId: number) {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Section 2.6: Age Verification Events -->

@@ -1,8 +1,8 @@
 # Environment and Configuration Registry
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-16
-**Version:** 1.1.0
+**Last Updated:** 2026-01-17
+**Version:** 1.2.0
 
 ---
 
@@ -229,6 +229,10 @@ openssl rand -hex 16
 | `FEATURE_PORTALS` | Enable portals rendering in world | `true` | All |
 | `FEATURE_PORTAL_TRAVEL` | Enable cross-community travel flow | `true` | All |
 | `FEATURE_PORTAL_EXPLORATION_SLOT` | Enable 1 exploration/diversity slot | `true` | All |
+| `FEATURE_AGE_GATE_SIGNUP` | Enable Gate A at signup (Adult-by-Design) | `true` | All |
+| `FEATURE_AGE_GATE_RISK` | Enable Gate B risk-based rechecks | `false` | prod (pilot), staging |
+| `FEATURE_AGE_GATE_FEATURES` | Enable Gate C feature-level gating | `false` | prod (pilot), staging |
+| `FEATURE_MINOR_DETECTION` | Enable automated minor detection | `false` | None (gated) |
 
 ### 4.2 Feature Flag Configuration
 
@@ -672,6 +676,62 @@ const XP_SOURCES = {
   - Privacy risk assessment complete
   - Explicit governance approval (DEC entry)
 
+### 6.6 Age Gate Configuration (Adult-by-Design)
+
+**Core Age Gate Settings:**
+
+| Variable | Description | Default | Notes |
+|----------|-------------|---------|-------|
+| `FEATURE_AGE_GATE_SIGNUP` | Enable Gate A at signup | `true` | Master switch for age verification |
+| `FEATURE_AGE_GATE_RISK` | Enable Gate B risk triggers | `false` | Phased rollout |
+| `FEATURE_AGE_GATE_FEATURES` | Enable Gate C feature gating | `false` | Phased rollout |
+| `FEATURE_MINOR_DETECTION` | Enable automated minor detection | `false` | Requires T&S review |
+
+**Age Verification Parameters:**
+
+| Variable | Description | Default | Range |
+|----------|-------------|---------|-------|
+| `AGE_MIN_REQUIRED` | Minimum age for platform access | `18` | 18-21 |
+| `AGE_REVALIDATION_DORMANT_DAYS` | Inactive days before Gate B trigger | `60` | 30-180 |
+| `AGE_REVALIDATION_ACCOUNT_MIN_DAYS` | Min account age for Gate B | `30` | 7-90 |
+| `AGE_DOB_MISMATCH_TOLERANCE_DAYS` | Allowed mismatch in Gate B | `365` | 0-730 |
+
+**Feature Gate Thresholds:**
+
+| Variable | Description | Default | Notes |
+|----------|-------------|---------|-------|
+| `AGE_LEVEL_DASHBOARD` | Min level for dashboard access | `1` | Self-declared |
+| `AGE_LEVEL_MESSAGING` | Min level for direct messaging | `1` | Self-declared |
+| `AGE_LEVEL_COMMUNITY_CREATE` | Min level to create communities | `2` | Revalidated |
+| `AGE_LEVEL_MODERATOR` | Min level for moderator role | `2` | Revalidated |
+| `AGE_LEVEL_MONETIZATION` | Min level for monetization | `3` | ID-verified |
+
+**Minor Detection Settings (Gated):**
+
+| Variable | Description | Default | Notes |
+|----------|-------------|---------|-------|
+| `MINOR_DETECTION_RISK_THRESHOLD` | Risk score threshold for flagging | `70` | 0-100 |
+| `MINOR_DETECTION_AUTO_SUSPEND` | Auto-suspend at high risk | `false` | Requires human review |
+| `MINOR_CASE_REVIEW_SLA_HOURS` | Target SLA for case review | `4` | 1-24 |
+
+**Go/No-Go Gates for Age Features:**
+
+- **FEATURE_AGE_GATE_RISK=true** requires:
+  - Gate A stable for 7+ days
+  - < 1% false positive rate at Gate A
+  - T&S queue capacity confirmed
+
+- **FEATURE_AGE_GATE_FEATURES=true** requires:
+  - Gate B stable for 14+ days
+  - Feature access patterns analyzed
+  - Documentation updated (Terms of Service)
+
+- **FEATURE_MINOR_DETECTION=true** requires:
+  - All gates stable for 30+ days
+  - T&S training complete
+  - Legal review of detection signals
+  - Explicit governance approval (DEC entry)
+
 ---
 
 ## 7. Configuration Validation
@@ -883,4 +943,4 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Age Gate feature flags (Section 4.1) and configuration (Section 6.6) -->

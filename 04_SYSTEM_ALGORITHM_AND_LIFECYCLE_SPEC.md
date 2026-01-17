@@ -1,8 +1,8 @@
 # System Algorithm and Lifecycle Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
-**Version:** 1.0.0
+**Last Updated:** 2026-01-17
+**Version:** 1.1.0
 
 ---
 
@@ -443,6 +443,165 @@ VALUES (?, true, false, true, NOW());
 | No avatar after 24h | Daily job | Show banner on dashboard |
 | No bio after 48h | Daily job | Show banner on dashboard |
 | No mission completed after 72h | Daily job | Send WhatsApp reminder (if opted in) |
+
+---
+
+## 5A. Age Verification Gates (Adult-by-Design)
+
+### 5A.1 Gate A: Account Activation
+
+Gate A is the mandatory age verification step at the end of onboarding, before dashboard access.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                ONBOARDING STEP: COMMUNITY_JOINED                 │
+│                (About to transition to COMPLETED)                │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+               ┌───────────────────────────────┐
+               │  FEATURE_AGE_GATE_SIGNUP      │
+               │  enabled?                     │
+               └───────────────────────────────┘
+                               │
+              ┌────────────────┴────────────────┐
+              │                                 │
+              ▼                                 ▼
+    ┌─────────────────┐              ┌─────────────────┐
+    │  Disabled       │              │  Enabled        │
+    │  Skip Gate A    │              │  Show Gate A    │
+    └─────────────────┘              └─────────────────┘
+              │                                 │
+              │                                 ▼
+              │                ┌───────────────────────────────┐
+              │                │  Gate A: Age Declaration UI   │
+              │                │  "Please enter your date of   │
+              │                │   birth to continue"          │
+              │                │  [Date Picker: MM/DD/YYYY]    │
+              │                └───────────────────────────────┘
+              │                                 │
+              │                                 ▼
+              │                ┌───────────────────────────────┐
+              │                │  Calculate Age Band           │
+              │                │  age = TODAY - DOB            │
+              │                │  age_band = classify(age)     │
+              │                └───────────────────────────────┘
+              │                                 │
+              │               ┌─────────────────┴─────────────────┐
+              │               │                                   │
+              │               ▼                                   ▼
+              │     ┌─────────────────┐              ┌─────────────────┐
+              │     │  Age >= 18      │              │  Age < 18       │
+              │     │  Adult bands    │              │  Minor bands    │
+              │     │  ('18_24',      │              │  ('under_13',   │
+              │     │   '25_34',      │              │   '13_17')      │
+              │     │   '35_plus')    │              │                 │
+              │     └─────────────────┘              └─────────────────┘
+              │               │                                   │
+              │               ▼                                   ▼
+              │     ┌─────────────────┐              ┌─────────────────┐
+              │     │  Store:         │              │  Block:         │
+              │     │  date_of_birth  │              │  Show Message   │
+              │     │  birth_year     │              │  "This platform │
+              │     │  age_band       │              │   requires you  │
+              │     │  assurance = 1  │              │   to be 18+"    │
+              │     │  declared_at    │              │  Log Event      │
+              │     └─────────────────┘              └─────────────────┘
+              │               │                                   │
+              │               ▼                                   ▼
+              │     ┌─────────────────┐              ┌─────────────────┐
+              │     │  Emit Event:    │              │  Emit Event:    │
+              │     │ age.declared    │              │  age.blocked    │
+              │     └─────────────────┘              └─────────────────┘
+              │               │                                   │
+              └───────────────┼───────────────────────────────────┘
+                              │
+                              ▼
+               ┌───────────────────────────────┐
+               │  IF passed:                   │
+               │  Transition to COMPLETED      │
+               │  Redirect to /dashboard       │
+               └───────────────────────────────┘
+```
+
+### 5A.2 Gate B: Risk-Based Recheck
+
+Gate B is triggered by risk signals to revalidate age assurance.
+
+**Triggers:**
+
+| Trigger | Condition | Priority |
+|---------|-----------|----------|
+| Dormant Reactivation | Account age > 30d AND inactive 60d | Medium |
+| T&S Flag | Staff flags "possible minor" | High |
+| Feature Access | Creator monetization, DM unlock | High |
+| Role Promotion | Moderator or Admin role | High |
+
+**Flow:**
+```
+TRIGGER_GATE_B(identity_id, trigger_reason):
+    │
+    ├── Check current assurance level
+    │   IF level >= 2:
+    │       RETURN { required: false }
+    │
+    ├── Show Revalidation UI
+    │   "Please confirm your date of birth"
+    │   [Pre-filled year from original DOB]
+    │
+    ├── User submits DOB
+    │
+    ├── Compare to original DOB
+    │   │
+    │   ├── Exact match: Update level = 2, continue
+    │   │
+    │   ├── Minor mismatch (±1 year): Accept, log warning
+    │   │
+    │   └── Major mismatch OR now shows under-18:
+    │       │
+    │       ├── Suspend account
+    │       ├── Create T&S case
+    │       └── Emit age.suspicious_revalidation event
+    │
+    └── RETURN { passed: boolean, new_level: number }
+```
+
+### 5A.3 Gate C: Feature Gating
+
+Gate C blocks access to high-risk features based on age assurance level.
+
+```typescript
+const FEATURE_GATES: Record<string, FeatureGateConfig> = {
+  'direct_messaging': { minLevel: 1, minAgeBand: '18_24' },
+  'community_creation': { minLevel: 2, minAgeBand: '18_24', minAccountAge: 7 },
+  'moderator_role': { minLevel: 2, minAgeBand: '18_24', minAccountAge: 30 },
+  'monetization': { minLevel: 3, minAgeBand: '18_24' },
+  'voice_zones': { minLevel: 1, minAgeBand: '18_24' }
+};
+
+async function checkFeatureAccess(identityId: number, feature: string): Promise<boolean> {
+  if (!FEATURE_AGE_GATE_FEATURES) return true;
+
+  const config = FEATURE_GATES[feature];
+  if (!config) return true;
+
+  const user = await getIdentity(identityId);
+
+  // Check age band
+  if (!isAdultAgeBand(user.age_band)) {
+    emit('age.feature_blocked', { feature, reason: 'minor' });
+    return false;
+  }
+
+  // Check assurance level
+  if (user.age_assurance_level < config.minLevel) {
+    emit('age.feature_blocked', { feature, reason: 'insufficient_assurance' });
+    return false;
+  }
+
+  return true;
+}
+```
 
 ---
 
@@ -1172,4 +1331,4 @@ Session: created → active → expired
 
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Updated: 2026-01-17 - Added Section 5A: Age Verification Gates -->
