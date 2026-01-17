@@ -41,6 +41,81 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-17-1
+
+**Date:** 2026-01-17
+**Duration:** ~1 hour
+**Focus Area:** BullMQ Failed Jobs Fix & Security Headers
+
+### Summary
+Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch between uc-webhooks and uc-api. Also fixed security header warnings reported in browser DevTools.
+
+### Changes Made
+
+**uc-api (1 file):**
+
+1. **src/services/socialEventsProcessor.ts** (+60 lines, -16 lines)
+   - Added `normalizePayload()` function to handle field name differences between uc-webhooks and uc-api
+   - Field mappings: type→kind, id→externalId, conversationId→channelId, createdAt→receivedAt
+   - Derives `occurredAt` from `payload.timestamp` when missing
+   - Fixed SQL INSERT to remove non-existent `event_uuid` column
+   - Changed from `ON DUPLICATE KEY UPDATE` to `INSERT IGNORE` (schema lacks unique constraint)
+
+**unofficial-communities (1 file):**
+
+2. **next.config.mjs** (-4 lines, +2 lines)
+   - Removed deprecated `X-XSS-Protection` header
+   - Added comment explaining removal rationale
+
+**System Config (not in git):**
+
+3. **/etc/nginx/nginx.conf**
+   - Added `server_tokens off;` to hide nginx version in responses
+
+### Decisions Made
+
+1. **Payload Normalization in Consumer**
+   - Decision: Normalize payload in uc-api rather than fixing uc-webhooks
+   - Rationale: Safer, backwards compatible, handles both old and new formats
+
+2. **INSERT IGNORE vs ON DUPLICATE KEY**
+   - Decision: Use INSERT IGNORE for social_events
+   - Rationale: Schema lacks unique constraint on external_id; proper fix requires schema migration
+
+3. **X-XSS-Protection Removal**
+   - Decision: Remove deprecated header entirely
+   - Rationale: Header is deprecated and can introduce vulnerabilities; CSP is the modern approach
+
+### Issues Encountered
+
+1. **Schema Mismatch Between Services**
+   - Problem: uc-webhooks sends different field names than uc-api expects
+   - Resolution: Added normalizePayload() function to map fields
+
+2. **Non-existent Database Column**
+   - Problem: SQL referenced `event_uuid` column that doesn't exist in Prisma schema
+   - Resolution: Removed column from INSERT, use `external_id` instead
+
+3. **Pre-existing TypeScript Errors**
+   - Problem: scaleService.ts has errors referencing non-existent Prisma models
+   - Resolution: Build still succeeds after prisma generate; errors are for future features
+
+### Follow-up Items
+- [ ] Add unique constraint on `social_events.external_id` for proper idempotency
+- [ ] Consider aligning uc-webhooks output schema with uc-api expectations
+- [ ] Implement identity resolution (phone number → identityId lookup)
+
+### Git Commits
+- `cef3089` fix(webhooks): normalize payload schema between uc-webhooks and uc-api (uc-api)
+- `64ebebd` fix(security): remove deprecated X-XSS-Protection header (unofficial-communities)
+
+### Notes
+- All 3 previously failed jobs (message, reaction, reply) now completed successfully
+- Jobs were test events from phone 5511888888888
+- Browser 404 errors on /api/v1/user/me likely due to cached JS bundles; endpoint returns 401 correctly
+
+---
+
 ## SESS-2026-01-16-5
 
 **Date:** 2026-01-16
