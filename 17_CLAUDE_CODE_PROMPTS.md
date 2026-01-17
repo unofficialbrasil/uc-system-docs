@@ -252,10 +252,10 @@ printf "│ %-25s │ %-5s │ %s %-23s │\n" "unofficial-communities" "3000" "
 API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/health 2>/dev/null || echo "DOWN")
 [ "$API_STATUS" = "200" ] && API_ICON="🟢" || API_ICON="🔴"
 printf "│ %-25s │ %-5s │ %s %-23s │\n" "uc-api" "3010" "$API_ICON" "$API_STATUS"
-# Webhooks
-WH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4101/health 2>/dev/null || echo "DOWN")
+# Webhooks (internal service - check via Docker network)
+WH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://uc-webhooks:3010/health 2>/dev/null || echo "DOWN")
 [ "$WH_STATUS" = "200" ] && WH_ICON="🟢" || WH_ICON="🔴"
-printf "│ %-25s │ %-5s │ %s %-23s │\n" "uc-webhooks" "4101" "$WH_ICON" "$WH_STATUS"
+printf "│ %-25s │ %-5s │ %s %-23s │\n" "uc-webhooks" "int" "$WH_ICON" "$WH_STATUS"
 # UC World
 WORLD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3005 2>/dev/null || echo "DOWN")
 [ "$WORLD_STATUS" = "200" ] || [ "$WORLD_STATUS" = "101" ] && WORLD_ICON="🟢" || WORLD_ICON="🟡"
@@ -300,8 +300,8 @@ echo ""
 echo "┌─────────────────────────────────────────────────────────────────┐"
 echo "│ WEBHOOK ACTIVITY                                                │"
 echo "├─────────────────────────────────────────────────────────────────┤"
-# Social events from webhooks
-EVENTS=$(curl -s http://localhost:4101/metrics 2>/dev/null | grep "social_events_enqueued_total" | grep -v "^#" | awk '{sum+=$2} END {print sum}')
+# Social events from webhooks (internal service - check via Docker network)
+EVENTS=$(curl -s http://uc-webhooks:3010/metrics 2>/dev/null | grep "social_events_enqueued_total" | grep -v "^#" | awk '{sum+=$2} END {print sum}')
 printf "│ 📨 Social Events Processed: %-35s │\n" "${EVENTS:-0}"
 echo "└─────────────────────────────────────────────────────────────────┘"
 echo ""
@@ -606,14 +606,14 @@ echo "└───────────────────────�
 echo ""
 
 echo "┌─────────────────────────────────────────────────────────────────┐"
-echo "│ Webhooks Service (Functional Check)                             │"
+echo "│ Webhooks Service (Internal - via Docker network)                │"
 echo "├─────────────────────────────────────────────────────────────────┤"
-WH_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4101/health 2>/dev/null || echo "ERR")
+WH_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://uc-webhooks:3010/health 2>/dev/null || echo "ERR")
 if [ "$WH_HEALTH" = "200" ]; then
   printf "│ 🟢 Health: %-52s │\n" "OK"
 
   # Check metrics endpoint returns valid Prometheus format
-  WH_METRICS=$(curl -s http://localhost:4101/metrics 2>/dev/null | head -1)
+  WH_METRICS=$(curl -s http://uc-webhooks:3010/metrics 2>/dev/null | head -1)
   if echo "$WH_METRICS" | grep -q "^#\|^[a-z]" 2>/dev/null; then
     printf "│ 🟢 Metrics: %-51s │\n" "Prometheus format OK"
   else
