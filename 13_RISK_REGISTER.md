@@ -502,4 +502,4 @@ Probability: Minimal(1) Low(2) Medium(3) High(4) Critical(5)
 
 *Next Risk ID: RSK-014*
 
-<!-- Last Reviewed: 2026-01-16 - No updates needed -->
+<!-- Last Reviewed: 2026-01-17 - No updates needed -->

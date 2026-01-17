@@ -1172,4 +1172,4 @@ Session: created → active → expired
 
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
-<!-- Last Reviewed: 2026-01-16 - No updates needed -->
+<!-- Last Reviewed: 2026-01-17 - No updates needed -->

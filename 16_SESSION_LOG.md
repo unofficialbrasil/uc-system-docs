@@ -44,11 +44,11 @@ Each session entry follows this structure:
 ## SESS-2026-01-17-1
 
 **Date:** 2026-01-17
-**Duration:** ~1 hour
-**Focus Area:** BullMQ Failed Jobs Fix & Security Headers
+**Duration:** ~2 hours
+**Focus Area:** BullMQ Failed Jobs Fix, Security Headers & Signup Access
 
 ### Summary
-Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch between uc-webhooks and uc-api. Also fixed security header warnings reported in browser DevTools.
+Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch between uc-webhooks and uc-api. Fixed security header warnings reported in browser DevTools. Enabled public signup by removing nginx redirect that was blocking the signup page.
 
 ### Changes Made
 
@@ -72,6 +72,10 @@ Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch 
 3. **/etc/nginx/nginx.conf**
    - Added `server_tokens off;` to hide nginx version in responses
 
+4. **/etc/nginx/conf.d/unofficial.conf**
+   - Removed `/signup` redirect to `/login` that was blocking signup access
+   - Comment said "signup disabled during test phase" - now enabled for production
+
 ### Decisions Made
 
 1. **Payload Normalization in Consumer**
@@ -85,6 +89,10 @@ Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch 
 3. **X-XSS-Protection Removal**
    - Decision: Remove deprecated header entirely
    - Rationale: Header is deprecated and can introduce vulnerabilities; CSP is the modern approach
+
+4. **Enable Public Signup**
+   - Decision: Remove nginx redirect blocking /signup
+   - Rationale: Test phase is complete; users need to be able to create accounts
 
 ### Issues Encountered
 
@@ -100,6 +108,11 @@ Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch 
    - Problem: scaleService.ts has errors referencing non-existent Prisma models
    - Resolution: Build still succeeds after prisma generate; errors are for future features
 
+4. **Signup Page Blocked**
+   - Problem: /signup returned 302 redirect to /login on public domain
+   - Cause: Nginx location block was explicitly redirecting /signup to /login
+   - Resolution: Removed redirect block from /etc/nginx/conf.d/unofficial.conf
+
 ### Follow-up Items
 - [ ] Add unique constraint on `social_events.external_id` for proper idempotency
 - [ ] Consider aligning uc-webhooks output schema with uc-api expectations
@@ -113,6 +126,8 @@ Fixed 3 failed BullMQ jobs in the social-events-queue caused by schema mismatch 
 - All 3 previously failed jobs (message, reaction, reply) now completed successfully
 - Jobs were test events from phone 5511888888888
 - Browser 404 errors on /api/v1/user/me likely due to cached JS bundles; endpoint returns 401 correctly
+- Signup page now accessible at https://unofficialcommunities.com.br/signup (returns HTTP 200)
+- User can now create accounts for testing the platform
 
 ---
 
