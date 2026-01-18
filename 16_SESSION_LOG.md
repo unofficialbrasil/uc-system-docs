@@ -41,6 +41,68 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-18-1
+
+**Date:** 2026-01-18
+**Duration:** ~1 hour
+**Focus Area:** UC World Camera Fix and Background Strip Investigation
+
+### Summary
+Fixed camera centering for the hexagonal world layout and investigated background strip issue that appears when zoomed out to maximum. Camera was incorrectly centered at (25,19) but hexagon world is 80×92 tiles with center at (40,46). Also disabled chat UI temporarily pending placement decision.
+
+### Changes Made
+
+**UC World (uc-world):**
+1. `client/src/core/ThreeEngine.ts`
+   - Fixed camera center from (25,19) to (40,46)
+   - Updated setupIsometricCamera() and zoomToFitMap()
+
+2. `client/src/scenes/GameWorld.ts`
+   - Added 500×500 background plane at y=-0.05
+   - Fixed stale comments (25→40, 19→46)
+
+3. `client/src/ui/HUD.ts`
+   - Disabled chat UI (not appending to DOM)
+   - Removed chat CSS from injected styles
+
+4. `CLAUDE.md`
+   - Documented background strip issue as pending
+   - Updated review date
+
+### Decisions Made
+
+1. **Camera center correction**
+   - Changed from (25,19) to (40,46) to match hexagon dimensions
+   - Rationale: World is 80×92 tiles, center must be at (40,46)
+
+2. **Disable chat temporarily**
+   - Decision: Remove chat from DOM entirely
+   - Rationale: Chat background was cutting into hexagon layout
+
+3. **Document background strip as pending**
+   - Decision: Issue not fully resolved, documented for next session
+   - Rationale: Multiple approaches tried (background plane sizes, transparent canvas) but strip persists at max zoom
+
+### Issues Encountered
+
+1. **Background strip at max zoom**
+   - Issue: Dark strip appears at bottom when zoomed out fully
+   - Debug: Changed scene.background to red, confirmed strip is scene background
+   - Tried: Background planes (200, 400, 500, 1000), transparent canvas
+   - Status: UNRESOLVED - needs camera frustum projection analysis
+
+### Follow-up Items
+
+- [ ] Investigate camera frustum projection at isometric angle
+- [ ] Consider limiting max zoom to prevent strip visibility
+- [ ] Decide on chat UI placement
+
+### Notes
+- Webhooks service showing unhealthy at session close (may need investigation)
+- All other services (Frontend, API, World) healthy
+
+---
+
 ## SESS-2026-01-17-3
 
 **Date:** 2026-01-17
