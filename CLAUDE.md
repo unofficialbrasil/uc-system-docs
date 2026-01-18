@@ -21,12 +21,12 @@ All documents must be:
 | Property | Value |
 |----------|-------|
 | Location | `/srv/unofficial/prod/app/uc-system-docs/` |
-| Documents | 19 numbered files |
+| Documents | 20 numbered files |
 | Purpose | Platform-wide specifications and governance |
 
 ---
 
-## Document Registry (18 Files)
+## Document Registry (20 Files)
 
 | # | File | Purpose | Update When |
 |---|------|---------|-------------|
@@ -49,6 +49,7 @@ All documents must be:
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` | Claude prompts | Procedures change |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research | Research updates |
 | 19 | `19_EXECUTION_PLAN.md` | Execution plan | Execution steps change |
+| 20 | `20_ADULT_BY_DESIGN_SPEC.md` | Adult-by-Design policy | Age verification changes |
 
 ---
 
@@ -112,12 +113,12 @@ git add -A && git commit -m "docs: [description]" && git push origin main
 
 ## Current Status
 
-- **19 documents** covering all platform aspects
-- **Numbered** (01-18) for ordered display
-- **Session prompts** v5.1 with comprehensive checks
+- **20 documents** covering all platform aspects
+- **Numbered** (01-20) for ordered display
+- **Session prompts** v6.1 with comprehensive checks
 - **Backup monitoring** integrated into session prompts
 
 ---
 
-<!-- Last Updated: 2026-01-18 - Session log updated -->
+<!-- Last Updated: 2026-01-18 - Fixed document count (20 files), added 20_ADULT_BY_DESIGN_SPEC.md to registry -->
 

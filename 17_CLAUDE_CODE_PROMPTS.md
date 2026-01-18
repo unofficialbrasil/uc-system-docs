@@ -1,11 +1,11 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-16
-**Version:** 6.1
+**Last Updated:** 2026-01-18
+**Version:** 6.2
 
 ---
 
-## Files Registry (29 Files Total)
+## Files Registry (30 Files Total)
 
 ### Repository Files (10 files)
 
@@ -17,7 +17,7 @@
 | uc-world | `/srv/unofficial/prod/app/uc-world/CLAUDE.md` | `/srv/unofficial/prod/app/uc-world/README.md` |
 | uc-system-docs | `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` | `/srv/unofficial/prod/app/uc-system-docs/README.md` |
 
-### System Documentation (19 files)
+### System Documentation (20 files)
 
 Location: `/srv/unofficial/prod/app/uc-system-docs/`
 
@@ -42,6 +42,7 @@ Location: `/srv/unofficial/prod/app/uc-system-docs/`
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` |
 | 19 | `19_EXECUTION_PLAN.md` |
+| 20 | `20_ADULT_BY_DESIGN_SPEC.md` |
 
 ---
 
@@ -54,7 +55,7 @@ Hi Claude, let's start a development session. Execute the COMPLETE startup check
 
 ## PHASE 1: READ ALL FILES (MANDATORY - NO EXCEPTIONS)
 
-You MUST read ALL 29 files to have full context. No exceptions.
+You MUST read ALL 30 files to have full context. No exceptions.
 
 ### 1.1 Repository CLAUDE.md Files (5 files)
 Read each file completely:
@@ -72,7 +73,7 @@ Read each file completely:
 - `/srv/unofficial/prod/app/uc-world/README.md`
 - `/srv/unofficial/prod/app/uc-system-docs/README.md`
 
-### 1.3 System Documentation (18 files)
+### 1.3 System Documentation (20 files)
 Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `01_SYSTEM_CANONICAL_INDEX.md`
 - `02_PRODUCT_BLUEPRINT.md`
@@ -93,6 +94,7 @@ Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `17_CLAUDE_CODE_PROMPTS.md`
 - `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md`
 - `19_EXECUTION_PLAN.md`
+- `20_ADULT_BY_DESIGN_SPEC.md`
 
 ## PHASE 2: VPS & GITHUB ACCESS CHECK
 
