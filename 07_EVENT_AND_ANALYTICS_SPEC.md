@@ -517,4 +517,4 @@ async function trackEvent(event: BaseEvent, identityId: number) {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-17 - Added Section 2.6: Age Verification Events -->
+<!-- Last Updated: 2026-01-18 - Added Section 2.6: Age Verification Events -->

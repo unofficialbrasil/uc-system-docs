@@ -1331,4 +1331,4 @@ Session: created → active → expired
 
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
-<!-- Last Updated: 2026-01-17 - Added Section 5A: Age Verification Gates -->
+<!-- Last Updated: 2026-01-18 - Added Section 5A: Age Verification Gates -->

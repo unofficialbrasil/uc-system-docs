@@ -12305,4 +12305,4 @@ Este bloco existe para manter uma visão executiva atualizada do que já está c
 15. Definir o modelo do *Community Graph* (dimensões de peso e sinais permitidos), rodar um piloto de detecção de comunidades e similaridade entre comunidades, e validar impacto em discovery, diversidade e retenção antes de automatizar recomendações em escala (Estudo 028).
 16. Pilotar (A/B) um conjunto mínimo de **agentes sociais de IA** (concierge, mestre de cerimônias, quebra‑gelo e matchmaker) como *ponte* para conexões humanas, com disclosure persistente, opt‑out real, logging mínimo, guardrails de não‑manipulação e política específica para menores; medir impacto e possíveis danos (substituição de contato humano, relatos de dependência, arrependimento) antes de escalar (Estudo 074).
 17. Definir e prototipar a **camada de identidade modular** (público/comunidade/privado), papéis por contribuição e telemetria de “identidade → pertencimento → retenção”, com guardrails de privacidade, safety para menores e transparência (Estudo 075).
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Reviewed: 2026-01-18 - No updates needed -->

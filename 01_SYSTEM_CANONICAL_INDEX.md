@@ -150,4 +150,4 @@ For audit trail:
 *This document is the entry point for understanding the Unofficial Communities system.*
 *All other documents in this folder are discoverable from here.*
 
-<!-- Last Updated: 2026-01-17 - Added 20_ADULT_BY_DESIGN_SPEC.md to registry -->
+<!-- Last Updated: 2026-01-18 - Added 20_ADULT_BY_DESIGN_SPEC.md to registry -->

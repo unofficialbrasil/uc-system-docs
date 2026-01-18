@@ -480,4 +480,4 @@ Option 3: Adult-by-Design with tiered assurance levels. Key elements:
 
 *Next Decision ID: DEC-0012*
 
-<!-- Last Updated: 2026-01-17 - Added DEC-0011: Adult-by-Design Policy -->
+<!-- Last Updated: 2026-01-18 - Added DEC-0011: Adult-by-Design Policy -->

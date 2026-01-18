@@ -943,4 +943,4 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Updated: 2026-01-17 - Added Age Gate feature flags (Section 4.1) and configuration (Section 6.6) -->
+<!-- Last Updated: 2026-01-18 - Added Age Gate feature flags (Section 4.1) and configuration (Section 6.6) -->

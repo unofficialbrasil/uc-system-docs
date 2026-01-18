@@ -1060,4 +1060,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-17 - Added age queue jobs (Section 1.2) -->
+<!-- Last Updated: 2026-01-18 - Added age queue jobs (Section 1.2) -->

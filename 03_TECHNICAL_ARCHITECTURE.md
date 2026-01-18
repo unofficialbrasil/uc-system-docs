@@ -566,4 +566,4 @@ docker-compose.prod.yml
 
 *This document describes the technical architecture as implemented. Changes require updates to this document and logging in DECISION_LOG.md.*
 
-<!-- Last Reviewed: 2026-01-17 - No updates needed -->
+<!-- Last Reviewed: 2026-01-18 - No updates needed -->

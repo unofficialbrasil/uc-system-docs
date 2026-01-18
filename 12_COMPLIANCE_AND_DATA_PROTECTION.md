@@ -910,4 +910,4 @@ const stats = await db.gamification.aggregate({
 
 *This document defines compliance requirements. All features must undergo privacy review before launch.*
 
-<!-- Last Updated: 2026-01-17 - Added age data to Legal Basis table (Section 2.1) and Age Verification Compliance section (Section 2.4) -->
+<!-- Last Updated: 2026-01-18 - Added age data to Legal Basis table (Section 2.1) and Age Verification Compliance section (Section 2.4) -->

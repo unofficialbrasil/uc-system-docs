@@ -602,4 +602,4 @@ POST /api/v1/age/appeal:
 
 *This document is the authoritative specification for the Adult-by-Design policy. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-17 -->
+<!-- Last Updated: 2026-01-18 -->
