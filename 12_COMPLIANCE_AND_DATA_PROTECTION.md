@@ -158,7 +158,8 @@ enum ConsentType {
   TERMS_OF_SERVICE = 'terms_of_service',      // Required
   PRIVACY_POLICY = 'privacy_policy',          // Required
   MARKETING = 'marketing',                    // Optional
-  ANALYTICS = 'analytics',                    // Optional (but default on)
+  ANALYTICS = 'analytics',                    // Optional (but default on) - aka "telemetry"
+  WHATSAPP_ACTIVITY = 'whatsapp_activity',    // Optional (default off) - Living Graph
   THIRD_PARTY_SHARING = 'third_party'         // Optional
 }
 
@@ -318,6 +319,74 @@ async function revokeConsent(
   }
 
   await logConsentChange(identityId, [{ type: consentType, granted: false }], metadata);
+}
+```
+
+### 3.5 Living Graph Consent Requirements
+
+The Living Graph (community-to-community similarity graph) requires explicit consent for WhatsApp activity tracking.
+
+#### Consent Gating Rules
+
+| Event Domain | Consent Required | Default | If Denied |
+|--------------|------------------|---------|-----------|
+| `whatsapp.*` | `WHATSAPP_ACTIVITY` | **OFF** | Event dropped (not stored) |
+| `world.*`, `user.*`, etc. | `ANALYTICS` | ON | Anonymized (identity_id = NULL) |
+| `age.*`, `system.*` | None | N/A | Always stored (safety/ops) |
+
+#### WhatsApp Activity Consent
+
+**What is collected (counts only, no content):**
+- Message sent count per day
+- Reaction count per day
+- Reply count per day
+- Group join/leave events
+
+**What is NEVER collected:**
+- Message content/text
+- Media files or URLs
+- Phone numbers
+- Individual timestamps (only daily buckets)
+
+**User-facing consent prompt (required text):**
+
+> "Allow Unofficial Communities to count your WhatsApp activity (messages, reactions) to help connect you with similar communities. We never read or store message content - only aggregate counts."
+
+```typescript
+// Living Graph consent check (enforced at event ingestion)
+async function canIngestWhatsAppEvent(identityId: number): Promise<boolean> {
+  const consent = await db.consent.findUnique({
+    where: {
+      identity_id_consent_type: {
+        identity_id: identityId,
+        consent_type: ConsentType.WHATSAPP_ACTIVITY
+      }
+    }
+  });
+
+  return consent?.granted === true;
+}
+
+// Enforcement: events from users without consent are DROPPED
+async function handleWhatsAppWebhook(event: WhatsAppEvent): Promise<void> {
+  const hasConsent = await canIngestWhatsAppEvent(event.identity_id);
+
+  if (!hasConsent) {
+    // Log drop for audit but do not store event
+    console.log(`[Consent] Dropping whatsapp event - no consent for identity ${event.identity_id}`);
+    return;
+  }
+
+  // Store counts-only event (content already stripped by webhook processor)
+  await ingestEvent({
+    event_name: `whatsapp.${event.type}`,
+    event_version: '1.0.0',
+    community_id: event.community_id,
+    identity_id: event.identity_id,
+    properties: {
+      timestamp_bucket: getDailyBucket(event.timestamp),
+    }
+  });
 }
 ```
 
@@ -910,4 +979,4 @@ const stats = await db.gamification.aggregate({
 
 *This document defines compliance requirements. All features must undergo privacy review before launch.*
 
-<!-- Last Updated: 2026-01-18 - Added age data to Legal Basis table (Section 2.1) and Age Verification Compliance section (Section 2.4) -->
+<!-- Last Updated: 2026-01-19 - Added WHATSAPP_ACTIVITY consent type and Living Graph consent requirements (Section 3.5) -->
