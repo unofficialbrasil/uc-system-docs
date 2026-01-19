@@ -475,6 +475,126 @@ FROM v_aggregation_stability;
 | Churn limit triggered | > 10% of communities | Medium | Review thresholds |
 | Safety overrides active | > 5 communities | Medium | Review override reasons |
 
+#### Automated Circuit Breaker Triggers (Step 7)
+
+The graph build job includes automated circuit breakers that trigger based on safety thresholds:
+
+```typescript
+// Pre-flight circuit breaker checks (run before graph computation)
+async function checkCircuitBreakers(): Promise<{ proceed: boolean; reason?: string }> {
+  // 1. Check consecutive build failures
+  const recentFailures = await db.query(`
+    SELECT COUNT(*) as failures
+    FROM community_graph_runs
+    WHERE status = 'failed'
+      AND started_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ORDER BY started_at DESC
+    LIMIT 3
+  `);
+
+  if (recentFailures.failures >= 3) {
+    await setFeatureFlag('FEATURE_COMMUNITY_GRAPH', false);
+    await alertOps('circuit_breaker_tripped', {
+      trigger: 'build_failure_streak',
+      action: 'FEATURE_COMMUNITY_GRAPH disabled'
+    });
+    return { proceed: false, reason: 'CIRCUIT_BREAKER_BUILD_FAILURES' };
+  }
+
+  // 2. Check report rate from previous 24h
+  const reportRate = await db.query(`
+    SELECT
+      COUNT(pr.id) as reports,
+      COUNT(DISTINCT e.id) as travels,
+      COUNT(pr.id) * 1000.0 / NULLIF(COUNT(DISTINCT e.id), 0) as rate_per_1000
+    FROM portal_reports pr
+    RIGHT JOIN analytics_events e ON e.event_name = 'world.portal.traveled'
+      AND e.timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    WHERE pr.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+  `);
+
+  if (reportRate.rate_per_1000 > 10) {
+    await setFeatureFlag('FEATURE_PORTAL_TRAVEL', false);
+    await alertOps('circuit_breaker_tripped', {
+      trigger: 'report_spike',
+      rate: reportRate.rate_per_1000,
+      action: 'FEATURE_PORTAL_TRAVEL disabled'
+    });
+    return { proceed: false, reason: 'CIRCUIT_BREAKER_REPORT_SPIKE' };
+  }
+
+  return { proceed: true };
+}
+
+// Post-build circuit breaker checks (run after computation, before commit)
+async function postBuildCircuitBreakers(
+  previousMetrics: GraphMetrics,
+  currentMetrics: GraphMetrics
+): Promise<{ commit: boolean; rollback: boolean; reason?: string }> {
+  // 1. Check edge collapse (>50% drop)
+  const edgeDelta = (currentMetrics.edges_eligible - previousMetrics.edges_eligible)
+                    / previousMetrics.edges_eligible;
+
+  if (edgeDelta < -0.5) {
+    await alertOps('circuit_breaker_tripped', {
+      trigger: 'edge_collapse',
+      previous: previousMetrics.edges_eligible,
+      current: currentMetrics.edges_eligible,
+      delta_pct: edgeDelta * 100,
+      action: 'Rollback to previous graph'
+    });
+    return { commit: false, rollback: true, reason: 'EDGE_COLLAPSE_DETECTED' };
+  }
+
+  // 2. Check k-anon cascade (>30% communities ineligible)
+  const eligibilityCheck = await db.query(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN active_members_7d < ? THEN 1 ELSE 0 END) as ineligible
+    FROM v_community_health
+    WHERE total_members >= 10
+  `, [env.COMMUNITY_GRAPH_MIN_ACTIVE || 30]);
+
+  const ineligibleRate = eligibilityCheck.ineligible / eligibilityCheck.total;
+
+  if (ineligibleRate > 0.3) {
+    await alertOps('circuit_breaker_tripped', {
+      trigger: 'k_anon_cascade',
+      ineligible_count: eligibilityCheck.ineligible,
+      total: eligibilityCheck.total,
+      rate_pct: ineligibleRate * 100,
+      action: 'Build paused, manual review required'
+    });
+    return { commit: false, rollback: false, reason: 'K_ANON_CASCADE' };
+  }
+
+  // 3. Check churn overload (>50% communities hit churn limit)
+  const churnRate = currentMetrics.churn_limited_count / currentMetrics.communities_processed;
+  if (churnRate > 0.5) {
+    await setFeatureFlag('FEATURE_COMMUNITY_GRAPH', false);
+    await alertOps('circuit_breaker_tripped', {
+      trigger: 'churn_overload',
+      churn_limited: currentMetrics.churn_limited_count,
+      total: currentMetrics.communities_processed,
+      action: 'FEATURE_COMMUNITY_GRAPH disabled'
+    });
+    return { commit: false, rollback: false, reason: 'CHURN_OVERLOAD' };
+  }
+
+  return { commit: true, rollback: false };
+}
+```
+
+**Circuit Breaker Recovery Procedures:**
+
+| Trigger | Auto-Recovery | Manual Recovery Steps |
+|---------|---------------|----------------------|
+| Build Failure Streak | After 1 successful manual build | 1. Investigate failure cause 2. Fix issue 3. Run manual build with `dry_run=true` 4. If successful, re-enable flag |
+| Report Spike | None (manual only) | 1. Review reported portals 2. Apply safety overrides as needed 3. Re-enable after 24h without new reports |
+| Edge Collapse | Automatic rollback | 1. Investigate cause (data issue? algorithm bug?) 2. Fix root cause 3. Run manual build |
+| K-Anon Cascade | None (manual only) | 1. Review community health 2. Consider lowering threshold temporarily 3. Run manual build after review |
+| Churn Overload | None (manual only) | 1. Review churn settings 2. Consider increasing `CHURN_MAX_WEEKLY` 3. Re-enable after review |
+
 ---
 
 ## 2. Schedules
@@ -1433,4 +1553,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 4: Added community-graph-build job with full handler, portal assignment logic, and alerts -->
+<!-- Last Updated: 2026-01-19 - Step 7: Added Automated Circuit Breaker Triggers with pre-flight and post-build checks, recovery procedures -->

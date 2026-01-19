@@ -624,6 +624,119 @@ const XP_SOURCES = {
 | `force_neighbor` | Force specific neighbor | Neighbor assigned regardless of algorithm |
 | `freeze` | Freeze portal assignments | Keep previous assignments unchanged |
 
+### 6.4.1 Circuit Breaker Behavior Specification (Step 7)
+
+Detailed behavior for each circuit breaker when triggered:
+
+**Global Kill Switches:**
+
+| Flag | When FALSE | Fallback Behavior | Recovery |
+|------|------------|-------------------|----------|
+| `FEATURE_COMMUNITY_GRAPH` | Graph build job skips | Portals use last valid assignments or curated | Set TRUE, wait for next graph build |
+| `FEATURE_PORTALS` | Portal zones hidden in world | Users cannot see or interact with portals | Set TRUE, portals reappear immediately |
+| `FEATURE_PORTAL_TRAVEL` | Travel requests denied | Server returns "Travel temporarily disabled" | Set TRUE, travel enabled immediately |
+| `FEATURE_PORTAL_EXPLORATION_SLOT` | 6th slot disabled | Only 5 stable neighbors, no diversity slot | Set TRUE, diversity slot returns next build |
+
+**Automated Circuit Breaker Triggers:**
+
+These thresholds automatically disable features when crossed:
+
+| Trigger | Condition | Action | Auto-Recovery |
+|---------|-----------|--------|---------------|
+| Report Spike | `report_rate > 10 per 1000 travels` for 24h | Set `FEATURE_PORTAL_TRAVEL=false` | Manual only |
+| Build Failure Streak | 3 consecutive graph build failures | Set `FEATURE_COMMUNITY_GRAPH=false` | After 1 successful manual build |
+| Churn Overload | `>50% communities hit churn limit` | Set `FEATURE_COMMUNITY_GRAPH=false` | Manual review required |
+| K-Anon Cascade | `>30% eligible communities fall below k=30` | Pause graph build, alert ops | Manual review |
+| Edge Collapse | Edge count drops >50% day-over-day | Rollback to previous graph, alert | Manual approval |
+
+**K-Anon Gating Enforcement:**
+
+Communities must meet k-anonymity threshold to participate in graph:
+
+```
+K-ANON CHECK (per community):
+    active_members_7d = COUNT(DISTINCT identity_id)
+                        FROM community_activity_daily
+                        WHERE date >= TODAY-7
+
+    IF active_members_7d < COMMUNITY_GRAPH_MIN_ACTIVE (default: 30):
+        - Community EXCLUDED from edge computation
+        - Community portals set to assignment_type='empty' or 'curated'
+        - Dashboard alert raised
+        - Event emitted: graph.community.k_anon_excluded
+
+    IF community was eligible last period but now excluded:
+        - Existing portal assignments FROZEN (not cleared)
+        - Community marked for recovery monitoring
+```
+
+**Neighbor Churn Limiter:**
+
+Prevents disruptive neighbor changes:
+
+```
+CHURN LIMIT ENFORCEMENT (per community, per week):
+    max_changes = COMMUNITY_GRAPH_CHURN_MAX_WEEKLY (default: 2)
+
+    FOR each slot in ['NE', 'E', 'SE', 'SW', 'W', 'NW']:
+        previous_neighbor = get_previous_assignment(community_id, slot)
+        proposed_neighbor = algorithm_output[slot]
+
+        IF previous_neighbor != proposed_neighbor:
+            IF changes_this_week >= max_changes:
+                - Keep previous_neighbor (churn-limited)
+                - Mark slot as churn_limited=true
+                - Log: "Churn limit reached for {community_id}, keeping stable neighbor"
+            ELSE:
+                - Accept proposed_neighbor
+                - Increment changes_this_week
+
+    HYSTERESIS: Neighbors kept for 2+ consecutive periods get +10% weight bonus
+```
+
+**Exploration Slot Assignment:**
+
+When `FEATURE_PORTAL_EXPLORATION_SLOT=true`, the 6th slot (typically NW) is reserved for diversity:
+
+```
+EXPLORATION SLOT LOGIC:
+    stable_slots = ['NE', 'E', 'SE', 'SW', 'W']  # 5 slots for top-weighted neighbors
+    exploration_slot = 'NW'                       # 1 slot for diversity
+
+    FOR stable_slots:
+        - Assign top 5 neighbors by weight
+        - Apply churn limiter
+        - Prioritize neighbors with 2+ period tenure
+
+    FOR exploration_slot:
+        - EXCLUDE neighbors already in stable_slots
+        - EXCLUDE neighbors assigned in last 2 periods (rotation)
+        - SELECT from:
+            1. Forced neighbors (curated) if available
+            2. Next-best weighted neighbor not in stable set
+            3. Random eligible community (if no weighted options)
+        - Mark assignment_type='graph' with reason_code='exploration'
+
+    IF FEATURE_PORTAL_EXPLORATION_SLOT=false:
+        - All 6 slots use stable logic
+        - No rotation, no diversity enforcement
+```
+
+**Per-Community Override Precedence:**
+
+When multiple overrides exist, they are applied in order:
+
+```
+OVERRIDE PRECEDENCE (highest to lowest):
+    1. block_all         - Overrides everything, all slots empty
+    2. freeze            - Overrides algorithm, keeps previous assignments
+    3. block_neighbor    - Removes specific neighbor from consideration
+    4. force_neighbor    - Inserts specific neighbor (into first available slot)
+    5. Algorithm output  - Default behavior
+
+    NOTE: expired overrides (expires_at < NOW()) are ignored
+```
+
 ### 6.5 Scale & Advanced Graph Configuration (Step 9)
 
 **Scale Thresholds:**
@@ -945,4 +1058,4 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Updated: 2026-01-19 - Step 4: Updated Living Graph feature flag defaults (false for circuit breakers), added graph edge thresholds -->
+<!-- Last Updated: 2026-01-19 - Step 7: Added Circuit Breaker Behavior Specification (Section 6.4.1) with automated triggers, k-anon gating, churn limiter, and exploration slot logic -->

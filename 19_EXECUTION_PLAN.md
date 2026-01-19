@@ -513,6 +513,115 @@ Circuit breakers must exist as:
 
 ---
 
+## 6.5 Tabletop Exercise Scenarios (Step 7 Requirement)
+
+Before pilot exit, conduct tabletop exercises to validate circuit breaker responses.
+
+### Exercise 1: Report Spike Scenario
+
+**Scenario:** Portal report rate suddenly exceeds 10 per 1000 travels.
+
+| Time | Event | Expected Response |
+|------|-------|-------------------|
+| T+0 | Report rate crosses threshold | Alert fires, 5-min grace period starts |
+| T+5min | Threshold still exceeded | `FEATURE_PORTAL_TRAVEL` auto-disabled |
+| T+5min | Ops paged | On-call acknowledges |
+| T+30min | Ops reviews reported portals | Identifies 3 bad portals from new community |
+| T+45min | Safety override applied | `block_neighbor` for problematic community |
+| T+1h | Manual re-enable | `FEATURE_PORTAL_TRAVEL=true` |
+| T+24h | Verify | Report rate normalized, monitor for 24h |
+
+**Success Criteria:**
+- [ ] Alert fires within 1 minute of threshold breach
+- [ ] Feature disabled automatically without human intervention
+- [ ] Recovery procedure executed in <2 hours
+- [ ] No user data leaked during incident
+
+---
+
+### Exercise 2: Edge Collapse Scenario
+
+**Scenario:** Graph build produces 60% fewer edges than previous day.
+
+| Time | Event | Expected Response |
+|------|-------|-------------------|
+| T+0 | Graph build starts (04:15) | Normal |
+| T+8min | Post-build check detects edge collapse | Build flagged for rollback |
+| T+8min | Previous graph restored | `community_portals` unchanged from yesterday |
+| T+8min | Alert fires | Ops paged with full context |
+| T+30min | Investigation | Data issue found: aggregation job partial failure |
+| T+1h | Fix aggregation | Backfill missing data |
+| T+2h | Manual rebuild | `dry_run=true` first |
+| T+3h | Verify edge count | Within 10% of expected |
+| T+4h | Commit new graph | Production updated |
+
+**Success Criteria:**
+- [ ] Rollback automatic, no broken portals served
+- [ ] Root cause identified within 2 hours
+- [ ] Recovery completed same day
+- [ ] Dashboard shows rollback clearly
+
+---
+
+### Exercise 3: K-Anon Cascade Scenario
+
+**Scenario:** Seasonal event causes 35% of communities to drop below k=30 active members.
+
+| Time | Event | Expected Response |
+|------|-------|-------------------|
+| T+0 | Holiday week, activity drops | Gradual decline |
+| Day 2 | 25% communities below threshold | Dashboard alert (medium) |
+| Day 3 | 35% communities below threshold | Build paused by circuit breaker |
+| Day 3 | Alert: K-Anon Cascade | Ops reviews, decides to wait |
+| Day 5 | Activity recovering | 20% communities still below |
+| Day 6 | Decision: lower threshold temporarily | `COMMUNITY_GRAPH_MIN_ACTIVE=20` |
+| Day 6 | Manual build with new threshold | Success |
+| Day 14 | Activity normalized | Restore `MIN_ACTIVE=30` |
+
+**Success Criteria:**
+- [ ] Portal assignments frozen (not cleared) during cascade
+- [ ] Decision to adjust threshold documented
+- [ ] No privacy violation from lowered threshold
+- [ ] Return to normal threshold within 2 weeks
+
+---
+
+### Exercise 4: Coordinated Abuse Scenario
+
+**Scenario:** Bad actor creates fake members across communities to manipulate portal assignments.
+
+| Time | Event | Expected Response |
+|------|-------|-------------------|
+| T+0 | 50 new accounts join 10 communities each | Normal signup |
+| Day 2 | Graph build shows unexpected edges | New edges to previously unconnected communities |
+| Day 2 | Dashboard: "Edge count +40%" | Anomaly alert fires |
+| Day 2 | Investigation | Common signup pattern detected |
+| Day 3 | Safety override | `block_neighbor` for suspicious communities |
+| Day 3 | Account review | 45 accounts flagged as suspicious |
+| Day 4 | Accounts suspended | Removed from member counts |
+| Day 5 | Graph rebuild | Edges normalized |
+
+**Success Criteria:**
+- [ ] Anomaly detected within 48 hours
+- [ ] Bad portals blocked before users report
+- [ ] No legitimate communities harmed
+- [ ] Process documented for future incidents
+
+---
+
+### Exercise Checklist (Pre-Pilot Exit)
+
+| Exercise | Completed | Date | Issues Found | Resolved |
+|----------|-----------|------|--------------|----------|
+| Report Spike | [ ] | - | - | - |
+| Edge Collapse | [ ] | - | - | - |
+| K-Anon Cascade | [ ] | - | - | - |
+| Coordinated Abuse | [ ] | - | - | - |
+
+**Go/No-Go Gate:** All 4 exercises must be completed with all success criteria met before pilot exit.
+
+---
+
 ## 7. Execution Sequencing (Critical Path, Step-by-Step, Testable)
 
 ### 7.1 Critical path overview (dependencies)
@@ -1004,4 +1113,4 @@ Produce definitive, executable plan that unifies UC World (servicescape), Living
 * No graph-driven portals until event taxonomy + consent-gated ingestion + daily aggregates are stable.
 * No portal travel until membership/visibility gating is implemented and tested.
 * No semantic/chat-derived signals until governance + consent + minimization proof exists.
-<!-- Last Updated: 2026-01-19 - Updated zone IDs to canonical format (Sections 4.3.1, 4.3.2) -->
+<!-- Last Updated: 2026-01-19 - Step 7: Added Section 6.5 Tabletop Exercise Scenarios with 4 exercises and pre-pilot exit checklist -->

@@ -438,6 +438,136 @@ Users overwhelmed by consent requests opt out of data collection, reducing graph
 
 ---
 
+### RSK-014: Circuit Breaker False Positive (Step 7)
+**Category:** Operational
+**Probability:** Low (2)
+**Impact:** Medium (3)
+**Risk Score:** 6 (Medium)
+**Owner:** Engineering Lead
+**Status:** Open
+
+**Description:**
+Automated circuit breakers (report spike, edge collapse, etc.) trigger unnecessarily, disabling features when system is actually healthy.
+
+**Trigger Conditions:**
+- Threshold set too sensitive for normal variance
+- Data anomaly (e.g., batch processing delay) triggers false alarm
+- Cascading circuit breakers compound the issue
+
+**Mitigation Strategy:**
+1. Require sustained condition (24h for report spike, not instant)
+2. Test thresholds against historical data before production
+3. Alert on-call before auto-disabling (5-minute grace period)
+4. Log all circuit breaker triggers with full context
+5. Run tabletop exercises to validate thresholds
+
+**Contingency Plan:**
+- Manual override capability for all circuit breakers
+- "Snooze" function to suppress specific triggers for 24h
+- Fast recovery procedures documented
+
+**Circuit Breaker Thresholds (reference):**
+| Trigger | Threshold | Confidence |
+|---------|-----------|------------|
+| Report Spike | >10 per 1000 travels for 24h | High |
+| Build Failure Streak | 3 consecutive | High |
+| Edge Collapse | >50% drop day-over-day | Medium |
+| K-Anon Cascade | >30% ineligible | Medium |
+| Churn Overload | >50% communities hit limit | Low |
+
+---
+
+### RSK-015: Neighbor Instability (Excessive Churn)
+**Category:** Product
+**Probability:** Medium (3)
+**Impact:** Medium (3)
+**Risk Score:** 9 (High)
+**Owner:** Product Owner
+**Status:** Open
+
+**Description:**
+Portal neighbors change too frequently, creating confusing user experience where "the map keeps changing."
+
+**Trigger Conditions:**
+- Users comment on portal instability
+- Same community appears/disappears from portals repeatedly
+- Churn rate exceeds 30% weekly across communities
+
+**Mitigation Strategy:**
+1. Churn limiter: max 2 changes per week per community (implemented)
+2. Hysteresis bonus: +10% weight for neighbors with 2+ period tenure
+3. Exploration slot (1 of 6) rotates while stable slots remain fixed
+4. Dashboard metric: "Average Neighbor Tenure" target >14 days
+5. Freeze override available for admin intervention
+
+**Contingency Plan:**
+- Reduce CHURN_MAX_WEEKLY to 1
+- Temporarily freeze all portal assignments
+- Switch to curated-only assignments
+- Communicate changes to community admins
+
+---
+
+### RSK-016: K-Anon Threshold Isolates Small Communities
+**Category:** Product
+**Probability:** Medium (3)
+**Impact:** Medium (3)
+**Risk Score:** 9 (High)
+**Owner:** Product Owner
+**Status:** Open
+
+**Description:**
+K-anonymity threshold (k=30 active members) excludes small but healthy communities from the graph, leaving them with empty portals.
+
+**Trigger Conditions:**
+- Community drops below 30 active members (7d)
+- Seasonal activity dips cause temporary exclusion
+- New communities cannot participate until reaching threshold
+
+**Mitigation Strategy:**
+1. Freeze existing portals when community becomes ineligible (don't clear)
+2. "Recovery monitoring" tracks communities near threshold
+3. Curated fallback: ops can manually assign portals for small communities
+4. Dashboard alert when community approaches threshold (35 members)
+5. Consider per-community threshold adjustments (config, not code)
+
+**Contingency Plan:**
+- Lower threshold temporarily (k=20) for pilot period
+- Implement "bootstrap" mode for new communities with curated portals
+- Allow communities to opt-in to graph participation below threshold
+
+---
+
+### RSK-017: Graph Algorithm Manipulation
+**Category:** Security
+**Probability:** Low (2)
+**Impact:** High (4)
+**Risk Score:** 8 (Medium)
+**Owner:** Engineering Lead
+**Status:** Open
+
+**Description:**
+Bad actors attempt to game the graph algorithm to get their community featured in portals of popular communities.
+
+**Trigger Conditions:**
+- Coordinated member overlap creation (fake multi-community members)
+- Artificial travel patterns to boost flow metrics
+- Exploit of algorithm weights or edge cases
+
+**Mitigation Strategy:**
+1. Require genuine activity (not just membership) for graph inclusion
+2. Rate limit new member contributions to graph metrics
+3. Anomaly detection on sudden member overlap spikes
+4. Safety override (block_neighbor) for manual exclusion
+5. No public documentation of exact algorithm weights
+
+**Contingency Plan:**
+- Block specific communities from graph participation
+- Require manual review for new graph inclusions
+- Reset graph and rebuild from verified data
+
+---
+
 ## Risk Matrix
 
 ```
@@ -497,9 +627,13 @@ Probability: Minimal(1) Low(2) Medium(3) High(4) Critical(5)
 | RSK-011 | Graph Recommendation Poor Matches | Product | Medium | Medium | 9 | Open |
 | RSK-012 | Portal Abuse (Spam Traveling) | Security | Low | Medium | 6 | Open |
 | RSK-013 | Consent Fatigue Leading to Opt-Out | Product | Medium | High | 12 | Open |
+| RSK-014 | Circuit Breaker False Positive | Operational | Low | Medium | 6 | Open |
+| RSK-015 | Neighbor Instability (Churn) | Product | Medium | Medium | 9 | Open |
+| RSK-016 | K-Anon Threshold Isolates Communities | Product | Medium | Medium | 9 | Open |
+| RSK-017 | Graph Algorithm Manipulation | Security | Low | High | 8 | Open |
 
 ---
 
-*Next Risk ID: RSK-014*
+*Next Risk ID: RSK-018*
 
-<!-- Last Reviewed: 2026-01-18 - No updates needed -->
+<!-- Last Updated: 2026-01-19 - Step 7: Added RSK-014 through RSK-017 for Living Graph guardrails (circuit breakers, churn, k-anon, manipulation) -->
