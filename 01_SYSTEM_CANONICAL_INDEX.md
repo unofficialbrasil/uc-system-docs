@@ -25,7 +25,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 
 ---
 
-## 2. Document Registry (20 Files)
+## 2. Document Registry (21 Files)
 
 | # | Document | Purpose | Status |
 |---|----------|---------|--------|
@@ -49,6 +49,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research reference (studies) | Active |
 | 19 | `19_EXECUTION_PLAN.md` | System execution plan and implementation guide | Active |
 | 20 | `20_ADULT_BY_DESIGN_SPEC.md` | 18+ age verification and enforcement policy | Active |
+| 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` | Admin camera controls and debug tools | Active |
 
 ---
 
@@ -150,4 +151,4 @@ For audit trail:
 *This document is the entry point for understanding the Unofficial Communities system.*
 *All other documents in this folder are discoverable from here.*
 
-<!-- Last Updated: 2026-01-18 - Added 20_ADULT_BY_DESIGN_SPEC.md to registry -->
+<!-- Last Updated: 2026-01-19 - Added 21_UC_WORLD_ADMIN_CONTROLS.md to registry -->

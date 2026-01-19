@@ -21,12 +21,12 @@ All documents must be:
 | Property | Value |
 |----------|-------|
 | Location | `/srv/unofficial/prod/app/uc-system-docs/` |
-| Documents | 20 numbered files |
+| Documents | 21 numbered files |
 | Purpose | Platform-wide specifications and governance |
 
 ---
 
-## Document Registry (20 Files)
+## Document Registry (21 Files)
 
 | # | File | Purpose | Update When |
 |---|------|---------|-------------|
@@ -50,6 +50,7 @@ All documents must be:
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research | Research updates |
 | 19 | `19_EXECUTION_PLAN.md` | Execution plan | Execution steps change |
 | 20 | `20_ADULT_BY_DESIGN_SPEC.md` | Adult-by-Design policy | Age verification changes |
+| 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` | Admin camera & debug tools | Admin features change |
 
 ---
 
@@ -113,12 +114,12 @@ git add -A && git commit -m "docs: [description]" && git push origin main
 
 ## Current Status
 
-- **20 documents** covering all platform aspects
-- **Numbered** (01-20) for ordered display
+- **21 documents** covering all platform aspects
+- **Numbered** (01-21) for ordered display
 - **Session prompts** v6.1 with comprehensive checks
 - **Backup monitoring** integrated into session prompts
 
 ---
 
-<!-- Last Updated: 2026-01-18 - Fixed document count (20 files), added 20_ADULT_BY_DESIGN_SPEC.md to registry -->
+<!-- Last Updated: 2026-01-19 - Added 21_UC_WORLD_ADMIN_CONTROLS.md to registry (21 files) -->
 
