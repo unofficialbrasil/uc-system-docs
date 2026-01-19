@@ -225,9 +225,9 @@ openssl rand -hex 16
 | `FEATURE_MAINTENANCE_MODE` | Enable maintenance mode | `false` | All |
 | `FEATURE_LIVING_GRAPH` | Enable Living Graph portal discovery | `false` | prod (pilot), staging |
 | `FEATURE_GRAPH_ADVANCED` | Enable Louvain/Node2Vec algorithms | `false` | None (gated) |
-| `FEATURE_COMMUNITY_GRAPH` | Enable graph job outputs to be consumed | `true` | All |
-| `FEATURE_PORTALS` | Enable portals rendering in world | `true` | All |
-| `FEATURE_PORTAL_TRAVEL` | Enable cross-community travel flow | `true` | All |
+| `FEATURE_COMMUNITY_GRAPH` | Enable graph job outputs to be consumed | `false` | prod (pilot), staging |
+| `FEATURE_PORTALS` | Enable portals rendering in world | `false` | prod (pilot), staging |
+| `FEATURE_PORTAL_TRAVEL` | Enable cross-community travel flow | `false` | prod (pilot), staging |
 | `FEATURE_PORTAL_EXPLORATION_SLOT` | Enable 1 exploration/diversity slot | `true` | All |
 | `FEATURE_AGE_GATE_SIGNUP` | Enable Gate A at signup (Adult-by-Design) | `true` | All |
 | `FEATURE_AGE_GATE_RISK` | Enable Gate B risk-based rechecks | `false` | prod (pilot), staging |
@@ -595,14 +595,16 @@ const XP_SOURCES = {
 | `WORLD_MAP_WIDTH` | Map width in tiles | `80` |
 | `WORLD_MAP_HEIGHT` | Map height in tiles | `92` |
 
-### 6.4 Living Graph Configuration (Step 7 Guardrails)
+### 6.4 Living Graph Configuration (Step 4 + Step 7 Guardrails)
 
 | Variable | Description | Default | Range |
 |----------|-------------|---------|-------|
 | `COMMUNITY_GRAPH_WINDOW_DAYS` | Rolling window for graph calculations | `28` | 7-90 |
-| `COMMUNITY_GRAPH_ALPHA` | Social affinity weight (α) | `0.40` | 0-1 |
-| `COMMUNITY_GRAPH_BETA` | Interest affinity weight (β) | `0.60` | 0-1 |
+| `COMMUNITY_GRAPH_ALPHA` | Interest affinity weight (α) | `0.40` | 0-1 |
+| `COMMUNITY_GRAPH_BETA` | Social affinity weight (β) | `0.60` | 0-1 |
 | `COMMUNITY_GRAPH_MIN_ACTIVE` | K-anon threshold (min active members) | `30` | 10-100 |
+| `COMMUNITY_GRAPH_MIN_SHARED_MEMBERS` | Min shared members for edge eligibility | `5` | 1-20 |
+| `COMMUNITY_GRAPH_MIN_TRAVEL_EVENTS` | Min portal travels (28d) for edge eligibility | `10` | 1-50 |
 | `COMMUNITY_GRAPH_CHURN_MAX_WEEKLY` | Max portal changes per week | `2` | 1-6 |
 
 **Circuit Breakers:**
@@ -943,4 +945,4 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Updated: 2026-01-18 - Added Age Gate feature flags (Section 4.1) and configuration (Section 6.6) -->
+<!-- Last Updated: 2026-01-19 - Step 4: Updated Living Graph feature flag defaults (false for circuit breakers), added graph edge thresholds -->

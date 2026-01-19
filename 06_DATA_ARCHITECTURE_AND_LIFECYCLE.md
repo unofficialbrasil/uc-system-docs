@@ -371,38 +371,80 @@ CREATE TABLE community_day_features (
     INDEX idx_feature_date (feature_date)
 );
 
--- Living Graph: Community similarity edges
-CREATE TABLE community_graph_edges (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    source_community_id INT NOT NULL,
-    target_community_id INT NOT NULL,
-    edge_weight DECIMAL(10,6) NOT NULL,      -- Similarity score (0-1)
-    edge_type ENUM('member_overlap', 'activity_pattern', 'content_similarity') NOT NULL,
-    valid_from DATE NOT NULL,                -- Edge validity period
-    valid_to DATE NOT NULL,
-    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- Living Graph: Graph build run tracking (Step 4)
+-- Records each graph build job execution with metrics and errors
+CREATE TABLE community_graph_runs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    period_start DATE NOT NULL,              -- Start of data window (e.g., today-28d)
+    period_end DATE NOT NULL,                -- End of data window (e.g., yesterday)
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_at TIMESTAMP NULL,
+    status ENUM('running', 'success', 'failed') NOT NULL DEFAULT 'running',
+    config JSON NULL,                        -- {alpha, beta, window_days, thresholds}
+    metrics JSON NULL,                       -- {edges_computed, portals_assigned, communities_processed}
+    error_message TEXT NULL,
 
-    FOREIGN KEY (source_community_id) REFERENCES communities(id) ON DELETE CASCADE,
-    FOREIGN KEY (target_community_id) REFERENCES communities(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_edge (source_community_id, target_community_id, edge_type, valid_from),
-    INDEX idx_source_weight (source_community_id, edge_weight DESC)
+    INDEX idx_period (period_start, period_end),
+    INDEX idx_status (status)
 );
 
--- Living Graph: Portal assignments (which community appears at which portal)
-CREATE TABLE community_portal_assignments (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    community_id INT NOT NULL,               -- The community being assigned a portal
-    portal_direction ENUM('N', 'NE', 'SE', 'S', 'SW', 'NW') NOT NULL,
-    assigned_community_id INT NOT NULL,      -- The community that appears at this portal
-    assignment_reason VARCHAR(100) NOT NULL, -- e.g., "member_overlap:0.45"
-    valid_from DATE NOT NULL,
-    valid_to DATE NOT NULL,
-    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- Living Graph: Community edges (undirected, store canonical a < b)
+-- Edges represent affinity between community pairs with explainable components
+CREATE TABLE community_edges (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    period_start DATE NOT NULL,
+    community_a INT NOT NULL,                -- Lower community_id
+    community_b INT NOT NULL,                -- Higher community_id (a < b always)
+    weight DECIMAL(6,5) NOT NULL,            -- Combined affinity score (0-1)
+    components JSON NOT NULL,                -- {A_social, A_interest, E1_overlap, E2_flow, E3_similarity}
+    evidence JSON NOT NULL,                  -- {shared_members, travel_28d, active_a, active_b}
+    status ENUM('eligible', 'filtered', 'blocked') NOT NULL DEFAULT 'eligible',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    UNIQUE KEY uk_edge (period_start, community_a, community_b),
+    INDEX idx_a (community_a),
+    INDEX idx_b (community_b),
+    FOREIGN KEY (community_a) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (community_b) REFERENCES communities(id) ON DELETE CASCADE
+);
+
+-- Living Graph: Portal assignments (degree ≤ 6 per community)
+-- Maps each community's 6 portal slots to neighbor communities with reason codes
+CREATE TABLE community_portals (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    period_start DATE NOT NULL,
+    community_id INT NOT NULL,
+    slot ENUM('NE', 'E', 'SE', 'SW', 'W', 'NW') NOT NULL,  -- 6 portal directions
+    neighbor_community_id INT NULL,          -- NULL if slot is empty
+    neighbor_weight DECIMAL(6,5) NULL,       -- Affinity score
+    reason_codes JSON NULL,                  -- ["shared_members_high", "similar_activity_patterns"]
+    reason_details JSON NULL,                -- Safe aggregates for explanation UI
+    confidence ENUM('low', 'med', 'high') DEFAULT 'med',
+    assignment_type ENUM('graph', 'curated', 'safety_override', 'empty') NOT NULL DEFAULT 'graph',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_portal (period_start, community_id, slot),
+    INDEX idx_comm (community_id),
     FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
-    FOREIGN KEY (assigned_community_id) REFERENCES communities(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_portal (community_id, portal_direction, valid_from),
-    INDEX idx_valid_dates (valid_from, valid_to)
+    FOREIGN KEY (neighbor_community_id) REFERENCES communities(id) ON DELETE SET NULL
+);
+
+-- Living Graph: Safety overrides (admin controls)
+-- Allows admins to block, force, or freeze portal connections
+CREATE TABLE community_graph_overrides (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    community_id INT NOT NULL,
+    neighbor_community_id INT NULL,          -- NULL for block_all/freeze actions
+    action ENUM('block_all', 'block_neighbor', 'force_neighbor', 'freeze') NOT NULL,
+    reason VARCHAR(255) NOT NULL,            -- Admin-provided reason
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NULL,                     -- Admin identity_id
+    expires_at TIMESTAMP NULL,               -- Optional expiry
+
+    INDEX idx_comm (community_id),
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (neighbor_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES identities(id) ON DELETE SET NULL
 );
 
 -- Living Graph: Aggregation job run tracking (Step 3 requirement)
@@ -756,4 +798,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 3: Added aggregation_job_runs table and v_aggregation_stability view -->
+<!-- Last Updated: 2026-01-19 - Step 4: Updated graph tables (community_graph_runs, community_edges, community_portals, community_graph_overrides) to match Section 8 spec -->

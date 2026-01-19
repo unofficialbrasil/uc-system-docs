@@ -232,6 +232,249 @@ async function backfillAggregates(daysBack: number = 28): Promise<void> {
 | Missing aggregates | > 0 communities | High | Re-run job |
 | 7-day streak broken | Consecutive runs | Critical | Block graph build |
 
+#### community-graph-build
+
+**Purpose:** Build Living Graph edges and portal assignments from aggregated community features.
+
+```typescript
+const communityGraphBuildJob: JobDefinition = {
+  name: 'community-graph-build',
+  queue: 'analytics',
+  description: 'Build community graph edges and portal assignments from daily aggregates',
+  schedule: '15 4 * * *',      // 04:15 America/Sao_Paulo daily (after aggregation)
+  priority: 'medium',
+  timeout_ms: 900000,          // 15 minutes
+  retry: {
+    attempts: 2,
+    backoff: { type: 'fixed', delay: 300000 }  // 5 min delay between retries
+  },
+  concurrency: 1,              // Only one instance at a time
+  data_schema: {
+    type: 'object',
+    properties: {
+      period_end: { type: 'string', format: 'date' },     // Defaults to yesterday
+      window_days: { type: 'number', default: 28 },
+      dry_run: { type: 'boolean', default: false },       // Compute but don't persist
+      community_ids: { type: 'array', items: { type: 'number' } }  // Optional filter
+    }
+  }
+};
+
+// Job Handler
+async function handleCommunityGraphBuild(job: Job): Promise<void> {
+  const periodEnd = job.data.period_end || getYesterdayDate();
+  const windowDays = job.data.window_days || 28;
+  const periodStart = subtractDays(periodEnd, windowDays);
+  const isDryRun = job.data.dry_run || false;
+
+  // 0. Pre-flight: Check 7-day aggregation stability gate
+  const stabilityCheck = await checkAggregationStability(7);
+  if (!stabilityCheck.stable) {
+    throw new Error(`Aggregation stability gate failed: ${stabilityCheck.reason}`);
+  }
+
+  // Record run start
+  const runId = await recordGraphRunStart(periodStart, periodEnd);
+
+  try {
+    // 1. Build community feature vectors from aggregates
+    const communityVectors = await buildCommunityFeatureVectors(periodStart, periodEnd);
+
+    // 2. Compute candidate edges
+    const candidateEdges = await computeCandidateEdges(communityVectors, {
+      minSharedMembers: env.COMMUNITY_GRAPH_MIN_SHARED_MEMBERS || 5,
+      minTravelEvents: env.COMMUNITY_GRAPH_MIN_TRAVEL_EVENTS || 10
+    });
+
+    // 3. Apply eligibility rules (k-anon, visibility)
+    const eligibleEdges = candidateEdges.filter(edge => {
+      const minActive = env.COMMUNITY_GRAPH_MIN_ACTIVE || 30;
+      return edge.active_a >= minActive && edge.active_b >= minActive;
+    });
+
+    // 4. Compute weights with configurable alpha/beta
+    const weightedEdges = eligibleEdges.map(edge => ({
+      ...edge,
+      weight: computeAffinity(edge, {
+        alpha: parseFloat(env.COMMUNITY_GRAPH_ALPHA) || 0.40,  // interest
+        beta: parseFloat(env.COMMUNITY_GRAPH_BETA) || 0.60    // social
+      }),
+      components: {
+        A_social: edge.social_score,
+        A_interest: edge.interest_score,
+        E1_overlap: edge.shared_members,
+        E2_flow: edge.travel_28d,
+        E3_coactivity: edge.coactivity_similarity
+      }
+    }));
+
+    // 5. Load overrides (block_all, block_neighbor, force_neighbor, freeze)
+    const overrides = await loadGraphOverrides();
+
+    // 6. Assign portals for each community (≤6 neighbors)
+    const portalAssignments = await assignPortals(weightedEdges, overrides, {
+      maxChurnPerWeek: env.COMMUNITY_GRAPH_CHURN_MAX_WEEKLY || 2,
+      explorationSlotEnabled: env.FEATURE_PORTAL_EXPLORATION_SLOT !== 'false'
+    });
+
+    // 7. Persist results (unless dry_run)
+    if (!isDryRun) {
+      await persistGraphResults(periodStart, weightedEdges, portalAssignments);
+    }
+
+    // 8. Record success metrics
+    await recordGraphRunSuccess(runId, {
+      communities_processed: communityVectors.length,
+      edges_computed: weightedEdges.length,
+      edges_eligible: eligibleEdges.length,
+      portals_assigned: portalAssignments.length,
+      churn_limited_count: portalAssignments.filter(p => p.churn_limited).length
+    });
+
+  } catch (error) {
+    await recordGraphRunFailure(runId, error.message);
+    throw error;
+  }
+}
+
+// Portal assignment logic (per community)
+async function assignPortals(
+  edges: WeightedEdge[],
+  overrides: Override[],
+  config: { maxChurnPerWeek: number; explorationSlotEnabled: boolean }
+): Promise<PortalAssignment[]> {
+  const assignments: PortalAssignment[] = [];
+  const communities = await getActiveCommunities();
+  const previousAssignments = await getPreviousPortalAssignments();
+
+  for (const community of communities) {
+    // Get override for this community
+    const communityOverride = overrides.find(o => o.community_id === community.id);
+
+    // Handle freeze override - keep previous assignments
+    if (communityOverride?.action === 'freeze') {
+      const frozen = previousAssignments.filter(p => p.community_id === community.id);
+      assignments.push(...frozen.map(p => ({ ...p, assignment_type: 'safety_override' })));
+      continue;
+    }
+
+    // Handle block_all override - empty all portals
+    if (communityOverride?.action === 'block_all') {
+      assignments.push(...PORTAL_SLOTS.map(slot => ({
+        community_id: community.id,
+        slot,
+        neighbor_community_id: null,
+        assignment_type: 'safety_override',
+        reason_codes: ['safety_override'],
+        reason_details: { reason: communityOverride.reason }
+      })));
+      continue;
+    }
+
+    // Get edges for this community, sorted by weight
+    const communityEdges = edges
+      .filter(e => e.community_a === community.id || e.community_b === community.id)
+      .map(e => ({
+        neighbor_id: e.community_a === community.id ? e.community_b : e.community_a,
+        weight: e.weight,
+        components: e.components,
+        evidence: e.evidence
+      }))
+      .sort((a, b) => b.weight - a.weight);
+
+    // Apply forced neighbors from overrides
+    const forcedNeighbors = overrides
+      .filter(o => o.community_id === community.id && o.action === 'force_neighbor')
+      .map(o => o.neighbor_community_id);
+
+    // Apply blocked neighbors from overrides
+    const blockedNeighbors = overrides
+      .filter(o => o.community_id === community.id && o.action === 'block_neighbor')
+      .map(o => o.neighbor_community_id);
+
+    // Filter out blocked neighbors
+    const availableEdges = communityEdges.filter(
+      e => !blockedNeighbors.includes(e.neighbor_id)
+    );
+
+    // Get previous neighbors for churn limiting
+    const prevNeighbors = previousAssignments
+      .filter(p => p.community_id === community.id && p.neighbor_community_id)
+      .map(p => p.neighbor_community_id);
+
+    // Select neighbors with churn limiting
+    const selected = selectNeighborsWithChurnLimit(
+      availableEdges,
+      forcedNeighbors,
+      prevNeighbors,
+      config
+    );
+
+    // Map to portal slots
+    PORTAL_SLOTS.forEach((slot, index) => {
+      const neighbor = selected[index];
+      assignments.push({
+        community_id: community.id,
+        slot,
+        neighbor_community_id: neighbor?.neighbor_id || null,
+        neighbor_weight: neighbor?.weight || null,
+        reason_codes: neighbor ? generateReasonCodes(neighbor) : null,
+        reason_details: neighbor ? generateReasonDetails(neighbor) : null,
+        confidence: neighbor ? computeConfidence(neighbor) : null,
+        assignment_type: neighbor
+          ? (forcedNeighbors.includes(neighbor.neighbor_id) ? 'curated' : 'graph')
+          : 'empty'
+      });
+    });
+  }
+
+  return assignments;
+}
+
+// Generate reason codes for portal explainability
+function generateReasonCodes(neighbor: NeighborCandidate): string[] {
+  const codes: string[] = [];
+
+  if (neighbor.evidence.shared_members >= 10) {
+    codes.push('shared_members_high');
+  }
+  if (neighbor.evidence.travel_28d >= 20) {
+    codes.push('cross_visits_high');
+  }
+  if (neighbor.components.E3_coactivity >= 0.7) {
+    codes.push('similar_activity_patterns');
+  }
+
+  return codes.slice(0, 3);  // Max 3 reason codes
+}
+```
+
+#### Graph Build Stability Gate
+
+The graph build job is blocked until the aggregation job has run successfully for 7 consecutive days:
+
+```sql
+-- Check aggregation stability before graph build
+SELECT
+  CASE
+    WHEN consecutive_success_days >= 7 THEN TRUE
+    ELSE FALSE
+  END as stable,
+  consecutive_success_days,
+  last_run_date
+FROM v_aggregation_stability;
+```
+
+#### Graph Build Job Alerts
+
+| Metric | Threshold | Severity | Action |
+|--------|-----------|----------|--------|
+| Job failure | Any | High | Page on-call |
+| Runtime > 12 minutes | Warning | Medium | Investigate |
+| Edge count drop > 20% | Day-over-day | High | Review + potential rollback |
+| Churn limit triggered | > 10% of communities | Medium | Review thresholds |
+| Safety overrides active | > 5 communities | Medium | Review override reasons |
+
 ---
 
 ## 2. Schedules
@@ -359,8 +602,8 @@ async function initializeScheduler(queue: Queue): Promise<void> {
 │          │                                                           │
 │  04:15 ──┴── community-graph-build                                  │
 │              └── Depends on: daily-feature-aggregation complete     │
-│              └── Outputs: community_graph_edges,                    │
-│                           community_portal_assignments               │
+│              └── Outputs: community_edges, community_portals,       │
+│                           community_graph_runs                       │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -1190,4 +1433,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 3: Added Section 1.4 Living Graph Jobs with daily-feature-aggregation details and backfill support -->
+<!-- Last Updated: 2026-01-19 - Step 4: Added community-graph-build job with full handler, portal assignment logic, and alerts -->
