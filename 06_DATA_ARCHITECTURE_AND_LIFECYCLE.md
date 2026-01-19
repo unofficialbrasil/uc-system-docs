@@ -521,6 +521,207 @@ FROM (
 ) grouped
 GROUP BY job_name, grp
 HAVING MAX(target_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY);
+
+-- Living Graph Dashboard Views (Step 6)
+
+-- View: Community Health Summary
+-- Used by: Community Health Dashboard
+CREATE VIEW v_community_health AS
+SELECT
+    c.id as community_id,
+    c.name as community_name,
+    c.visibility,
+    COUNT(DISTINCT CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN cad.identity_id END) as active_members_7d,
+    COUNT(DISTINCT m.identity_id) as total_members,
+    COALESCE(SUM(CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN cad.world_sessions END), 0) as world_sessions_7d,
+    COALESCE(SUM(CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN cad.missions_completed END), 0) as missions_7d,
+    COALESCE(AVG(CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN cad.messages_sent END), 0) as avg_messages_per_day,
+    -- Week-over-week activity trend
+    ROUND(
+        (SUM(CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) /
+         NULLIF(SUM(CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND cad.date < DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END), 0) - 1) * 100
+    , 2) as activity_trend_pct,
+    -- K-anon eligibility
+    CASE WHEN COUNT(DISTINCT CASE WHEN cad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN cad.identity_id END) >= 30
+         THEN 'eligible' ELSE 'ineligible' END as graph_eligibility
+FROM communities c
+LEFT JOIN members m ON c.id = m.community_id AND m.status = 'active'
+LEFT JOIN community_activity_daily cad ON c.id = cad.community_id AND cad.date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+GROUP BY c.id, c.name, c.visibility;
+
+-- View: Portal Performance Summary
+-- Used by: Portal Performance Dashboard
+CREATE VIEW v_portal_performance AS
+SELECT
+    cp.community_id as source_community_id,
+    cs.name as source_name,
+    cp.neighbor_community_id as destination_community_id,
+    cd.name as destination_name,
+    cp.slot,
+    cp.reason_codes,
+    cp.confidence,
+    COALESCE(pad.travel_count, 0) as travel_count_7d,
+    COALESCE(pad.unique_travelers, 0) as unique_travelers_7d,
+    COALESCE(pad.visitor_count, 0) as visitor_count_7d,
+    COALESCE(pad.visitor_joins, 0) as visitor_joins_7d,
+    CASE WHEN pad.visitor_count > 0
+         THEN ROUND(pad.visitor_joins / pad.visitor_count * 100, 2)
+         ELSE 0 END as conversion_rate_pct,
+    COALESCE(pad.bounce_count, 0) as bounce_count_7d,
+    CASE WHEN pad.travel_count > 0
+         THEN ROUND(pad.bounce_count / pad.travel_count * 100, 2)
+         ELSE 0 END as bounce_rate_pct,
+    (SELECT COUNT(*) FROM portal_reports pr
+     WHERE pr.source_community_id = cp.community_id
+       AND pr.destination_community_id = cp.neighbor_community_id
+       AND pr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as report_count_7d
+FROM community_portals cp
+JOIN communities cs ON cp.community_id = cs.id
+LEFT JOIN communities cd ON cp.neighbor_community_id = cd.id
+LEFT JOIN portal_activity_daily pad ON cp.community_id = pad.source_community_id
+    AND cp.neighbor_community_id = pad.destination_community_id
+    AND pad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+WHERE cp.period_start = (SELECT MAX(period_start) FROM community_portals)
+  AND cp.neighbor_community_id IS NOT NULL;
+
+-- View: Neighbor Stability (Churn Metrics)
+-- Used by: Neighbor Stability Dashboard
+CREATE VIEW v_neighbor_stability AS
+WITH current_portals AS (
+    SELECT community_id, slot, neighbor_community_id
+    FROM community_portals
+    WHERE period_start = (SELECT MAX(period_start) FROM community_portals)
+),
+previous_portals AS (
+    SELECT community_id, slot, neighbor_community_id
+    FROM community_portals
+    WHERE period_start = (SELECT MAX(period_start) FROM community_portals WHERE period_start < (SELECT MAX(period_start) FROM community_portals))
+)
+SELECT
+    c.id as community_id,
+    c.name as community_name,
+    COUNT(DISTINCT curr.slot) as active_portals,
+    SUM(CASE WHEN curr.neighbor_community_id != COALESCE(prev.neighbor_community_id, -1) THEN 1 ELSE 0 END) as changed_portals,
+    ROUND(
+        SUM(CASE WHEN curr.neighbor_community_id != COALESCE(prev.neighbor_community_id, -1) THEN 1 ELSE 0 END) /
+        NULLIF(COUNT(DISTINCT curr.slot), 0) * 100
+    , 2) as churn_rate_pct,
+    (SELECT COUNT(*) FROM community_graph_overrides cgo
+     WHERE cgo.community_id = c.id
+       AND (cgo.expires_at IS NULL OR cgo.expires_at > NOW())) as active_overrides
+FROM communities c
+LEFT JOIN current_portals curr ON c.id = curr.community_id
+LEFT JOIN previous_portals prev ON c.id = prev.community_id AND curr.slot = prev.slot
+GROUP BY c.id, c.name;
+
+-- View: Graph Build Metrics
+-- Used by: Neighbor Stability Dashboard (Graph Build Health)
+CREATE VIEW v_graph_build_metrics AS
+SELECT
+    gr.id as run_id,
+    gr.period_start,
+    gr.period_end,
+    gr.started_at,
+    gr.finished_at,
+    gr.status,
+    TIMESTAMPDIFF(SECOND, gr.started_at, gr.finished_at) as duration_seconds,
+    JSON_EXTRACT(gr.metrics, '$.communities_processed') as communities_processed,
+    JSON_EXTRACT(gr.metrics, '$.edges_computed') as edges_computed,
+    JSON_EXTRACT(gr.metrics, '$.edges_eligible') as edges_eligible,
+    JSON_EXTRACT(gr.metrics, '$.portals_assigned') as portals_assigned,
+    JSON_EXTRACT(gr.metrics, '$.churn_limited_count') as churn_limited_count,
+    -- Compare with previous run
+    LAG(JSON_EXTRACT(gr.metrics, '$.edges_eligible')) OVER (ORDER BY gr.period_start) as prev_edges_eligible,
+    ROUND(
+        (JSON_EXTRACT(gr.metrics, '$.edges_eligible') - LAG(JSON_EXTRACT(gr.metrics, '$.edges_eligible')) OVER (ORDER BY gr.period_start)) /
+        NULLIF(LAG(JSON_EXTRACT(gr.metrics, '$.edges_eligible')) OVER (ORDER BY gr.period_start), 0) * 100
+    , 2) as edge_count_delta_pct
+FROM community_graph_runs gr
+WHERE gr.started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+ORDER BY gr.started_at DESC;
+
+-- View: Proxemic Health (Zone-based health indicators)
+-- Used by: Community Health Dashboard (Proxemic Proxies)
+CREATE VIEW v_proxemic_health AS
+SELECT
+    zdd.community_id,
+    c.name as community_name,
+    zdd.date,
+    -- Hub dwell ratio
+    ROUND(
+        SUM(CASE WHEN zdd.zone_type = 'central_hub' THEN zdd.total_dwell_seconds ELSE 0 END) /
+        NULLIF(SUM(zdd.total_dwell_seconds), 0) * 100
+    , 2) as hub_dwell_ratio_pct,
+    -- Social zone time
+    ROUND(
+        SUM(CASE WHEN zdd.zone_type IN ('social_east', 'social_west') THEN zdd.total_dwell_seconds ELSE 0 END) /
+        NULLIF(SUM(zdd.total_dwell_seconds), 0) * 100
+    , 2) as social_zone_ratio_pct,
+    -- Zone diversity (unique zones visited)
+    COUNT(DISTINCT zdd.zone_type) as unique_zones_visited,
+    -- Portal zone engagement
+    ROUND(
+        SUM(CASE WHEN zdd.zone_type LIKE 'portal_%' THEN zdd.unique_visitors ELSE 0 END) /
+        NULLIF(SUM(zdd.unique_visitors), 0) * 100
+    , 2) as portal_zone_visitor_pct
+FROM zone_dwell_daily zdd
+JOIN communities c ON zdd.community_id = c.id
+WHERE zdd.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+GROUP BY zdd.community_id, c.name, zdd.date;
+
+-- View: Dashboard Alerts (Active alerts based on thresholds)
+-- Used by: All dashboards for alert display
+CREATE VIEW v_dashboard_alerts AS
+-- K-anon violations
+SELECT
+    'community_below_k_anon' as alert_type,
+    'high' as severity,
+    community_id,
+    community_name,
+    CONCAT('Active members (', active_members_7d, ') below k-anon threshold (30)') as message,
+    NOW() as detected_at
+FROM v_community_health
+WHERE active_members_7d < 30 AND graph_eligibility = 'ineligible'
+
+UNION ALL
+
+-- High bounce rate portals
+SELECT
+    'high_portal_bounce' as alert_type,
+    'medium' as severity,
+    source_community_id as community_id,
+    CONCAT(source_name, ' → ', destination_name) as community_name,
+    CONCAT('Bounce rate ', bounce_rate_pct, '% exceeds 60% threshold') as message,
+    NOW() as detected_at
+FROM v_portal_performance
+WHERE bounce_rate_pct > 60
+
+UNION ALL
+
+-- Excessive churn
+SELECT
+    'excessive_churn' as alert_type,
+    'high' as severity,
+    community_id,
+    community_name,
+    CONCAT('Churn rate ', churn_rate_pct, '% exceeds 40% threshold') as message,
+    NOW() as detected_at
+FROM v_neighbor_stability
+WHERE churn_rate_pct > 40
+
+UNION ALL
+
+-- Build failures
+SELECT
+    'build_failure' as alert_type,
+    'critical' as severity,
+    0 as community_id,
+    'Graph Build' as community_name,
+    CONCAT('Graph build failed: ', COALESCE(error_message, 'Unknown error')) as message,
+    started_at as detected_at
+FROM community_graph_runs
+WHERE status = 'failed'
+  AND started_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR);
 ```
 
 ---
@@ -837,4 +1038,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 5: Added user_portal_preferences and portal_reports tables for user agency in portal UI -->
+<!-- Last Updated: 2026-01-19 - Step 6: Added dashboard views (v_community_health, v_portal_performance, v_neighbor_stability, v_graph_build_metrics, v_proxemic_health, v_dashboard_alerts) -->

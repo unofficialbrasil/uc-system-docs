@@ -272,6 +272,12 @@ async function checkAgeAuthorization(
 | `GET /api/gamification/*` | Yes | Self Only | 1+ | 120/min |
 | `POST /api/admin/*` | Yes | System Admin | 2+ | 30/min |
 | `GET /api/internal/*` | Service Auth | Internal Services | N/A | None |
+| `GET /api/admin/dashboard/community-health` | Yes | Admin+, Ops | 2+ | 60/min |
+| `GET /api/admin/dashboard/portal-performance` | Yes | Admin+, Ops | 2+ | 60/min |
+| `GET /api/admin/dashboard/neighbor-stability` | Yes | Ops only | 2+ | 60/min |
+| `GET /api/admin/dashboard/graph-builds` | Yes | Ops only | 2+ | 60/min |
+| `GET /api/admin/dashboard/alerts` | Yes | Admin+, Ops | 2+ | 120/min |
+| `GET /api/admin/dashboard/export` | Yes | Admin+, Ops | 2+ | 10/hour |
 
 ### 2.3 Resource-Level Authorization
 
@@ -421,6 +427,11 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 | `profile:view_own` | View own profile | All |
 | `profile:edit_own` | Edit own profile | All |
 | `webhooks:configure` | Setup webhook integrations | Owner |
+| `dashboard:view_community_health` | View community health metrics | Admin+, Ops |
+| `dashboard:view_portal_performance` | View portal performance metrics | Admin+, Ops |
+| `dashboard:view_graph_stability` | View graph stability metrics | Ops only |
+| `dashboard:view_alerts` | View dashboard alerts | Admin+, Ops |
+| `dashboard:export` | Export dashboard data | Admin+, Ops |
 
 ### 3.3 Visitor Mode (Portal Travel) - Living Graph Step 5
 
@@ -1194,4 +1205,4 @@ CREATE TABLE security_audit_log (
 
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 5: Expanded Section 3.3 Visitor Mode with travel gating flow, permission sets, and session enforcement -->
+<!-- Last Updated: 2026-01-19 - Step 6: Added dashboard permissions and endpoints to authorization matrix (Sections 2.2, 3.2) -->

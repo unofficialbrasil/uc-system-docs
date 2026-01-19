@@ -752,8 +752,146 @@ function validateEventSchema(event: BaseEvent): void {
 | Mission Completion Rate | % of assigned missions completed | Completed missions / Assigned missions |
 | Avg Session Duration | Time spent in platform | SUM(session_duration) / COUNT(sessions) |
 
+### 9.3 Living Graph Dashboards (Step 6)
+
+Three operational dashboards provide visibility into graph health and portal performance.
+
+#### 9.3.1 Community Health Dashboard
+
+**Audience:** Community Admins, Ops Team
+**Refresh:** Hourly (real-time for alerts)
+**Data Sources:** `community_activity_daily`, `zone_dwell_daily`, `members`, `gamification_points`
+
+| Metric | Definition | Calculation | Alert Threshold |
+|--------|------------|-------------|-----------------|
+| Active Members (7d) | Members with activity in last 7 days | COUNT(DISTINCT identity_id) FROM community_activity_daily WHERE date >= TODAY-7 | < 30 (k-anon threshold) |
+| Onboarding Rate | New members completing first mission within 48h | Completed / Joined (rolling 7d) | < 40% |
+| Activity Trend | Week-over-week activity change | (This week DAU / Last week DAU) - 1 | < -20% |
+| Zone Dwell Distribution | Time spent across zones | AVG(total_dwell_seconds) GROUP BY zone_type | N/A (informational) |
+| Engagement Score | Composite health metric | (activity_score * 0.4) + (retention_score * 0.3) + (social_score * 0.3) | < 50 |
+
+**Proxemic Proxies (spatial indicators of community health):**
+
+| Proxy | Measures | Good Signal | Warning Signal |
+|-------|----------|-------------|----------------|
+| Hub Dwell Ratio | Time in central_hub vs. total | 20-40% | > 60% (users stuck) |
+| Zone Diversity | Unique zones visited per session | > 3 zones | < 2 zones |
+| Social Zone Time | Time in social_east + social_west | > 30% of session | < 10% |
+| Portal Zone Visits | Users entering portal zones | > 10% of active users | < 2% |
+
+#### 9.3.2 Portal Performance Dashboard
+
+**Audience:** Ops Team, Product
+**Refresh:** Hourly
+**Data Sources:** `portal_activity_daily`, `portal_reports`, `world.portal.*` events
+
+| Metric | Definition | Calculation | Alert Threshold |
+|--------|------------|-------------|-----------------|
+| Portal Travel Rate | Travels per active user per day | COUNT(world.portal.traveled) / DAU | Informational |
+| Visitor Conversion | Visitors who join after visit | Joins from visitors / Total visitors (7d) | < 5% (low value) |
+| Bounce Rate | Visitors who leave within 60s | COUNT(duration < 60) / COUNT(visits) | > 50% |
+| Portal Report Rate | Reports per 1000 travels | (reports / travels) * 1000 | > 5 per 1000 |
+| Card View Rate | Portal cards opened per portal zone entry | card.viewed / portal.activated | Informational |
+| Why Click Rate | Users expanding explanation | why.clicked / card.viewed | Informational |
+| Hide Rate | Users hiding portals | hide.clicked / card.viewed | > 20% (bad matches) |
+
+**Per-Portal Breakdown (by source_community → destination_community):**
+
+| Metric | Definition | Action Trigger |
+|--------|------------|----------------|
+| Travel Count (7d) | Total travels through this portal | N/A |
+| Bounce Rate | % leaving within 60s | > 60% → review edge quality |
+| Report Count | Total reports on this portal | > 3 → ops review |
+| Conversion Rate | Visitors who joined | < 2% → consider removing edge |
+
+#### 9.3.3 Neighbor Stability Dashboard
+
+**Audience:** Ops Team, Graph Engineers
+**Refresh:** Daily (after graph build)
+**Data Sources:** `community_portals`, `community_edges`, `community_graph_runs`
+
+| Metric | Definition | Calculation | Alert Threshold |
+|--------|------------|-------------|-----------------|
+| Churn Rate | % of portals changed from previous period | Changed portals / Total portals | > 30% |
+| Churn-Limited Communities | Communities hitting churn limit | COUNT WHERE churn_limited = true | > 10% of communities |
+| Edge Stability | % of edges unchanged from previous period | Stable edges / Total edges | < 70% |
+| Average Neighbor Tenure | Days a neighbor stays assigned | AVG(days_assigned) | < 7 days |
+| Orphan Communities | Communities with 0 active portals | COUNT WHERE active_portals = 0 | > 5% |
+| Override Count | Active safety overrides | COUNT FROM community_graph_overrides WHERE expires_at IS NULL OR expires_at > NOW() | > 10 |
+
+**Graph Build Health:**
+
+| Metric | Definition | Alert Threshold |
+|--------|------------|-----------------|
+| Build Success Rate | Successful runs / Total runs (7d) | < 100% |
+| Build Duration | Time to complete graph build | > 12 minutes |
+| Edge Count Delta | Day-over-day edge count change | > ±20% |
+| Portal Assignment Coverage | Communities with ≥1 portal | < 90% of eligible |
+
+### 9.4 Dashboard Alert Thresholds
+
+| Alert | Condition | Severity | Action |
+|-------|-----------|----------|--------|
+| Community Below K-Anon | active_members_7d < 30 | High | Hide from graph, notify ops |
+| High Portal Bounce | bounce_rate > 60% for 3 days | Medium | Review edge, consider removal |
+| Excessive Churn | churn_rate > 40% | High | Review graph params, pause if needed |
+| Report Spike | report_rate > 10 per 1000 | Critical | Page on-call, review reported portals |
+| Build Failure | graph_build_status = 'failed' | Critical | Page on-call, fallback to previous |
+| Aggregation Gap | consecutive_success_days < 7 | High | Block graph build, investigate |
+| Override Accumulation | active_overrides > 20 | Medium | Review override reasons |
+| Orphan Spike | orphan_communities > 10% | Medium | Review eligibility rules |
+
+### 9.5 Export Functionality
+
+All dashboard data supports CSV/JSON export for offline analysis.
+
+#### 9.5.1 Exportable Reports
+
+| Report | Contents | Frequency | Access |
+|--------|----------|-----------|--------|
+| Community Health Summary | All health metrics per community | Daily | Admin+ |
+| Portal Performance Report | Travel, bounce, conversion by portal | Weekly | Admin+ |
+| Graph Stability Report | Churn, edge changes, overrides | Weekly | Ops only |
+| Aggregated Activity Export | Community-level aggregates (no PII) | On-demand | Admin+ |
+
+#### 9.5.2 Export API
+
+```typescript
+// Export endpoint
+GET /api/admin/dashboard/export
+
+// Query parameters
+interface ExportParams {
+  report_type: 'community_health' | 'portal_performance' | 'graph_stability' | 'activity';
+  community_id?: number;       // Optional filter
+  date_from: string;           // ISO date
+  date_to: string;             // ISO date
+  format: 'csv' | 'json';
+}
+
+// Response headers
+Content-Type: text/csv | application/json
+Content-Disposition: attachment; filename="report_<type>_<date>.csv"
+
+// Rate limit
+10 exports per hour per admin
+```
+
+#### 9.5.3 Data Minimization in Exports
+
+Exports follow data minimization principles:
+
+| Field Type | In Export | Notes |
+|------------|-----------|-------|
+| Community aggregates | Yes | Activity, health metrics |
+| Identity IDs | No | Never exported |
+| Member counts | Yes | Aggregated only |
+| Individual events | No | Only aggregates |
+| Portal assignments | Yes | Community IDs only |
+| Reason codes | Yes | Graph explainability |
+
 ---
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 5: Added portal UI interaction events (card.viewed, why.clicked, hide.clicked, report.submitted, visitor.timeout, visitor.zone_blocked) -->
+<!-- Last Updated: 2026-01-19 - Step 6: Added Living Graph Dashboards (Section 9.3-9.5) with community health, portal performance, neighbor stability metrics, alerts, and export functionality -->

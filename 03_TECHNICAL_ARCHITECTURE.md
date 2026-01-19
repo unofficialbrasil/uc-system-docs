@@ -202,6 +202,82 @@ Does NOT:
 | API | MySQL | TCP | MySQL protocol | Credentials |
 | All Services | Redis | TCP | Redis protocol | Password |
 
+### 2.4 Admin Dashboard API Endpoints (Step 6)
+
+Living Graph dashboards are served via dedicated admin API endpoints.
+
+#### Dashboard Data Endpoints
+
+| Endpoint | Method | Description | Response |
+|----------|--------|-------------|----------|
+| `/api/admin/dashboard/community-health` | GET | Community health metrics | `v_community_health` data |
+| `/api/admin/dashboard/community-health/:id` | GET | Single community health | Filtered by community_id |
+| `/api/admin/dashboard/portal-performance` | GET | Portal performance metrics | `v_portal_performance` data |
+| `/api/admin/dashboard/portal-performance/:id` | GET | Single community portals | Filtered by source_community_id |
+| `/api/admin/dashboard/neighbor-stability` | GET | Churn and stability metrics | `v_neighbor_stability` data |
+| `/api/admin/dashboard/graph-builds` | GET | Graph build history | `v_graph_build_metrics` data |
+| `/api/admin/dashboard/proxemic-health` | GET | Zone-based health proxies | `v_proxemic_health` data |
+| `/api/admin/dashboard/alerts` | GET | Active dashboard alerts | `v_dashboard_alerts` data |
+
+#### Query Parameters
+
+| Parameter | Type | Applies To | Description |
+|-----------|------|------------|-------------|
+| `date_from` | ISO date | All | Start date filter |
+| `date_to` | ISO date | All | End date filter |
+| `community_id` | number | Most | Filter by community |
+| `limit` | number | All | Max records (default 100) |
+| `offset` | number | All | Pagination offset |
+| `alert_type` | string | /alerts | Filter by alert type |
+| `severity` | string | /alerts | Filter by severity |
+
+#### Export Endpoints
+
+| Endpoint | Method | Description | Format |
+|----------|--------|-------------|--------|
+| `/api/admin/dashboard/export` | GET | Export dashboard data | CSV or JSON |
+
+```typescript
+// Export query parameters
+interface ExportParams {
+  report_type: 'community_health' | 'portal_performance' | 'graph_stability' | 'activity';
+  community_id?: number;
+  date_from: string;  // ISO date
+  date_to: string;    // ISO date
+  format: 'csv' | 'json';
+}
+```
+
+#### Response Format
+
+All dashboard endpoints return:
+
+```typescript
+interface DashboardResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+    generated_at: string;  // ISO timestamp
+  };
+  alerts?: {
+    count: number;
+    critical: number;
+    high: number;
+    medium: number;
+  };
+}
+```
+
+#### Rate Limits
+
+| Endpoint Type | Limit | Window |
+|---------------|-------|--------|
+| Dashboard data | 60/min | Per admin |
+| Export | 10/hour | Per admin |
+| Alerts | 120/min | Per admin |
+
 ---
 
 ## 3. Datastores
@@ -573,4 +649,4 @@ docker-compose.prod.yml
 
 *This document describes the technical architecture as implemented. Changes require updates to this document and logging in DECISION_LOG.md.*
 
-<!-- Last Updated: 2026-01-19 - Added TimescaleDB for UC World (Section 1.1, 1.2) -->
+<!-- Last Updated: 2026-01-19 - Step 6: Added Admin Dashboard API Endpoints (Section 2.4) with data, export, and rate limits -->
