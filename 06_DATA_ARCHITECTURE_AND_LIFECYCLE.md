@@ -108,6 +108,7 @@ CREATE TABLE consents (
     data_processing BOOLEAN DEFAULT TRUE,    -- Required for service
     marketing BOOLEAN DEFAULT FALSE,         -- Opt-in
     telemetry BOOLEAN DEFAULT TRUE,          -- Default on, opt-out
+    whatsapp_activity BOOLEAN DEFAULT FALSE, -- Opt-in for Living Graph (WhatsApp event counts)
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
@@ -647,6 +648,7 @@ DELIMITER ;
     "data_processing": true,
     "marketing": false,
     "telemetry": true,
+    "whatsapp_activity": false,
     "updated_at": "2025-06-01T10:00:00Z"
   },
   "memberships": [
@@ -718,4 +720,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-18 - Added age fields to identities, Section 2.3A T&S Domain, age retention rules -->
+<!-- Last Updated: 2026-01-19 - Added whatsapp_activity consent field for Living Graph -->

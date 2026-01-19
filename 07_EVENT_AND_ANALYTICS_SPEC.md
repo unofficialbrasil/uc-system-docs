@@ -80,7 +80,8 @@ Examples:
 | `world.session.ended` | Disconnected | `{ duration_seconds, community_id }` | Server |
 | `world.zone.entered` | Entered zone | `{ zone_type, from_zone, community_id }` | Server |
 | `world.zone.exited` | Left zone | `{ zone_type, duration_seconds, community_id }` | Server |
-| `world.portal_travel` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, travel_reason }` | Server |
+| `world.portal.activated` | User enters portal zone | `{ portal_direction, destination_community_id, destination_name, reason_code }` | Server |
+| `world.portal.traveled` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, travel_reason }` | Server |
 | `world.presence.updated` | Position changed | `{ zone_type, community_id }` | Server (sampled) |
 
 **Canonical Zone IDs** (defined in `uc-world/shared/src/zones.ts`):
@@ -105,11 +106,17 @@ Examples:
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
-| `whatsapp.message_sent` | User sends message to group | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
-| `whatsapp.reaction_added` | User reacts to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
-| `whatsapp.reply_sent` | User replies to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.message.sent` | User sends message to group | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.reaction.added` | User reacts to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.reply.sent` | User replies to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.member.joined` | User joins WhatsApp group | `{ community_id, identity_id, joined_via }` | Webhooks |
+| `whatsapp.member.left` | User leaves WhatsApp group | `{ community_id, identity_id, left_reason }` | Webhooks |
 
-> **Consent Requirement:** WhatsApp activity events are ONLY collected for users who have consented (`consents.whatsapp_activity = true`). Events are stored in aggregate form (daily buckets) for graph computation, not individual message content.
+> **Privacy Rules:**
+> - Events are **counts-only** - no message content is ever stored
+> - Events are stored in aggregate form (daily buckets) for graph computation
+> - Collection requires explicit consent (`consents.whatsapp_activity = true`)
+> - `identity_id` is anonymized after 90 days per retention policy
 
 ### 2.6 Age Verification Events (Adult-by-Design)
 
@@ -535,4 +542,4 @@ async function trackEvent(event: BaseEvent, identityId: number) {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Added canonical zone ID table (Section 2.4), fixed zone_type example -->
+<!-- Last Updated: 2026-01-19 - Step 1: Event taxonomy upgrade - fixed naming convention, added portal.activated, added WhatsApp member events -->
