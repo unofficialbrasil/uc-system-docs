@@ -102,6 +102,136 @@ const dailyMissionsJob: JobDefinition = {
 };
 ```
 
+### 1.4 Living Graph Jobs (Step 3)
+
+The Living Graph requires two key jobs that produce community-level features for graph building.
+
+#### daily-feature-aggregation
+
+**Purpose:** Produce community-level feature aggregates from raw events for graph computation.
+
+```typescript
+const dailyFeatureAggregationJob: JobDefinition = {
+  name: 'daily-feature-aggregation',
+  queue: 'analytics',
+  description: 'Aggregate raw events into community-level features for Living Graph',
+  schedule: '0 1 * * *',       // 01:00 America/Sao_Paulo daily
+  priority: 'medium',
+  timeout_ms: 600000,          // 10 minutes
+  retry: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 60000 }
+  },
+  concurrency: 1,              // Only one instance at a time
+  data_schema: {
+    type: 'object',
+    properties: {
+      date: { type: 'string', format: 'date' },      // YYYY-MM-DD to aggregate
+      backfill: { type: 'boolean', default: false }, // If true, skip "already computed" check
+      community_ids: { type: 'array', items: { type: 'number' } }  // Optional filter
+    }
+  }
+};
+
+// Job Handler
+async function handleDailyFeatureAggregation(job: Job): Promise<void> {
+  const targetDate = job.data.date || getYesterdayDate();
+  const isBackfill = job.data.backfill || false;
+
+  // Skip if already computed (unless backfill)
+  if (!isBackfill && await isAlreadyAggregated(targetDate)) {
+    console.log(`[Aggregation] Skipping ${targetDate} - already computed`);
+    return;
+  }
+
+  // 1. community_activity_daily
+  await computeCommunityActivityDaily(targetDate);
+
+  // 2. zone_dwell_daily (derived from zone enter/exit events)
+  await computeZoneDwellDaily(targetDate);
+
+  // 3. whatsapp_activity_daily (only consented users)
+  await computeWhatsAppActivityDaily(targetDate);
+
+  // 4. mission_activity_daily
+  await computeMissionActivityDaily(targetDate);
+
+  // 5. portal_activity_daily
+  await computePortalActivityDaily(targetDate);
+
+  // Record successful run
+  await recordAggregationRun(targetDate, 'success');
+}
+
+// Dwell computation (derived from enter/exit pairs)
+async function computeZoneDwellDaily(date: string): Promise<void> {
+  // Find all zone enter/exit event pairs for the day
+  // Calculate dwell = exit_timestamp - enter_timestamp
+  // Bucket into: 0-60s, 60-300s, 300-900s, 900s+
+  // Group by community_id, zone_id
+  const sql = `
+    INSERT INTO analytics_aggregates (aggregate_type, period_type, period_start, period_end, dimensions, metrics)
+    SELECT
+      'zone_dwell_daily' as aggregate_type,
+      'daily' as period_type,
+      ? as period_start,
+      ? as period_end,
+      JSON_OBJECT('community_id', e.community_id, 'zone_id', e.zone_id) as dimensions,
+      JSON_OBJECT(
+        'enter_count', COUNT(CASE WHEN e.event_name = 'world.zone.entered' THEN 1 END),
+        'exit_count', COUNT(CASE WHEN e.event_name = 'world.zone.exited' THEN 1 END),
+        'dwell_sec_bucketed', JSON_OBJECT(
+          '0-60', SUM(CASE WHEN dwell_sec BETWEEN 0 AND 60 THEN 1 ELSE 0 END),
+          '60-300', SUM(CASE WHEN dwell_sec BETWEEN 61 AND 300 THEN 1 ELSE 0 END),
+          '300-900', SUM(CASE WHEN dwell_sec BETWEEN 301 AND 900 THEN 1 ELSE 0 END),
+          '900+', SUM(CASE WHEN dwell_sec > 900 THEN 1 ELSE 0 END)
+        )
+      ) as metrics
+    FROM analytics_events e
+    LEFT JOIN (
+      SELECT identity_id, community_id, zone_id,
+             TIMESTAMPDIFF(SECOND, enter_time, exit_time) as dwell_sec
+      FROM zone_sessions  -- Derived view or CTE
+    ) d ON e.identity_id = d.identity_id
+    WHERE DATE(e.timestamp) = ?
+      AND e.event_name IN ('world.zone.entered', 'world.zone.exited')
+    GROUP BY e.community_id, JSON_EXTRACT(e.properties, '$.zone_type')
+    ON DUPLICATE KEY UPDATE metrics = VALUES(metrics), computed_at = NOW()
+  `;
+  await db.execute(sql, [date, date, date]);
+}
+```
+
+#### Backfill Support (28 days)
+
+```typescript
+// Backfill script for pilot
+async function backfillAggregates(daysBack: number = 28): Promise<void> {
+  const dates = getDateRange(daysBack);
+
+  for (const date of dates) {
+    await queue.add('daily-feature-aggregation', {
+      date,
+      backfill: true
+    }, {
+      jobId: `backfill-${date}`,
+      delay: dates.indexOf(date) * 5000  // Stagger by 5 seconds
+    });
+  }
+
+  console.log(`[Backfill] Queued ${dates.length} aggregation jobs`);
+}
+```
+
+#### Aggregation Job Alerts
+
+| Metric | Threshold | Severity | Action |
+|--------|-----------|----------|--------|
+| Job failure | Any | High | Page on-call |
+| Runtime > 8 minutes | Warning | Medium | Investigate |
+| Missing aggregates | > 0 communities | High | Re-run job |
+| 7-day streak broken | Consecutive runs | Critical | Block graph build |
+
 ---
 
 ## 2. Schedules
@@ -1060,4 +1190,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Fixed timezone code example (tz: America/Sao_Paulo) -->
+<!-- Last Updated: 2026-01-19 - Step 3: Added Section 1.4 Living Graph Jobs with daily-feature-aggregation details and backfill support -->

@@ -457,6 +457,24 @@ END;
 | Zone Dwell Time | community_id, zone_type, date | avg_duration, visits | Daily 01:00 |
 | Retention Cohorts | signup_week, cohort_week | d1, d7, d30 retention | Weekly |
 
+### 7.1.1 Living Graph Aggregates (Step 3)
+
+These aggregates are required for the Living Graph community-to-community similarity computation.
+
+| Aggregate Type | Window | Dimensions | Metrics | Purpose |
+|----------------|--------|------------|---------|---------|
+| `community_activity_daily` | 1 day | `{community_id}` | `{active_identities, sessions, dwell_total_sec}` | Baseline activity normalization |
+| `zone_dwell_daily` | 1 day | `{community_id, zone_id}` | `{enter_count, exit_count, dwell_sec_bucketed}` | Proxemics evaluation |
+| `whatsapp_activity_daily` | 1 day | `{community_id}` | `{messages, reactions, joins, leaves}` | Primary social rhythm |
+| `mission_activity_daily` | 1 day | `{community_id, mission_type}` | `{completed, unique_completers}` | Interest/competence signature |
+| `portal_activity_daily` | 1 day | `{from_community_id, to_community_id}` | `{travels, bounces, unique_travelers}` | Cross-community flow (E2 signal) |
+
+**Implementation Rules:**
+- Dwell is derived from `world.zone.entered` / `world.zone.exited` timestamp pairs
+- WhatsApp aggregates only include consented users (`whatsapp_activity = true`)
+- All aggregates run at **04:00 America/Sao_Paulo** daily
+- Backfill capability required for 28 days (pilot requirement)
+
 ### 7.2 Aggregate Schema
 
 ```sql
@@ -509,6 +527,78 @@ CREATE TABLE analytics_aggregates (
     "unique_users": 72,
     "total_xp_awarded": 4450,
     "avg_completion_time_minutes": 45
+  }
+}
+
+// Living Graph: Community Activity Daily
+{
+  "aggregate_type": "community_activity_daily",
+  "period_type": "daily",
+  "period_start": "2026-01-14",
+  "period_end": "2026-01-14",
+  "dimensions": {
+    "community_id": 1
+  },
+  "metrics": {
+    "active_identities": 45,
+    "sessions": 78,
+    "dwell_total_sec": 145800
+  }
+}
+
+// Living Graph: Zone Dwell Daily
+{
+  "aggregate_type": "zone_dwell_daily",
+  "period_type": "daily",
+  "period_start": "2026-01-14",
+  "period_end": "2026-01-14",
+  "dimensions": {
+    "community_id": 1,
+    "zone_id": "central_hub"
+  },
+  "metrics": {
+    "enter_count": 156,
+    "exit_count": 152,
+    "dwell_sec_bucketed": {
+      "0-60": 45,
+      "60-300": 78,
+      "300-900": 25,
+      "900+": 8
+    }
+  }
+}
+
+// Living Graph: WhatsApp Activity Daily
+{
+  "aggregate_type": "whatsapp_activity_daily",
+  "period_type": "daily",
+  "period_start": "2026-01-14",
+  "period_end": "2026-01-14",
+  "dimensions": {
+    "community_id": 1
+  },
+  "metrics": {
+    "messages": 234,
+    "reactions": 89,
+    "joins": 3,
+    "leaves": 1
+  }
+}
+
+// Living Graph: Portal Activity Daily
+{
+  "aggregate_type": "portal_activity_daily",
+  "period_type": "daily",
+  "period_start": "2026-01-14",
+  "period_end": "2026-01-14",
+  "dimensions": {
+    "from_community_id": 1,
+    "to_community_id": 5
+  },
+  "metrics": {
+    "travels": 12,
+    "bounces": 3,
+    "unique_travelers": 8
   }
 }
 ```
@@ -660,4 +750,4 @@ function validateEventSchema(event: BaseEvent): void {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 2: Consent-gated ingestion - added event_version, consent gate, content prohibition, schema validation -->
+<!-- Last Updated: 2026-01-19 - Step 3: Daily aggregation - added Living Graph aggregates (Section 7.1.1), aggregate examples -->

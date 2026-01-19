@@ -404,6 +404,42 @@ CREATE TABLE community_portal_assignments (
     UNIQUE KEY uk_portal (community_id, portal_direction, valid_from),
     INDEX idx_valid_dates (valid_from, valid_to)
 );
+
+-- Living Graph: Aggregation job run tracking (Step 3 requirement)
+-- Used to track consecutive successful runs for 7-day stability gate
+CREATE TABLE aggregation_job_runs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    job_name VARCHAR(50) NOT NULL,           -- e.g., 'daily-feature-aggregation'
+    target_date DATE NOT NULL,               -- The date being aggregated
+    status ENUM('success', 'failed', 'skipped') NOT NULL,
+    started_at TIMESTAMP NOT NULL,
+    completed_at TIMESTAMP NULL,
+    duration_ms INT NULL,
+    records_processed INT DEFAULT 0,
+    error_message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_job_date (job_name, target_date),
+    INDEX idx_job_status (job_name, status, target_date DESC)
+);
+
+-- View: Check if 7-day stability gate is met
+CREATE VIEW v_aggregation_stability AS
+SELECT
+    job_name,
+    COUNT(*) as consecutive_success_days,
+    MIN(target_date) as streak_start,
+    MAX(target_date) as streak_end,
+    CASE WHEN COUNT(*) >= 7 THEN 'STABLE' ELSE 'UNSTABLE' END as stability_status
+FROM (
+    SELECT job_name, target_date,
+           target_date - INTERVAL ROW_NUMBER() OVER (PARTITION BY job_name ORDER BY target_date) DAY as grp
+    FROM aggregation_job_runs
+    WHERE status = 'success'
+      AND target_date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+) grouped
+GROUP BY job_name, grp
+HAVING MAX(target_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY);
 ```
 
 ---
@@ -720,4 +756,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Added whatsapp_activity consent field for Living Graph -->
+<!-- Last Updated: 2026-01-19 - Step 3: Added aggregation_job_runs table and v_aggregation_stability view -->
