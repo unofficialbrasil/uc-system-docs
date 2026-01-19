@@ -422,46 +422,246 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 | `profile:edit_own` | Edit own profile | All |
 | `webhooks:configure` | Setup webhook integrations | Owner |
 
-### 3.3 Visitor Mode (Portal Travel)
+### 3.3 Visitor Mode (Portal Travel) - Living Graph Step 5
 
-When a user travels to another community via portal, they enter **Visitor Mode**:
+When a user travels to another community via portal, authorization determines their access level.
 
-| Aspect | Visitor Behavior | Member Behavior |
-|--------|------------------|-----------------|
+#### 3.3.1 Travel Gating Authorization Flow
+
+```
+AUTHORIZE_PORTAL_TRAVEL(identityId, sourceCommunityId, destCommunityId):
+    │
+    ├── 1. Feature flag check
+    │   IF NOT FEATURE_PORTAL_TRAVEL:
+    │       RETURN { allowed: false, reason: 'FEATURE_DISABLED' }
+    │
+    ├── 2. Origin membership check
+    │   membership = getMembership(identityId, sourceCommunityId)
+    │   IF NOT membership OR membership.status != 'active':
+    │       RETURN { allowed: false, reason: 'NOT_MEMBER_OF_ORIGIN' }
+    │
+    ├── 3. Destination membership check
+    │   destMembership = getMembership(identityId, destCommunityId)
+    │   IF destMembership AND destMembership.status == 'active':
+    │       RETURN { allowed: true, mode: 'MEMBER' }
+    │
+    ├── 4. Destination visibility check
+    │   community = getCommunity(destCommunityId)
+    │   │
+    │   ├── IF visibility == 'public':
+    │   │       Check rate limit, then RETURN { allowed: true, mode: 'VISITOR' }
+    │   │
+    │   ├── IF visibility == 'private':
+    │   │       RETURN { allowed: false, reason: 'PRIVATE_COMMUNITY' }
+    │   │
+    │   └── IF visibility == 'invite_only':
+    │           RETURN { allowed: false, reason: 'INVITE_REQUIRED', action: 'show_join_request' }
+    │
+    └── 5. Rate limit check (visitors only)
+        IF mode == 'VISITOR':
+            travelCount = redis.incr(`portal:travel:${identityId}`)
+            IF travelCount > 3:
+                RETURN { allowed: false, reason: 'RATE_LIMITED' }
+```
+
+#### 3.3.2 Access Mode Comparison
+
+| Aspect | Visitor Mode | Member Mode |
+|--------|--------------|-------------|
+| Authorization | `world:connect`, `world:move`, `chat:view` | Full role-based permissions |
 | World Access | Central Hub only | All zones |
-| XP Earning | None | Normal |
-| Chat | View only | Full participation |
-| Duration | 5 minutes max | Unlimited |
+| Zone Enforcement | Server blocks movement to other zones | No zone restrictions |
+| XP Earning | Disabled | Normal |
+| Chat | View only (no send) | Full participation |
+| Duration | 5 minutes, then auto-teleport | Unlimited |
 | Rate Limit | 3 travels/hour | N/A |
+| Member List | Hidden | Visible per role |
+| Admin Actions | Denied | Per role |
+| Gamification | Frozen | Active |
+
+#### 3.3.3 Visitor Permission Set
 
 ```typescript
-// Visitor authorization check
-async function authorizeVisitorAccess(
+// Explicit visitor permissions (no inheritance)
+const VISITOR_PERMISSIONS: Permission[] = [
+  'world:connect',       // Connect to room as visitor
+  'world:move',          // Move within allowed zones
+  'chat:view',           // View chat messages
+  'community:view_basic' // View community name and public info only
+];
+
+// Explicitly denied for visitors (even if public community)
+const VISITOR_DENIED: Permission[] = [
+  'member:view_list',        // No member list access
+  'gamification:view_own',   // No gamification in visited community
+  'gamification:earn_xp',    // No XP earning
+  'chat:send',               // No chat sending
+  'community:view_settings', // No settings access
+  'world:portal_travel'      // No chained portal travel from visited community
+];
+```
+
+#### 3.3.4 Complete Travel Authorization Implementation
+
+```typescript
+interface TravelAuthResult {
+  allowed: boolean;
+  mode?: 'MEMBER' | 'VISITOR';
+  reason?: string;
+  action?: string;
+  visitor_session?: VisitorSession;
+}
+
+async function authorizePortalTravel(
   identityId: number,
-  targetCommunityId: number
-): Promise<{ allowed: boolean; reason?: string }> {
-  // 1. Check if already a member
-  const membership = await getMembership(identityId, targetCommunityId);
-  if (membership) {
-    return { allowed: true }; // Members always allowed
+  sourceCommunityId: number,
+  destCommunityId: number
+): Promise<TravelAuthResult> {
+  // 1. Feature flag check
+  if (!isFeatureEnabled('FEATURE_PORTAL_TRAVEL')) {
+    return { allowed: false, reason: 'FEATURE_DISABLED' };
   }
 
-  // 2. Check rate limit (3 portal travels per hour)
-  const travelCount = await redis.incr(`portal:travel:${identityId}`);
+  // 2. Origin membership - must be active member of source
+  const sourceMembership = await getMembership(identityId, sourceCommunityId);
+  if (!sourceMembership || sourceMembership.status !== 'active') {
+    return { allowed: false, reason: 'NOT_MEMBER_OF_ORIGIN' };
+  }
+
+  // 3. Check if already member of destination
+  const destMembership = await getMembership(identityId, destCommunityId);
+  if (destMembership && destMembership.status === 'active') {
+    // Full member access - emit event and allow
+    await emit('world.portal.traveled', {
+      identity_id: identityId,
+      from_community_id: sourceCommunityId,
+      to_community_id: destCommunityId,
+      visitor_mode: false
+    });
+    return { allowed: true, mode: 'MEMBER' };
+  }
+
+  // 4. Check destination visibility
+  const destCommunity = await getCommunity(destCommunityId);
+
+  if (destCommunity.visibility === 'private') {
+    return { allowed: false, reason: 'PRIVATE_COMMUNITY' };
+  }
+
+  if (destCommunity.visibility === 'invite_only') {
+    return {
+      allowed: false,
+      reason: 'INVITE_REQUIRED',
+      action: 'show_join_request'
+    };
+  }
+
+  // 5. Public community - check visitor rate limit
+  const travelKey = `portal:travel:${identityId}`;
+  const travelCount = await redis.incr(travelKey);
   if (travelCount === 1) {
-    await redis.expire(`portal:travel:${identityId}`, 3600);
+    await redis.expire(travelKey, 3600); // 1 hour window
   }
   if (travelCount > 3) {
     return { allowed: false, reason: 'RATE_LIMITED' };
   }
 
-  // 3. Check community allows visitors
-  const community = await getCommunity(targetCommunityId);
-  if (community.visibility === 'private') {
-    return { allowed: false, reason: 'PRIVATE_COMMUNITY' };
+  // 6. Create visitor session
+  const visitorSession: VisitorSession = {
+    identity_id: identityId,
+    source_community_id: sourceCommunityId,
+    destination_community_id: destCommunityId,
+    started_at: new Date(),
+    expires_at: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    allowed_zones: ['central_hub'],
+    permissions: VISITOR_PERMISSIONS
+  };
+
+  // Store in Redis with TTL
+  await redis.setex(
+    `visitor:${identityId}:${destCommunityId}`,
+    300, // 5 minutes
+    JSON.stringify(visitorSession)
+  );
+
+  // Emit travel event
+  await emit('world.portal.traveled', {
+    identity_id: identityId,
+    from_community_id: sourceCommunityId,
+    to_community_id: destCommunityId,
+    visitor_mode: true
+  });
+
+  return {
+    allowed: true,
+    mode: 'VISITOR',
+    visitor_session: visitorSession
+  };
+}
+```
+
+#### 3.3.5 Visitor Session Enforcement
+
+```typescript
+// Middleware for visitor zone enforcement
+function enforceVisitorZone(
+  identityId: number,
+  communityId: number,
+  targetZone: string
+): { allowed: boolean; message?: string } {
+  // Check if visitor session exists
+  const sessionKey = `visitor:${identityId}:${communityId}`;
+  const session = await redis.get(sessionKey);
+
+  if (!session) {
+    // Not a visitor, must be a member - allow all zones
+    return { allowed: true };
+  }
+
+  const visitorSession = JSON.parse(session);
+
+  // Check if session expired
+  if (new Date() > new Date(visitorSession.expires_at)) {
+    await handleVisitorExpiry(identityId, communityId);
+    return { allowed: false, message: 'Visit session expired' };
+  }
+
+  // Check zone access
+  if (!visitorSession.allowed_zones.includes(targetZone)) {
+    return {
+      allowed: false,
+      message: 'This area is for community members only'
+    };
   }
 
   return { allowed: true };
+}
+
+// Handle visitor session expiry
+async function handleVisitorExpiry(
+  identityId: number,
+  communityId: number
+): Promise<void> {
+  // Get visitor session to find origin
+  const sessionKey = `visitor:${identityId}:${communityId}`;
+  const session = await redis.get(sessionKey);
+
+  if (session) {
+    const visitorSession = JSON.parse(session);
+
+    // Clean up session
+    await redis.del(sessionKey);
+
+    // Emit timeout event
+    await emit('world.visitor.timeout', {
+      identity_id: identityId,
+      visited_community_id: communityId,
+      origin_community_id: visitorSession.source_community_id
+    });
+
+    // Teleport back to origin community
+    await teleportToOrigin(identityId, visitorSession.source_community_id);
+  }
 }
 ```
 
@@ -994,4 +1194,4 @@ CREATE TABLE security_audit_log (
 
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
 
-<!-- Last Updated: 2026-01-18 - Added Section 2.1A: Age Verification Authorization, updated Endpoint Matrix with Age Level column -->
+<!-- Last Updated: 2026-01-19 - Step 5: Expanded Section 3.3 Visitor Mode with travel gating flow, permission sets, and session enforcement -->

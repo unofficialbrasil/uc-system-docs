@@ -80,8 +80,14 @@ Examples:
 | `world.session.ended` | Disconnected | `{ duration_seconds, community_id }` | Server |
 | `world.zone.entered` | Entered zone | `{ zone_type, from_zone, community_id }` | Server |
 | `world.zone.exited` | Left zone | `{ zone_type, duration_seconds, community_id }` | Server |
-| `world.portal.activated` | User enters portal zone | `{ portal_direction, destination_community_id, destination_name, reason_code }` | Server |
-| `world.portal.traveled` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, travel_reason }` | Server |
+| `world.portal.activated` | User enters portal zone | `{ portal_direction, destination_community_id, destination_name, reason_codes }` | Server |
+| `world.portal.traveled` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, visitor_mode }` | Server |
+| `world.portal.card.viewed` | Portal card UI opened | `{ portal_direction, destination_community_id, reason_codes, confidence }` | Client |
+| `world.portal.why.clicked` | User expands "Why" explanation | `{ portal_direction, destination_community_id }` | Client |
+| `world.portal.hide.clicked` | User hides a portal neighbor | `{ portal_direction, destination_community_id, hidden_neighbor_id }` | Client |
+| `world.portal.report.submitted` | User reports portal issue | `{ source_community_id, destination_community_id, reason, report_id }` | Server |
+| `world.visitor.timeout` | Visitor session expired | `{ visited_community_id, origin_community_id, duration_seconds }` | Server |
+| `world.visitor.zone_blocked` | Visitor tried to enter restricted zone | `{ visited_community_id, attempted_zone, allowed_zones }` | Server |
 | `world.presence.updated` | Position changed | `{ zone_type, community_id }` | Server (sampled) |
 
 **Canonical Zone IDs** (defined in `uc-world/shared/src/zones.ts`):
@@ -750,4 +756,4 @@ function validateEventSchema(event: BaseEvent): void {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 3: Daily aggregation - added Living Graph aggregates (Section 7.1.1), aggregate examples -->
+<!-- Last Updated: 2026-01-19 - Step 5: Added portal UI interaction events (card.viewed, why.clicked, hide.clicked, report.submitted, visitor.timeout, visitor.zone_blocked) -->

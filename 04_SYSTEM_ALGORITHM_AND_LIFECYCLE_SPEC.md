@@ -963,6 +963,293 @@ SERVER (Colyseus):
             -- Restore player state
 ```
 
+### 8.5 Portal Rendering and Travel (Living Graph Step 5)
+
+Portals connect communities in UC World, driven by the Living Graph or curated assignments.
+
+#### 8.5.1 Portal Loading on Room Init
+
+```
+SERVER (Colyseus room onCreate/onJoin):
+    -- Load portal assignments for this community
+    portalAssignments = SELECT * FROM community_portals
+        WHERE community_id = ? AND period_start = (SELECT MAX(period_start) FROM community_portals)
+
+    -- Build portal state for each slot
+    FOR slot IN ['NE', 'E', 'SE', 'SW', 'W', 'NW']:
+        assignment = portalAssignments.find(p => p.slot == slot)
+
+        IF assignment AND assignment.neighbor_community_id:
+            neighbor = getCommunity(assignment.neighbor_community_id)
+            state.portals[slot] = {
+                active: true,
+                destination_community_id: neighbor.id,
+                destination_name: neighbor.name,
+                destination_visibility: neighbor.visibility,  -- 'public', 'private', 'invite_only'
+                reason_codes: assignment.reason_codes,
+                reason_details: assignment.reason_details,
+                data_window_days: 28,
+                confidence: assignment.confidence,
+                assignment_type: assignment.assignment_type
+            }
+        ELSE:
+            state.portals[slot] = { active: false }
+
+CLIENT (on state sync):
+    FOR slot, portal IN state.portals:
+        IF portal.active:
+            renderPortalVisual(slot, portal)
+        ELSE:
+            renderEmptyPortal(slot)
+```
+
+#### 8.5.2 Portal Card UI Requirements
+
+When a user enters a portal zone, show the Portal Card UI:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      PORTAL CARD UI                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │  [Community Avatar]                                        │  │
+│  │                                                            │  │
+│  │  Lendas do Futebol                                         │  │
+│  │  Public Community • 127 members                            │  │
+│  │                                                            │  │
+│  │  ┌────────────────────────────────────────────────────┐  │  │
+│  │  │  Why this portal?                                   │  │  │
+│  │  │  • Many members in common                           │  │  │
+│  │  │  • Similar activity patterns                        │  │  │
+│  │  │  Based on last 28 days                              │  │  │
+│  │  │  Confidence: High                                   │  │  │
+│  │  └────────────────────────────────────────────────────┘  │  │
+│  │                                                            │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐               │  │
+│  │  │  Visit   │  │   Why?   │  │  Hide    │               │  │
+│  │  │  (5 min) │  │          │  │  Portal  │               │  │
+│  │  └──────────┘  └──────────┘  └──────────┘               │  │
+│  │                                                            │  │
+│  │  ┌──────────┐                                            │  │
+│  │  │  Report  │                                            │  │
+│  │  │  Issue   │                                            │  │
+│  │  └──────────┘                                            │  │
+│  │                                                            │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Portal Card Fields:**
+
+| Field | Source | Display Logic |
+|-------|--------|---------------|
+| Community name | `community.name` | Always shown |
+| Visibility badge | `community.visibility` | "Public", "Private", or "Invite Only" |
+| Member count | `community.member_count` | Only for public communities |
+| Reason codes | `portal.reason_codes[]` | Render as human-readable bullets |
+| Data window | `portal.data_window_days` | "Based on last N days" |
+| Confidence | `portal.confidence` | "Low", "Medium", "High" |
+
+**Reason Code to Display Text Mapping:**
+
+| Reason Code | Display Text |
+|-------------|--------------|
+| `shared_members_high` | "Many members in common" |
+| `cross_visits_high` | "Frequently visited by your community" |
+| `similar_activity_patterns` | "Similar activity patterns" |
+| `curated` | "Recommended by community admins" |
+| `safety_override` | "Limited portal (under review)" |
+
+#### 8.5.3 Travel Gating Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                USER CLICKS "VISIT" ON PORTAL                      │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+               ┌───────────────────────────────┐
+               │  FEATURE_PORTAL_TRAVEL        │
+               │  enabled?                     │
+               └───────────────────────────────┘
+                               │
+              ┌────────────────┴────────────────┐
+              │                                 │
+              ▼                                 ▼
+    ┌─────────────────┐              ┌─────────────────┐
+    │  Disabled       │              │  Enabled        │
+    │  Show "Coming   │              │  Continue       │
+    │  Soon" message  │              │                 │
+    └─────────────────┘              └─────────────────┘
+                                              │
+                                              ▼
+                              ┌───────────────────────────────┐
+                              │  Check origin membership      │
+                              │  User must be ACTIVE member   │
+                              │  of current community         │
+                              └───────────────────────────────┘
+                                              │
+                             ┌────────────────┴────────────────┐
+                             │                                 │
+                             ▼                                 ▼
+                   ┌─────────────────┐              ┌─────────────────┐
+                   │  Not a member   │              │  Active member  │
+                   │  Deny travel    │              │  Continue       │
+                   │  (should not    │              │                 │
+                   │  reach here)    │              │                 │
+                   └─────────────────┘              └─────────────────┘
+                                                            │
+                                                            ▼
+                                            ┌───────────────────────────────┐
+                                            │  Check destination community  │
+                                            │  visibility                   │
+                                            └───────────────────────────────┘
+                                                            │
+              ┌─────────────────────────────────────────────┼─────────────────────────────┐
+              │                                             │                             │
+              ▼                                             ▼                             ▼
+    ┌─────────────────┐                          ┌─────────────────┐          ┌─────────────────┐
+    │  PUBLIC         │                          │  PRIVATE        │          │  INVITE_ONLY    │
+    │                 │                          │                 │          │                 │
+    │  Check if user  │                          │  Check if user  │          │  Check if user  │
+    │  is member      │                          │  is member      │          │  is member      │
+    └─────────────────┘                          └─────────────────┘          └─────────────────┘
+              │                                             │                             │
+    ┌─────────┴─────────┐                       ┌──────────┴──────────┐       ┌──────────┴──────────┐
+    │                   │                       │                     │       │                     │
+    ▼                   ▼                       ▼                     ▼       ▼                     ▼
+┌────────┐       ┌───────────┐          ┌────────┐            ┌───────────┐ ┌────────┐      ┌───────────┐
+│ Member │       │Non-member │          │ Member │            │Non-member │ │ Member │      │Non-member │
+│Full    │       │VISITOR    │          │Full    │            │DENY       │ │Full    │      │Show join  │
+│Access  │       │MODE       │          │Access  │            │"Private   │ │Access  │      │request    │
+│        │       │(5 min)    │          │        │            │community" │ │        │      │flow       │
+└────────┘       └───────────┘          └────────┘            └───────────┘ └────────┘      └───────────┘
+```
+
+#### 8.5.4 Visitor Mode Constraints
+
+When a user enters a community via portal without membership (public communities only):
+
+| Constraint | Value | Rationale |
+|------------|-------|-----------|
+| Max duration | 5 minutes | Encourage membership for extended access |
+| Accessible zones | Central Hub only | Limit exposure without membership |
+| XP earning | Disabled | Must be member to earn |
+| Chat participation | View only | Lurking allowed, participation requires membership |
+| Rate limit | 3 travels/hour | Prevent abuse |
+| Member list access | Denied | Privacy protection |
+| Admin actions | Denied | Authorization boundary |
+
+**Visitor Mode Server Logic:**
+
+```typescript
+// On visitor entering destination community
+function handleVisitorEntry(
+  identityId: number,
+  sourceCommunityId: number,
+  destCommunityId: number
+): VisitorSession {
+  // Create visitor session with expiry
+  const session: VisitorSession = {
+    identity_id: identityId,
+    source_community_id: sourceCommunityId,
+    destination_community_id: destCommunityId,
+    started_at: new Date(),
+    expires_at: addMinutes(new Date(), 5),
+    allowed_zones: ['central_hub'],
+    permissions: ['world:connect', 'world:move', 'chat:view']
+  };
+
+  // Store in Redis with 5-minute TTL
+  await redis.setex(
+    `visitor:${identityId}:${destCommunityId}`,
+    300,
+    JSON.stringify(session)
+  );
+
+  // Emit travel event
+  emit('world.portal.traveled', {
+    identity_id: identityId,
+    from_community_id: sourceCommunityId,
+    to_community_id: destCommunityId,
+    visitor_mode: true
+  });
+
+  return session;
+}
+
+// Visitor zone enforcement
+function onVisitorMove(visitor: VisitorSession, targetZone: string): boolean {
+  if (!visitor.allowed_zones.includes(targetZone)) {
+    // Block movement, show "Members only" message
+    return false;
+  }
+  return true;
+}
+
+// Visitor timeout handling
+function onVisitorTimeout(identityId: number, destCommunityId: number): void {
+  // Teleport visitor back to their origin community
+  teleportToOrigin(identityId);
+
+  // Show "Visit ended" UI with join CTA
+  sendMessage(identityId, {
+    type: 'visitor_timeout',
+    message: 'Your visit has ended. Join this community for full access!',
+    actions: [
+      { label: 'Join Community', action: 'join_request' },
+      { label: 'Return Home', action: 'close' }
+    ]
+  });
+}
+```
+
+#### 8.5.5 Portal User Controls
+
+Users have agency over their portal experience:
+
+| Control | Action | Persistence |
+|---------|--------|-------------|
+| "Hide Portal" | Hide this specific neighbor from portal UI | Per-user, stored in `user_portal_preferences` |
+| "Why?" | Expand reason code explanation | UI only |
+| "Report Issue" | Flag portal for ops review | Creates `portal_reports` entry |
+
+**Hide Portal Implementation:**
+
+```sql
+-- User preferences for hidden portals
+CREATE TABLE user_portal_preferences (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    identity_id INT NOT NULL,
+    community_id INT NOT NULL,           -- User's home community
+    hidden_neighbor_id INT NOT NULL,     -- Community to hide from portals
+    hidden_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_pref (identity_id, community_id, hidden_neighbor_id),
+    FOREIGN KEY (identity_id) REFERENCES identities(id),
+    FOREIGN KEY (community_id) REFERENCES communities(id),
+    FOREIGN KEY (hidden_neighbor_id) REFERENCES communities(id)
+);
+
+-- Portal reports for ops review
+CREATE TABLE portal_reports (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    reporter_identity_id INT NOT NULL,
+    source_community_id INT NOT NULL,
+    destination_community_id INT NOT NULL,
+    reason ENUM('inappropriate', 'spam', 'safety', 'other') NOT NULL,
+    details TEXT,
+    status ENUM('open', 'reviewed', 'actioned', 'dismissed') DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL,
+    reviewed_by INT NULL,
+    FOREIGN KEY (reporter_identity_id) REFERENCES identities(id),
+    FOREIGN KEY (source_community_id) REFERENCES communities(id),
+    FOREIGN KEY (destination_community_id) REFERENCES communities(id)
+);
+```
+
 ---
 
 ## 9. Background Jobs and Async Processing
@@ -1334,4 +1621,4 @@ Session: created → active → expired
 
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
-<!-- Last Updated: 2026-01-19 - Updated zone IDs to canonical format (Section 8.3) -->
+<!-- Last Updated: 2026-01-19 - Step 5: Added Section 8.5 Portal Rendering and Travel with visitor mode, travel gating, and user controls -->

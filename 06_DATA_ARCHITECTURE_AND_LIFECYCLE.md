@@ -447,6 +447,45 @@ CREATE TABLE community_graph_overrides (
     FOREIGN KEY (created_by) REFERENCES identities(id) ON DELETE SET NULL
 );
 
+-- Living Graph: User portal preferences (Step 5 - user agency)
+-- Allows users to hide specific portals from their UI
+CREATE TABLE user_portal_preferences (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    identity_id INT NOT NULL,
+    community_id INT NOT NULL,               -- User's home community
+    hidden_neighbor_id INT NOT NULL,         -- Community to hide from portals
+    hidden_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_pref (identity_id, community_id, hidden_neighbor_id),
+    INDEX idx_user_comm (identity_id, community_id),
+    FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (hidden_neighbor_id) REFERENCES communities(id) ON DELETE CASCADE
+);
+
+-- Living Graph: Portal reports for ops review (Step 5 - user agency)
+-- Allows users to report inappropriate portal connections
+CREATE TABLE portal_reports (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    reporter_identity_id INT NOT NULL,
+    source_community_id INT NOT NULL,        -- Community where user saw portal
+    destination_community_id INT NOT NULL,   -- Destination being reported
+    reason ENUM('inappropriate', 'spam', 'safety', 'other') NOT NULL,
+    details TEXT NULL,                       -- Optional user-provided details
+    status ENUM('open', 'reviewed', 'actioned', 'dismissed') DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL,
+    reviewed_by INT NULL,                    -- Admin who reviewed
+    action_taken VARCHAR(255) NULL,          -- What was done
+
+    INDEX idx_status (status, created_at DESC),
+    INDEX idx_dest (destination_community_id, status),
+    FOREIGN KEY (reporter_identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (destination_community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES identities(id) ON DELETE SET NULL
+);
+
 -- Living Graph: Aggregation job run tracking (Step 3 requirement)
 -- Used to track consecutive successful runs for 7-day stability gate
 CREATE TABLE aggregation_job_runs (
@@ -798,4 +837,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 4: Updated graph tables (community_graph_runs, community_edges, community_portals, community_graph_overrides) to match Section 8 spec -->
+<!-- Last Updated: 2026-01-19 - Step 5: Added user_portal_preferences and portal_reports tables for user agency in portal UI -->
