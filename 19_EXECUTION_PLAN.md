@@ -217,29 +217,32 @@ Operational rule for launch:
 
 ### 4.3.1 Canonical zone list (internal IDs must not change)
 
-| Zone ID (canonical) | Zone name    | Count | Why it exists                                                  |
-| ------------------- | ------------ | ----: | -------------------------------------------------------------- |
-| onboarding          | Onboarding   |     1 | Reduce friction, orient, first “competence win” (Fogg Ability) |
-| hub                 | Hub          |     1 | Discovery and public presence (servicescape “town square”)     |
-| workshop            | Workshop     |     1 | Contribution and co-creation (Ability prompts)                 |
-| lounge_w / lounge_e | Lounges      |     2 | Semi-private bonding, reduce crowding                          |
-| brand               | Brand Zone   |     1 | Contextual partner layer (brand-safe, opt-in)                  |
-| quiet               | Quiet Room   |     1 | Refuge; proxemic relief; safety                                |
-| portal_[dir]        | Portal zones |     6 | Exploration + bridging across communities                      |
+| Zone ID (canonical) | Zone name       | Count | Why it exists                                                  |
+| ------------------- | --------------- | ----: | -------------------------------------------------------------- |
+| `onboarding`        | Welcome         |     1 | Reduce friction, orient, first "competence win" (Fogg Ability) |
+| `central_hub`       | Central Hub     |     1 | Discovery and public presence (servicescape "town square")     |
+| `workshop`          | Workshop        |     1 | Contribution and co-creation (Ability prompts)                 |
+| `social_west`       | Lounge West     |     1 | Semi-private bonding, reduce crowding                          |
+| `social_east`       | Lounge East     |     1 | Semi-private bonding, reduce crowding                          |
+| `brand_zone`        | Partner Space   |     1 | Contextual partner layer (brand-safe, opt-in)                  |
+| `quiet_refuge`      | Quiet Room      |     1 | Refuge; proxemic relief; safety                                |
+| `portal_*`          | Portal zones    |     6 | Exploration + bridging across communities                      |
+
+> **Note:** Zone IDs are defined in `uc-world/shared/src/zones.ts`. Portal zones use the pattern `portal_<direction>` where direction is `ne`, `e`, `se`, `sw`, `w`, or `nw`.
 
 ### 4.3.2 Zone → Behavioral intent → Technical trigger → Metric mapping (required)
 
 This is the operational contract the build must satisfy.
 
-| Zone       | Behavioral intent (science)                                  | Technical triggers (events/UI/system)                                                 | Success metrics (non-manipulative)                                     | Guardrails (No-Go)                                          |
-| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Onboarding | Increase Ability; reduce cognitive load (Fogg)               | `world.zone.entered` → show tutorial UI; assign first mission; show “next step”       | Onboarding completion; time-to-first-hub; first mission completion     | No forced loops; no deceptive countdowns                    |
-| Hub        | Belonging via light presence; discovery (servicescape + SDT) | `world.zone.entered` → show “what’s happening” UI; density indicator; navigation cues | Unique encounters; voluntary movement to lounges/workshop; return rate | No fake “busy” signals; no simulated users                  |
-| Workshop   | Competence + contribution (Fogg Facilitator prompts)         | Enter Workshop → show tools UI; mission prompts aligned to context                    | UGC created; mission completion; “help given” proxies                  | No coercive prompts; no public shaming                      |
-| Lounges    | Bonding social capital; reduce crowding (proxemics)          | Enter Lounge → enable chat affordances; optional proximity voice (if implemented)     | Reciprocity proxy; repeat lounge visits; reduced hub churn             | No forced pairing; no surveillance of private conversations |
-| Brand Zone | Contextual value exchange; autonomy preserved                | Enter Brand → show opt-in offers; log aggregated visit; explicit lead consent flows   | Opt-in conversions; lead quality; user satisfaction                    | No dark patterns; no targeting; no PII exposure to partners |
-| Quiet Room | Refuge; safety; autonomy                                     | Enter Quiet → mute audio; reduce stimuli; offer “report/help” UI                      | Quiet usage when hub crowded; reduction in session drop-offs           | No “time-out punishment”; must be user-controlled           |
-| Portals    | Exploration without coercion; anti-bubble bridges            | Enter portal zone → show portal card(s) with reason codes; `world.portal.activated`   | Cross-community visits; bounce rate; diversity (entropy)               | No forced travel; no hidden auto-join                       |
+| Zone ID | Behavioral intent (science)                                  | Technical triggers (events/UI/system)                                                 | Success metrics (non-manipulative)                                     | Guardrails (No-Go)                                          |
+| ------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `onboarding` | Increase Ability; reduce cognitive load (Fogg)               | `world.zone.entered` → show tutorial UI; assign first mission; show "next step"       | Onboarding completion; time-to-first-hub; first mission completion     | No forced loops; no deceptive countdowns                    |
+| `central_hub` | Belonging via light presence; discovery (servicescape + SDT) | `world.zone.entered` → show "what's happening" UI; density indicator; navigation cues | Unique encounters; voluntary movement to lounges/workshop; return rate | No fake "busy" signals; no simulated users                  |
+| `workshop` | Competence + contribution (Fogg Facilitator prompts)         | Enter Workshop → show tools UI; mission prompts aligned to context                    | UGC created; mission completion; "help given" proxies                  | No coercive prompts; no public shaming                      |
+| `social_*` | Bonding social capital; reduce crowding (proxemics)          | Enter Lounge → enable chat affordances; optional proximity voice (if implemented)     | Reciprocity proxy; repeat lounge visits; reduced hub churn             | No forced pairing; no surveillance of private conversations |
+| `brand_zone` | Contextual value exchange; autonomy preserved                | Enter Brand → show opt-in offers; log aggregated visit; explicit lead consent flows   | Opt-in conversions; lead quality; user satisfaction                    | No dark patterns; no targeting; no PII exposure to partners |
+| `quiet_refuge` | Refuge; safety; autonomy                                     | Enter Quiet → mute audio; reduce stimuli; offer "report/help" UI                      | Quiet usage when hub crowded; reduction in session drop-offs           | No "time-out punishment"; must be user-controlled           |
+| `portal_*` | Exploration without coercion; anti-bubble bridges            | Enter portal zone → show portal card(s) with reason codes; `world.portal.activated`   | Cross-community visits; bounce rate; diversity (entropy)               | No forced travel; no hidden auto-join                       |
 
 ---
 
@@ -1001,4 +1004,4 @@ Produce definitive, executable plan that unifies UC World (servicescape), Living
 * No graph-driven portals until event taxonomy + consent-gated ingestion + daily aggregates are stable.
 * No portal travel until membership/visibility gating is implemented and tested.
 * No semantic/chat-derived signals until governance + consent + minimization proof exists.
-<!-- Last Reviewed: 2026-01-18 - No updates needed -->
+<!-- Last Updated: 2026-01-19 - Updated zone IDs to canonical format (Sections 4.3.1, 4.3.2) -->

@@ -193,7 +193,7 @@ async function initializeScheduler(queue: Queue): Promise<void> {
   for (const job of scheduledJobs) {
     await queue.add(job.name, job.data, {
       ...job.opts,
-      repeat: { pattern: job.pattern, tz: 'UTC' }
+      repeat: { pattern: job.pattern, tz: 'America/Sao_Paulo' }
     });
     console.log(`Scheduled job: ${job.name} at ${job.pattern}`);
   }
@@ -1060,4 +1060,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-18 - Added age queue jobs (Section 1.2) -->
+<!-- Last Updated: 2026-01-19 - Fixed timezone code example (tz: America/Sao_Paulo) -->

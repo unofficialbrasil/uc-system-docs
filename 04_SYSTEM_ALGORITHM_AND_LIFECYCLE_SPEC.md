@@ -921,15 +921,18 @@ CLIENT (on state change):
 
 ### 8.3 Zone Events
 
-| Zone | On Enter | On Exit |
-|------|----------|---------|
-| Central Hub | Log presence | - |
-| Workshop | Show tools UI | Hide tools UI |
-| Lounge | Enable chat | - |
-| Brand Zone | Log visit for analytics | - |
-| Quiet Room | Mute all audio | Unmute |
-| Onboarding | Show tutorial | - |
-| Portal (any) | Show portal UI | Hide portal UI |
+| Zone ID | Display Name | On Enter | On Exit |
+|---------|--------------|----------|---------|
+| `central_hub` | Central Hub | Log presence | - |
+| `workshop` | Workshop | Show tools UI | Hide tools UI |
+| `social_east` | Lounge East | Enable chat | - |
+| `social_west` | Lounge West | Enable chat | - |
+| `brand_zone` | Partner Space | Log visit for analytics | - |
+| `quiet_refuge` | Quiet Room | Mute all audio | Unmute |
+| `onboarding` | Welcome | Show tutorial | - |
+| `portal_*` | Portal zones | Show portal UI | Hide portal UI |
+
+> **Note:** Zone IDs are defined in `uc-world/shared/src/zones.ts`. Portal zones use the pattern `portal_<direction>` where direction is `ne`, `e`, `se`, `sw`, `w`, or `nw`.
 
 ### 8.4 Disconnect Handling
 
@@ -1331,4 +1334,4 @@ Session: created → active → expired
 
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
-<!-- Last Updated: 2026-01-18 - Added Section 5A: Age Verification Gates -->
+<!-- Last Updated: 2026-01-19 - Updated zone IDs to canonical format (Section 8.3) -->

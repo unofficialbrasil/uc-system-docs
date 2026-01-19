@@ -83,6 +83,24 @@ Examples:
 | `world.portal_travel` | Portal travel completed | `{ source_community_id, destination_community_id, portal_direction, travel_reason }` | Server |
 | `world.presence.updated` | Position changed | `{ zone_type, community_id }` | Server (sampled) |
 
+**Canonical Zone IDs** (defined in `uc-world/shared/src/zones.ts`):
+
+| Zone ID | Display Name | Type |
+|---------|--------------|------|
+| `central_hub` | Central Hub | Interior |
+| `workshop` | Workshop | Interior |
+| `social_east` | Lounge East | Interior |
+| `social_west` | Lounge West | Interior |
+| `brand_zone` | Partner Space | Interior |
+| `quiet_refuge` | Quiet Room | Interior |
+| `onboarding` | Welcome | Interior |
+| `portal_ne` | Northeast Portal | Portal |
+| `portal_e` | East Portal | Portal |
+| `portal_se` | Southeast Portal | Portal |
+| `portal_sw` | Southwest Portal | Portal |
+| `portal_w` | West Portal | Portal |
+| `portal_nw` | Northwest Portal | Portal |
+
 ### 2.5 WhatsApp Activity Events (Living Graph)
 
 | Event Name | Trigger | Properties | Source |
@@ -203,7 +221,7 @@ interface BaseEvent {
   "anonymous_id": "a1b2c3d4e5f6...",
   "community_id": 1,
   "properties": {
-    "zone_type": "lounge_east",
+    "zone_type": "social_east",
     "from_zone": "central_hub"
   }
 }
@@ -517,4 +535,4 @@ async function trackEvent(event: BaseEvent, identityId: number) {
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-18 - Added Section 2.6: Age Verification Events -->
+<!-- Last Updated: 2026-01-19 - Added canonical zone ID table (Section 2.4), fixed zone_type example -->

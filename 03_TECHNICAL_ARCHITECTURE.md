@@ -1,7 +1,7 @@
 # Technical Architecture
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-19
 **Version:** 1.0.0
 
 ---
@@ -59,7 +59,13 @@
 │    │   Three.js      │◄────────────►│    Colyseus     │                     │
 │    │   (Client)      │  WebSocket   │    (Server)     │                     │
 │    │   Port 3005     │              │   Port 3006     │                     │
-│    └─────────────────┘              └─────────────────┘                     │
+│    └─────────────────┘              └────────┬────────┘                     │
+│                                              │                               │
+│                                     ┌────────▼────────┐                     │
+│                                     │  TimescaleDB    │                     │
+│                                     │  (PostgreSQL)   │                     │
+│                                     │   Port 5432     │                     │
+│                                     └─────────────────┘                     │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -80,7 +86,8 @@
 | Webhooks | Fastify + BullMQ | 4101 | app-uc-webhooks-1 | Meta webhook processing |
 | UC World Client | Three.js | 3005 | app-uc-world-1 | 3D world frontend |
 | UC World Server | Colyseus | 3006 | app-uc-world-1 | Multiplayer server |
-| Database | MySQL 8.0 | 3306 | app-uc-api-db-1 | Primary datastore |
+| Database (API) | MySQL 8.0 | 3306 | app-uc-api-db-1 | Primary datastore |
+| Database (World) | TimescaleDB/PG14 | 5432 | uc-world-db | UC World time-series data |
 | Cache | Redis 7.4.6 | 6379 | app-uc-redis-1 | Sessions, cache, queues |
 | Metrics | Prometheus | 9090 | uc-prometheus | Metrics collection |
 | Dashboards | Grafana | 3100 | uc-grafana | Visualization |
@@ -566,4 +573,4 @@ docker-compose.prod.yml
 
 *This document describes the technical architecture as implemented. Changes require updates to this document and logging in DECISION_LOG.md.*
 
-<!-- Last Reviewed: 2026-01-18 - No updates needed -->
+<!-- Last Updated: 2026-01-19 - Added TimescaleDB for UC World (Section 1.1, 1.2) -->
