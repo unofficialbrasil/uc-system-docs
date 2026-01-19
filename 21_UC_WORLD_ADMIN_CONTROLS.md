@@ -21,7 +21,40 @@ This document specifies the administrative camera controls and debug tools avail
 
 ## 2. Admin Authentication
 
-### 2.1 How Admin Status is Verified
+### 2.1 Identity Resolution
+
+UC World supports two access methods:
+
+| Access Method | URL | Identity Source |
+|---------------|-----|-----------------|
+| **Dashboard Embed** | `/world/[tag]` | URL params (`?identityId=X&username=Y`) |
+| **Direct Access** | `world.unofficialcommunities.com.br` | Session cookie via API |
+
+**Identity Resolution Flow (main.ts):**
+
+1. First check URL parameters (iframe embed from dashboard)
+2. If no URL params, fetch from frontend BFF `GET /api/v1/user/me` using session cookie
+3. If both fail, allow anonymous access (no admin features)
+
+```typescript
+// Identity resolution priority
+const urlIdentity = getUserIdentityFromUrl();
+if (urlIdentity.identityId) return urlIdentity; // Iframe embed
+
+const apiIdentity = await fetchUserIdentityFromApi(); // Direct access via BFF
+if (apiIdentity.identityId) return apiIdentity;
+
+return {}; // Anonymous
+```
+
+**Technical Requirements for Direct Access:**
+- Session cookie must have `domain=.unofficialcommunities.com.br` (set in login/signup routes)
+- Frontend BFF must have CORS headers allowing `world.unofficialcommunities.com.br` (set in next.config.mjs)
+- User must be logged in to the main site first
+
+**Note:** UC World calls the frontend BFF (not uc-api directly) because the session is managed by the frontend with a different token format.
+
+### 2.2 How Admin Status is Verified
 
 Admin status is verified **server-side** when a user joins a UC World room:
 
@@ -39,7 +72,7 @@ if (options.identityId) {
 }
 ```
 
-### 2.2 Admin Roles
+### 2.3 Admin Roles
 
 | Role | Permissions |
 |------|-------------|
@@ -55,7 +88,7 @@ if (options.identityId) {
 
 | Key | Action | Description |
 |-----|--------|-------------|
-| **F1** | Toggle Admin Mode | Switches between normal and admin camera |
+| **F2** | Toggle Admin Mode | Switches between normal and admin camera |
 
 When admin mode is activated:
 - Camera unlocks from player position
@@ -280,7 +313,7 @@ interface AdminPlayerInfo {
 ╔═══════════════════════════════════════════════════════════╗
 ║              UC WORLD ADMIN CONTROLS                       ║
 ╠═══════════════════════════════════════════════════════════╣
-║  F1          Toggle Admin Mode                             ║
+║  F2          Toggle Admin Mode                             ║
 ║  ` (backtick) Toggle Debug Overlay                         ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  ORBIT CAMERA (Admin Mode):                                ║
@@ -326,7 +359,7 @@ interface AdminPlayerInfo {
 
 ### 11.1 Admin Mode Not Activating
 
-**Symptom:** F1 does nothing
+**Symptom:** F2 does nothing
 
 **Causes:**
 1. Identity not verified as admin in database
@@ -357,12 +390,28 @@ interface AdminPlayerInfo {
 
 ---
 
-## 12. Version History
+## 12. Technical Notes
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-01-19 | Initial documentation |
+### 12.1 Why F2 Instead of F1?
+
+The admin mode toggle uses **F2** because F1 is reserved by browsers:
+- **Chrome/Edge**: F1 opens browser help
+- **Firefox**: F1 opens OS or browser help
+- **Safari**: F1 triggers system functions
+
+F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-<!-- Last Updated: 2026-01-19 - Initial creation -->
+## 13. Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.2.0 | 2026-01-19 | Fixed direct access: uses frontend BFF with CORS, cookie domain sharing |
+| 1.1.0 | 2026-01-19 | Added direct access support via session cookie API fetch |
+| 1.0.1 | 2026-01-19 | Added debug logging for identity tracking |
+| 1.0.0 | 2026-01-19 | Initial documentation (F2 key for admin mode) |
+
+---
+
+<!-- Last Updated: 2026-01-19 - Added direct access identity resolution -->
