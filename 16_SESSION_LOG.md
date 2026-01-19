@@ -41,6 +41,67 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-19-1
+
+**Date:** 2026-01-19
+**Duration:** ~3 hours
+**Focus Area:** Living Graph Execution Plan - Steps 4-7 Documentation
+
+### Summary
+Completed documentation for Living Graph execution plan Steps 4 through 7, adding comprehensive specifications for the graph schema, build job, portal rendering, dashboards, and guardrails/circuit breakers.
+
+### Changes Made
+
+**Step 4 - Graph Schema + Build Job:**
+- `06_DATA_ARCHITECTURE_AND_LIFECYCLE.md` - Updated graph tables (community_graph_runs, community_edges, community_portals, community_graph_overrides)
+- `08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md` - Added community-graph-build job with full handler, portal assignment logic
+- `11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md` - Updated feature flag defaults, added edge threshold parameters
+
+**Step 5 - Portal Rendering + Travel Gating:**
+- `04_SYSTEM_ALGORITHM_AND_LIFECYCLE_SPEC.md` - Added Section 8.5 Portal Rendering and Travel (card UI, travel gating flow, visitor mode)
+- `06_DATA_ARCHITECTURE_AND_LIFECYCLE.md` - Added user_portal_preferences and portal_reports tables
+- `07_EVENT_AND_ANALYTICS_SPEC.md` - Added portal UI events (card.viewed, why.clicked, hide.clicked, report.submitted, visitor.timeout)
+- `09_SECURITY_AND_AUTHORIZATION_SPEC.md` - Expanded Section 3.3 Visitor Mode with travel authorization flow
+
+**Step 6 - Admin/Ops Dashboards:**
+- `07_EVENT_AND_ANALYTICS_SPEC.md` - Added Living Graph Dashboards (Section 9.3-9.5) with metrics, alerts, exports
+- `06_DATA_ARCHITECTURE_AND_LIFECYCLE.md` - Added dashboard views (v_community_health, v_portal_performance, v_neighbor_stability, etc.)
+- `03_TECHNICAL_ARCHITECTURE.md` - Added Admin Dashboard API Endpoints (Section 2.4)
+- `09_SECURITY_AND_AUTHORIZATION_SPEC.md` - Added dashboard permissions
+
+**Step 7 - Guardrails & Circuit Breakers:**
+- `11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md` - Added Circuit Breaker Behavior Specification (Section 6.4.1)
+- `08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md` - Added Automated Circuit Breaker Triggers
+- `13_RISK_REGISTER.md` - Added RSK-014 through RSK-017 for Living Graph risks
+- `19_EXECUTION_PLAN.md` - Added Section 6.5 Tabletop Exercise Scenarios
+
+### Decisions Made
+- Circuit breakers default to FALSE (off) for safety during rollout
+- K-anon threshold set at 30 active members (7d) for graph participation
+- Churn limit: max 2 portal changes per week per community
+- Exploration slot (NW) rotates while 5 stable slots remain fixed
+- 4 tabletop exercises required before pilot exit
+
+### Issues Encountered
+- None significant - documentation work proceeded smoothly
+
+### Follow-up Items
+- [ ] Step 8: Pilot validation (Lendas VIP satellite-first + A/B)
+- [ ] Step 9: Scale rollout + advanced graph (optional, gated)
+- [ ] Execute tabletop exercises before pilot exit
+- [ ] Implement documented specifications in code
+
+### Metrics at Close
+- Disk: 29%
+- Memory: 51%
+- Load: 1.07
+- Services: 3/4 healthy (webhooks offline)
+
+### Notes
+Session continued from compacted context. Living Graph specification now complete through Step 7. Ready for pilot implementation phase.
+
+---
+
 ## SESS-2026-01-18-1
 
 **Date:** 2026-01-18
