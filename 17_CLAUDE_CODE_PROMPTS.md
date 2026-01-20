@@ -56,7 +56,7 @@ Hi Claude, let's start a development session. Execute the COMPLETE startup check
 
 ## PHASE 1: READ ALL FILES (MANDATORY - NO EXCEPTIONS)
 
-You MUST read ALL 30 files to have full context. No exceptions.
+You MUST read ALL 31 files to have full context. No exceptions.
 
 ### 1.1 Repository CLAUDE.md Files (5 files)
 Read each file completely:
@@ -944,8 +944,8 @@ After completing ALL phases, provide this summary:
 ║                                                                  ║
 ║ FILES LOADED:                                                    ║
 ║   ✓ Repository files: 10/10                                      ║
-║   ✓ System files: 18/18                                          ║
-║   ✓ Total context: 29 files                                      ║
+║   ✓ System files: 21/21                                          ║
+║   ✓ Total context: 31 files                                      ║
 ║                                                                  ║
 ║ INFRASTRUCTURE:                                                  ║
 ║   • VPS: [🟢 Connected / 🔴 Disconnected]                        ║
@@ -1077,7 +1077,7 @@ For EACH of the 10 repository files below, either:
 
 ## PHASE 3: UPDATE ALL SYSTEM FILES (MANDATORY)
 
-For EACH of the 18 system files, either:
+For EACH of the 21 system files, either:
 - **UPDATE** the content if relevant changes were made, OR
 - **ADD** a review stamp at the end: `<!-- Last Reviewed: YYYY-MM-DD - No updates needed -->`
 
@@ -1104,6 +1104,8 @@ Location: `/srv/unofficial/prod/app/uc-system-docs/`
 | 17 | `17_CLAUDE_CODE_PROMPTS.md` | Procedures changed |
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` | Research updated |
 | 19 | `19_EXECUTION_PLAN.md` | Execution steps changed |
+| 20 | `20_ADULT_BY_DESIGN_SPEC.md` | Age verification changed |
+| 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` | Admin features changed |
 
 ### Session Log Entry Template (16_SESSION_LOG.md)
 
@@ -1477,7 +1479,7 @@ Provide this final summary:
 ║                                                                  ║
 ║ FILES UPDATED:                                                   ║
 ║   • Repository files: X/10                                       ║
-║   • System files: X/18                                           ║
+║   • System files: X/21                                           ║
 ║   • Session log: ✓ Added                                         ║
 ║                                                                  ║
 ║ GIT STATUS:                                                      ║
@@ -1526,7 +1528,7 @@ Provide this final summary:
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-Session closed. All 29 files reviewed/updated. Context preserved.
+Session closed. All 31 files reviewed/updated. Context preserved.
 ```
 ```
 
@@ -1589,6 +1591,6 @@ Session closed. All 29 files reviewed/updated. Context preserved.
 
 ---
 
-*Version 6.0 - 2026-01-15 - Added comprehensive verification phases (DB, Queue, E2E, Security, Observability) and GO/NO-GO gates*
+*Version 6.3 - 2026-01-19 - Updated to 31 files (21 system docs), added 20_ADULT_BY_DESIGN_SPEC.md and 21_UC_WORLD_ADMIN_CONTROLS.md*
 
-<!-- Last Reviewed: 2026-01-18 - No updates needed -->
+<!-- Last Updated: 2026-01-19 - Fixed file counts throughout (31 total, 21 system docs) -->
