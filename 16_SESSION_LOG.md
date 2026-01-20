@@ -41,6 +41,128 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-19-2
+
+**Date:** 2026-01-19
+**Duration:** ~1.5 hours
+**Focus Area:** Living Graph Implementation Verification (Steps 2-9)
+
+### Summary
+Verified and tested the complete Living Graph implementation from Steps 2-9 of the execution plan. All steps were already implemented in previous sessions. Made one code change to add portal user controls (Hide/Why?/Report) in UC World client. The Living Graph is now ready for pilot deployment.
+
+### Changes Made
+
+**uc-world (1 file):**
+
+1. **client/src/systems/ZoneManager.ts** (~150 lines added)
+   - Added portal card user controls:
+     - "Hide" button with localStorage persistence
+     - "Why?" modal explaining connection factors
+     - "Report" modal for inappropriate connections
+   - Added `setupPortalCardButtons()` method
+   - Added `handleHidePortal()`, `handleUnhidePortal()` methods
+   - Added `handleWhyPortal()`, `handleReportPortal()` methods
+   - Added `getDetailedReasonExplanations()` for human-readable reasons
+   - Updated `updatePortalCard()` for data window and hidden state
+
+**Git Commits:**
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-world | 2bc7979 | feat(portal): add user controls for Living Graph Step 5 |
+
+### Verification Summary
+
+All Living Graph steps verified as complete:
+
+| Step | Name | Status | Key Verification |
+|------|------|--------|------------------|
+| 0 | Canonical spec alignment | ✅ | Docs in uc-system-docs/ |
+| 1 | Event taxonomy | ✅ | Schema tables exist |
+| 2 | Consent-gated ingestion | ✅ | `hasActiveConsent()` in telemetry |
+| 3 | Daily aggregation job | ✅ | BullMQ @ 04:00 UTC, backfill works |
+| 4 | Graph build job | ✅ | BullMQ @ 04:15 UTC, edges/portals |
+| 5 | Portal rendering | ✅ | Card UI with user controls |
+| 6 | Admin dashboards | ✅ | Health/activity/portal/export endpoints |
+| 7 | Guardrails | ✅ | Kill switches, overrides, churn limit |
+| 8 | Pilot A/B | ✅ | Enrollment, Go/No-Go checks |
+| 9 | Scale + advanced | ✅ | Louvain/Node2Vec infrastructure |
+
+### API Endpoints Tested
+
+All endpoints verified working:
+
+```
+# Step 6 - Dashboards
+GET /v1/admin/graph/overview              ✅ 200
+GET /v1/admin/guardrails/status           ✅ 200
+
+# Step 7 - Guardrails
+GET /v1/admin/guardrails/overrides        ✅ 200
+
+# Step 8 - Pilot
+GET /v1/admin/pilot/overview              ✅ 200
+GET /v1/admin/pilot/ab-comparison         ✅ 200
+GET /v1/admin/pilot/go-no-go              ✅ 200
+
+# Step 9 - Scale
+GET /v1/admin/scale/metrics               ✅ 200
+GET /v1/admin/scale/readiness             ✅ 200 (83% ready)
+GET /v1/admin/scale/config                ✅ 200
+GET /v1/admin/scale/node2vec/status       ✅ 200
+```
+
+### Scale Readiness Status
+
+```
+Score: 83% (5/6 checks passing)
+├── System Resources: ✅ CPU healthy, Memory healthy
+├── Graph Build Stability: ✅ 0 failures in 7 days
+├── Pilot Communities: ❌ 0 active (need 3+)
+├── Pilot Health: ✅ No issues
+├── Guardrails Active: ✅ Enabled
+└── Database Capacity: ✅ 1% used
+```
+
+### Decisions Made
+
+1. **Living Graph Complete**
+   - Decision: All 10 steps (0-9) verified as implemented
+   - Rationale: Endpoints tested, services running, code reviewed
+
+2. **Portal User Controls Design**
+   - Decision: Hide uses localStorage, Why? shows modal, Report shows form
+   - Rationale: User autonomy and transparency per Step 5 DOD
+
+### Issues Encountered
+
+None - all implementations verified working.
+
+### Follow-up Items
+
+For production pilot deployment:
+- [ ] Enroll 3+ pilot communities via `POST /v1/admin/pilot/communities/:id/enroll`
+- [ ] Activate pilots via `POST /v1/admin/pilot/communities/:id/activate`
+- [ ] Monitor Go/No-Go dashboard for 28 days
+- [ ] Complete tabletop exercises (Section 6.5 of execution plan)
+- [ ] Enable scale when readiness reaches 100%
+
+### Metrics at Close
+
+- Disk: ~30%
+- Memory: ~49%
+- Load: ~0.14
+- Services: 4/4 healthy
+- Scale Readiness: 83%
+
+### Notes
+- The execution plan has Steps 0-9 (10 steps, zero-indexed)
+- Step 9 is the final step; there is no Step 10
+- Living Graph is ready for pilot deployment pending community enrollment
+- All feature flags enabled: communityGraph=true, portals=true, portalTravel=true
+
+---
+
 ## SESS-2026-01-19-1
 
 **Date:** 2026-01-19
