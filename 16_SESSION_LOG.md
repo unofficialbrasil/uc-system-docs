@@ -41,6 +41,69 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-20-1
+
+**Date:** 2026-01-20
+**Duration:** ~2 hours
+**Focus Area:** UC World Background Strip Debugging
+
+### Summary
+Extensive debugging session attempting to resolve the background strip issue that appears at the bottom of UC World when zoomed out to maximum. The issue was confirmed to be the Three.js `scene.background` showing through, but all attempted fixes failed to fully resolve it.
+
+### Changes Made
+
+**uc-world (2 files):**
+
+1. **client/src/scenes/GameWorld.ts**
+   - Added comment documenting the known issue
+   - Reverted experimental background geometry changes
+
+2. **client/src/core/ThreeEngine.ts**
+   - Added `autoClear = true` explicitly
+   - Added viewport/scissor reset in render()
+   - Reverted far plane change
+
+**Documentation (3 files):**
+
+1. **uc-world/CLAUDE.md** - Added detailed "Known Issues" section with all attempted fixes
+2. **uc-system-docs/21_UC_WORLD_ADMIN_CONTROLS.md** - Added Known Issues section
+3. **uc-system-docs/16_SESSION_LOG.md** - This entry
+
+### Debugging Findings
+
+**Confirmed:**
+- Strip IS the Three.js `scene.background` (green test proved this)
+- Strip appears only at max zoom (frustumSize=55) with scroll wheel
+- Strip covers 3D content but NOT HTML overlays
+- A 2000x2000x2000 box CAN cover the strip area (red test showed coverage)
+
+**Attempted fixes that did NOT work:**
+1. Horizontal background planes at various sizes and Y positions
+2. Background box with `side: THREE.BackSide`
+3. `depthWrite: false` and `renderOrder` on background geometry
+4. `depthTest: false` and high `renderOrder` on border lines
+5. `frustumCulled: false` on all geometry
+6. Increasing camera far plane
+7. CSS positioning changes
+8. Viewport/scissor reset
+
+**Key finding:** When a 2000x2000 box is added with matching background color, it obscures the hexagon border lines instead of appearing behind them. The issue appears to be with Three.js render ordering at extreme orthographic frustum sizes.
+
+### Issues Encountered
+- The background strip issue remains unresolved
+- Root cause appears to be related to orthographic camera projection at isometric angles with large frustum sizes
+
+### Follow-up Items
+- [ ] Try custom shader for background
+- [ ] Try render-to-texture approach
+- [ ] Consider limiting max zoom to avoid the issue
+- [ ] Investigate Three.js render order for orthographic cameras
+
+### Notes
+This is a visual artifact only and does not affect gameplay. The issue is documented in CLAUDE.md for future investigation.
+
+---
+
 ## SESS-2026-01-19-2
 
 **Date:** 2026-01-19

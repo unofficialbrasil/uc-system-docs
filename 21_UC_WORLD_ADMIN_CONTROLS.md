@@ -390,9 +390,27 @@ interface AdminPlayerInfo {
 
 ---
 
-## 12. Technical Notes
+## 12. Known Issues
 
-### 12.1 Why F2 Instead of F1?
+### 12.1 Background Strip at Max Zoom
+
+**Status:** Unresolved
+
+**Symptom:** When using scroll wheel to zoom out to maximum (frustumSize=55), a dark strip appears at the bottom of the screen that covers the hexagon border lines but not HTML elements (zone labels).
+
+**Root Cause:** Confirmed to be the Three.js `scene.background` showing through. At max zoom with the isometric orthographic camera angle, the visible area extends beyond where scene geometry exists.
+
+**Impact:** Visual artifact only; does not affect gameplay or functionality.
+
+**Workaround:** Avoid zooming out to absolute maximum, or use the admin `zoomToFitMap()` function which repositions the camera appropriately.
+
+**Detailed investigation notes:** See `uc-world/CLAUDE.md` "Known Issues" section.
+
+---
+
+## 13. Technical Notes
+
+### 13.1 Why F2 Instead of F1?
 
 The admin mode toggle uses **F2** because F1 is reserved by browsers:
 - **Chrome/Edge**: F1 opens browser help
@@ -403,10 +421,11 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-## 13. Version History
+## 14. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-01-20 | Added Known Issues section documenting background strip at max zoom |
 | 1.2.0 | 2026-01-19 | Fixed direct access: uses frontend BFF with CORS, cookie domain sharing |
 | 1.1.0 | 2026-01-19 | Added direct access support via session cookie API fetch |
 | 1.0.1 | 2026-01-19 | Added debug logging for identity tracking |
@@ -414,4 +433,4 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-<!-- Last Updated: 2026-01-19 - Added direct access identity resolution -->
+<!-- Last Updated: 2026-01-20 - Added Known Issues section -->
