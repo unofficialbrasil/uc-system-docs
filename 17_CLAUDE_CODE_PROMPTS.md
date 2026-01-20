@@ -1,11 +1,11 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-18
-**Version:** 6.2
+**Last Updated:** 2026-01-19
+**Version:** 6.3
 
 ---
 
-## Files Registry (30 Files Total)
+## Files Registry (31 Files Total)
 
 ### Repository Files (10 files)
 
@@ -17,7 +17,7 @@
 | uc-world | `/srv/unofficial/prod/app/uc-world/CLAUDE.md` | `/srv/unofficial/prod/app/uc-world/README.md` |
 | uc-system-docs | `/srv/unofficial/prod/app/uc-system-docs/CLAUDE.md` | `/srv/unofficial/prod/app/uc-system-docs/README.md` |
 
-### System Documentation (20 files)
+### System Documentation (21 files)
 
 Location: `/srv/unofficial/prod/app/uc-system-docs/`
 
@@ -43,6 +43,7 @@ Location: `/srv/unofficial/prod/app/uc-system-docs/`
 | 18 | `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md` |
 | 19 | `19_EXECUTION_PLAN.md` |
 | 20 | `20_ADULT_BY_DESIGN_SPEC.md` |
+| 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` |
 
 ---
 
@@ -73,7 +74,7 @@ Read each file completely:
 - `/srv/unofficial/prod/app/uc-world/README.md`
 - `/srv/unofficial/prod/app/uc-system-docs/README.md`
 
-### 1.3 System Documentation (20 files)
+### 1.3 System Documentation (21 files)
 Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `01_SYSTEM_CANONICAL_INDEX.md`
 - `02_PRODUCT_BLUEPRINT.md`
@@ -95,6 +96,7 @@ Read ALL files in `/srv/unofficial/prod/app/uc-system-docs/`:
 - `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md`
 - `19_EXECUTION_PLAN.md`
 - `20_ADULT_BY_DESIGN_SPEC.md`
+- `21_UC_WORLD_ADMIN_CONTROLS.md`
 
 ## PHASE 2: VPS & GITHUB ACCESS CHECK
 
