@@ -104,6 +104,68 @@ This is a visual artifact only and does not affect gameplay. The issue is docume
 
 ---
 
+## SESS-2026-01-20-2
+
+**Date:** 2026-01-20
+**Duration:** ~3 hours
+**Focus Area:** UC World Background Strip Fix - RESOLVED
+
+### Summary
+Successfully fixed the long-standing background strip issue in UC World. The problem was that the orthographic camera frustum at max zoom extended beyond world geometry, showing the clear color. The solution uses a **screen-space shader quad** that renders directly in clip space coordinates, ensuring the entire viewport is always filled regardless of camera position or frustum settings.
+
+### Changes Made
+
+**uc-world (2 files):**
+
+1. **client/src/scenes/GameWorld.ts**
+   - Added screen-space background quad with custom ShaderMaterial
+   - Vertex shader outputs directly to clip space: `gl_Position = vec4(position.xy, 0.0, 1.0)`
+   - Removed BackSide box approach (no longer needed)
+   - Kept GridHelper and extended tube borders for visual depth
+   - Removed all debug geometry (red/green/yellow/cyan test elements)
+
+2. **client/src/core/ThreeEngine.ts**
+   - Updated camera near/far planes to -10000/10000 for proper depth handling
+   - (Standard orthographic settings)
+
+**Documentation (3 files):**
+
+1. **uc-world/CLAUDE.md** - Updated Known Issues → Recently Fixed, documented solution
+2. **uc-world/README.md** - Updated review stamp with fix note
+3. **uc-system-docs/16_SESSION_LOG.md** - This entry
+
+### Technical Solution
+
+The fix uses a 2x2 PlaneGeometry with a custom ShaderMaterial that:
+- Outputs vertex positions directly in normalized device coordinates (clip space)
+- Uses `gl_Position = vec4(position.xy, 0.0, 1.0)` to fill entire viewport
+- Has `depthTest: false` and `depthWrite: false` to not interfere with scene
+- Renders first with `renderOrder: -2000`
+- Uses the brand dark blue color (0x0d1117)
+
+This approach bypasses all camera transformations, guaranteeing the background always fills the entire screen regardless of camera frustum size or position.
+
+### Decisions Made
+- **Screen-space shader quad over BackSide box**: The BackSide box approach worked partially but had depth ordering issues with scene geometry. The shader quad approach is simpler and more reliable.
+- **Keep extended camera far planes**: Setting near=-10000, far=10000 ensures proper depth handling with the shader quad.
+
+### Issues Encountered
+- Initial debug testing showed BackSide box rendered in strip area but other geometry didn't
+- Multiple approaches tried (floor planes, BackSide floors, edge markers) before shader solution
+- Color matching required visible debug color first to verify quad was rendering
+
+### Follow-up Items
+- [x] Background strip issue - RESOLVED
+- [x] Documentation updated
+- [x] Session close checklist completed
+
+### Metrics at Close
+- Disk: 30%
+- Memory: 48%
+- Services: 4/4 healthy (Frontend, API, Webhooks, World)
+
+---
+
 ## SESS-2026-01-19-2
 
 **Date:** 2026-01-19

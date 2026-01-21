@@ -460,6 +460,44 @@ Option 3: Adult-by-Design with tiered assurance levels. Key elements:
 
 ---
 
+### DEC-0012: Screen-Space Shader Quad for UC World Background
+**Date:** 2026-01-20
+**Status:** Accepted
+
+#### Context
+UC World displayed a dark "strip" at the bottom of the screen when zoomed out to maximum. The orthographic camera's frustum extended beyond world geometry, exposing the WebGL clear color. Multiple geometry-based solutions (background planes, BackSide boxes) failed to reliably fill the gap due to depth ordering issues with isometric camera angles.
+
+#### Options Considered
+1. **Larger Background Geometry** - Extend floor planes/boxes to cover more area
+2. **Limit Max Zoom** - Prevent users from zooming out far enough to see the strip
+3. **Screen-Space Shader Quad** - Custom shader that renders directly in clip space
+4. **Post-Processing Effect** - Full-screen effect to fill gaps
+
+#### Decision
+Option 3: Screen-space shader quad. A 2x2 PlaneGeometry with a custom ShaderMaterial that outputs vertex positions directly in normalized device coordinates (clip space), bypassing all camera transformations.
+
+```glsl
+gl_Position = vec4(position.xy, 0.0, 1.0);
+```
+
+#### Trade-offs
+- Slightly more complex rendering setup (custom shader)
+- Requires understanding of clip space vs world space
+- Very clean solution once implemented
+- No performance impact (single quad, no transformations)
+
+#### Rejected Alternatives
+- Larger Background Geometry: Depth ordering issues persisted regardless of size or configuration
+- Limit Max Zoom: Admin users need full zoom range for community management
+- Post-Processing: Overkill for a simple background fill
+
+#### Revisit Criteria
+- If Three.js updates change clip space handling
+- If additional visual effects are needed that require custom render pipeline
+- If performance issues arise on low-end devices
+
+---
+
 ## Decision Index
 
 | ID | Title | Date | Status |
@@ -475,9 +513,10 @@ Option 3: Adult-by-Design with tiered assurance levels. Key elements:
 | DEC-0009 | Monorepo vs Multi-Repo | 2025-XX-XX | Accepted |
 | DEC-0010 | Prometheus + Grafana for Monitoring | 2026-01-11 | Accepted |
 | DEC-0011 | Adult-by-Design (18+) Policy | 2026-01-17 | Accepted |
+| DEC-0012 | Screen-Space Shader Quad for Background | 2026-01-20 | Accepted |
 
 ---
 
-*Next Decision ID: DEC-0012*
+*Next Decision ID: DEC-0013*
 
-<!-- Last Updated: 2026-01-18 - Added DEC-0011: Adult-by-Design Policy -->
+<!-- Last Updated: 2026-01-20 - Added DEC-0012: Screen-Space Shader Quad for Background -->

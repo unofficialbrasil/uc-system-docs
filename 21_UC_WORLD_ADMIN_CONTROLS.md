@@ -392,19 +392,19 @@ interface AdminPlayerInfo {
 
 ## 12. Known Issues
 
-### 12.1 Background Strip at Max Zoom
+Currently no known issues.
 
-**Status:** Unresolved
+### 12.1 Background Strip at Max Zoom (RESOLVED)
 
-**Symptom:** When using scroll wheel to zoom out to maximum (frustumSize=55), a dark strip appears at the bottom of the screen that covers the hexagon border lines but not HTML elements (zone labels).
+**Status:** ✅ Fixed (2026-01-20)
 
-**Root Cause:** Confirmed to be the Three.js `scene.background` showing through. At max zoom with the isometric orthographic camera angle, the visible area extends beyond where scene geometry exists.
+**Original Symptom:** When using scroll wheel to zoom out to maximum (frustumSize=55), a dark strip appeared at the bottom of the screen that covered the hexagon border lines but not HTML elements (zone labels).
 
-**Impact:** Visual artifact only; does not affect gameplay or functionality.
+**Root Cause:** The orthographic camera frustum at max zoom extended beyond world geometry, exposing the WebGL clear color.
 
-**Workaround:** Avoid zooming out to absolute maximum, or use the admin `zoomToFitMap()` function which repositions the camera appropriately.
+**Solution:** Screen-space shader quad that renders directly in clip space coordinates, bypassing all camera transformations. This ensures the background always fills the entire viewport regardless of camera position or frustum settings.
 
-**Detailed investigation notes:** See `uc-world/CLAUDE.md` "Known Issues" section.
+**Implementation:** See `uc-world/CLAUDE.md` "Recently Fixed" section and DEC-0012 in Decision Log.
 
 ---
 
@@ -425,6 +425,7 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4.0 | 2026-01-20 | Background strip issue RESOLVED with screen-space shader quad |
 | 1.3.0 | 2026-01-20 | Added Known Issues section documenting background strip at max zoom |
 | 1.2.0 | 2026-01-19 | Fixed direct access: uses frontend BFF with CORS, cookie domain sharing |
 | 1.1.0 | 2026-01-19 | Added direct access support via session cookie API fetch |
@@ -433,4 +434,4 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-<!-- Last Updated: 2026-01-20 - Added Known Issues section -->
+<!-- Last Updated: 2026-01-20 - Background strip issue fixed with screen-space shader quad -->
