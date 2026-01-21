@@ -4,7 +4,7 @@ System-wide documentation for Unofficial Communities platform - the authoritativ
 
 ## Overview
 
-This repository contains 18 numbered documents covering all aspects of the Unofficial Communities platform:
+This repository contains 21 numbered documents covering all aspects of the Unofficial Communities platform:
 
 | # | Document | Purpose |
 |---|----------|---------|
@@ -26,13 +26,16 @@ This repository contains 18 numbered documents covering all aspects of the Unoff
 | 16 | Session Log | Development session history |
 | 17 | Claude Code Prompts | Session prompts for Claude Code |
 | 18 | Behavioral Science Framework | Research reference |
+| 19 | Execution Plan | Execution steps and timeline |
+| 20 | Adult-by-Design Spec | Age verification policy |
+| 21 | UC World Admin Controls | Admin camera and debug tools |
 
 ## Documentation Structure
 
 ```
 Unofficial Communities Documentation
 ├── uc-system-docs/           # Platform-wide (this repo)
-│   └── 18 numbered documents
+│   └── 21 numbered documents
 │
 └── Per-repository:
     ├── CLAUDE.md             # Technical reference
@@ -56,4 +59,4 @@ Start with `01_SYSTEM_CANONICAL_INDEX.md` - it provides the reading order and do
 
 Proprietary - Unofficial Communities
 
-<!-- Last Reviewed: 2026-01-20 - No updates needed -->
+<!-- Last Reviewed: 2026-01-21 - Updated document count to 21 -->

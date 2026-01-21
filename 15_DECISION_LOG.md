@@ -404,23 +404,6 @@ Option 3: Prometheus + Grafana stack:
 
 ---
 
-## Decision Index
-
-| ID | Title | Date | Status |
-|----|-------|------|--------|
-| DEC-0001 | System Documentation Location | 2026-01-14 | Accepted |
-| DEC-0002 | Three.js Migration from Phaser 3 | 2026-01-12 | Accepted |
-| DEC-0003 | Hexagonal Community Layout | 2026-01-13 | Accepted |
-| DEC-0004 | Redis for Session Storage | 2025-12-XX | Accepted |
-| DEC-0005 | Fastify over Express | 2025-XX-XX | Accepted |
-| DEC-0006 | Colyseus for Multiplayer | 2025-XX-XX | Accepted |
-| DEC-0007 | Behavioral Science Framework Integration | 2025-XX-XX | Accepted |
-| DEC-0008 | LGPD-First Data Architecture | 2025-XX-XX | Accepted |
-| DEC-0009 | Monorepo vs Multi-Repo | 2025-XX-XX | Accepted |
-| DEC-0010 | Prometheus + Grafana for Monitoring | 2026-01-11 | Accepted |
-
----
-
 ### DEC-0011: Adult-by-Design (18+) Policy
 **Date:** 2026-01-17
 **Status:** Accepted
@@ -519,4 +502,4 @@ gl_Position = vec4(position.xy, 0.0, 1.0);
 
 *Next Decision ID: DEC-0013*
 
-<!-- Last Updated: 2026-01-20 - Added DEC-0012: Screen-Space Shader Quad for Background -->
+<!-- Last Updated: 2026-01-21 - Removed duplicate Decision Index table -->
