@@ -1,7 +1,7 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-19
-**Version:** 6.3
+**Last Updated:** 2026-01-21
+**Version:** 6.4
 
 ---
 
@@ -1551,7 +1551,7 @@ Session closed. All 31 files reviewed/updated. Context preserved.
 |---------|------|---------|
 | unofficial-communities | 3000 | - |
 | uc-api | 3010 | `/metrics` |
-| uc-webhooks | 4101 | `/metrics` |
+| uc-webhooks | internal | `/metrics` (Docker network only) |
 | uc-world | 3005 | - |
 | Prometheus | 9090 | - |
 | Grafana | 3100 | - |
@@ -1562,7 +1562,7 @@ Session closed. All 31 files reviewed/updated. Context preserved.
 | Grafana | http://localhost:3100 |
 | Prometheus | http://localhost:9090 |
 | API Metrics | http://localhost:3010/metrics |
-| Webhooks Metrics | http://localhost:4101/metrics |
+| Webhooks Metrics | http://uc-webhooks:3010/metrics (Docker network only) |
 
 ### GO / NO-GO Criteria Reference
 
@@ -1591,6 +1591,6 @@ Session closed. All 31 files reviewed/updated. Context preserved.
 
 ---
 
-*Version 6.3 - 2026-01-19 - Updated to 31 files (21 system docs), added 20_ADULT_BY_DESIGN_SPEC.md and 21_UC_WORLD_ADMIN_CONTROLS.md*
+*Version 6.4 - 2026-01-21 - Updated uc-webhooks port from 4101 to internal (Docker network only)*
 
 <!-- Last Updated: 2026-01-19 - Fixed file counts throughout (31 total, 21 system docs) -->
