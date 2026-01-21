@@ -41,6 +41,93 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-21-1
+
+**Date:** 2026-01-21
+**Duration:** ~1.5 hours
+**Focus Area:** Living Graph Test Data & Bug Fix
+
+### Summary
+Seeded synthetic test data for the Living Graph pilot and discovered/fixed a critical bug in the graph build service that was preventing edge creation. The bug was in the SQL IN clause handling where `communityIds.join(',')` was being treated as a single string parameter instead of individual values.
+
+### Changes Made
+
+**uc-api (2 files):**
+
+1. **src/services/communityGraphBuildService.ts** (COMMITTED & PUSHED)
+   - Added `import { Prisma } from '@prisma/client'`
+   - Fixed `getMemberOverlap()`: Changed `communityIds.join(',')` to `Prisma.join(communityIds)`
+   - Fixed `getPortalTravelCounts()`: Changed `communityIds.join(',')` to `Prisma.join(communityIds)`
+
+2. **scripts/seedLivingGraphTestData.ts** (NOT COMMITTED - test utility)
+   - Created seed script for Living Graph testing
+   - Creates 300 synthetic identities (50 per community)
+   - Creates user_profiles linking identities to communities
+   - Creates 14 days of community_day_features
+   - Creates community_nodes and community_affinities
+
+**Database (via seed script):**
+- 300 new identities
+- 600 user_profiles with consents
+- 84 community_day_features records
+- 210 portal_traversals records
+- 6 community_nodes with affinities
+
+### Decisions Made
+
+1. **Bug fix approach**
+   - Decision: Use `Prisma.join()` for array expansion in raw queries
+   - Rationale: Prisma's `$queryRaw` template literals treat `${value}` as a single parameter; `Prisma.join()` properly expands arrays
+
+2. **Seed script not committed**
+   - Decision: Keep seed script as local test utility
+   - Rationale: Test data generation is for development only, not production code
+
+### Issues Encountered
+
+1. **IN clause bug in graph build**
+   - Symptom: Graph build ran successfully but created 0 edges despite valid data
+   - Root cause: `communityIds.join(',')` in Prisma `$queryRaw` becomes a single string parameter `'5,6,7,8,9,10'` instead of individual values
+   - Solution: Changed to `Prisma.join(communityIds)` which properly expands to `5, 6, 7, 8, 9, 10` as separate parameters
+   - Verification: After fix, graph build created 10 edges and 16 portal assignments
+
+2. **Container rebuild permissions**
+   - Issue: Could not restart API container due to secrets file permissions
+   - Solution: Used `sudo docker compose up -d uc-api` to recreate with new image
+
+### Git Commits
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | 1d7cd4d | fix: use Prisma.join for IN clauses in graph build queries |
+
+### Metrics at Close
+
+**System Health:**
+- Disk: 30%
+- Memory: ~48%
+- Load: ~0.28
+- Services: 7/7 healthy
+
+**Living Graph Status:**
+- Total Edges: 10
+- Portal Assignments: 16
+- Average Edge Weight: 0.6
+- Green Communities: 2
+- Yellow Communities: 4
+- Scale Readiness: 100%
+- Pilot Decision: Continue
+
+### Follow-up Items
+- [x] Bug fix committed and pushed
+- [ ] Consider adding unit tests for `Prisma.join()` usage in raw queries
+- [ ] Monitor next scheduled graph build (04:15 UTC) to confirm fix works in production
+
+### Notes
+This bug likely existed since the graph build service was created but was never triggered because there was no test data with sufficient portal traversals. The fix is critical for the Living Graph to function correctly when real communities are added.
+
+---
+
 ## SESS-2026-01-20-1
 
 **Date:** 2026-01-20
