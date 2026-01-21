@@ -128,10 +128,24 @@ Implemented two new visualization modes for UC World:
 - ✅ All containers running healthy
 - ✅ Client builds successfully
 
+### Additional Work: Auth Prometheus Metrics
+
+**uc-api (1 file):**
+
+1. **src/routes/auth/authRoutes.ts**
+   - Added metrics instrumentation to signup endpoint (success, conflict, validation_error, error)
+   - Added metrics instrumentation to login endpoint (success, not_found, invalid_password, validation_error, error)
+   - Uses existing `authSignupTotal` and `authLoginTotal` counters
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | 5e3a343 | feat: add Prometheus metrics to auth signup/login endpoints |
+
 ### Follow-up Items
 - [ ] Manual testing of overworld view in browser
 - [ ] Verify portal preview opacity transitions in browser
 - [ ] Complete tabletop exercises (Section 6.5) before pilot exit
+- [x] ~~Add Prometheus metrics to uc-api auth endpoints~~ (completed)
 
 ---
 
