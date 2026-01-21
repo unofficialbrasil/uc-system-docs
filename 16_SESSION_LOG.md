@@ -41,6 +41,70 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-21-3
+
+**Date:** 2026-01-21
+**Duration:** ~1 hour
+**Focus Area:** UC World Coordinate System Fix
+
+### Summary
+Fixed critical bug where the ground hexagon and zone floor tints were rendering at different positions than the zone boundary lines, causing two separate hexagons to appear in the 3D world. Root cause was a coordinate system mismatch in THREE.js shape transformations.
+
+### Changes Made
+
+**uc-world (2 files):**
+
+1. **client/src/scenes/GameWorld.ts**
+   - Fixed ground hexagon shape creation to use negated Y coordinates
+   - Shape point (x, -y) after rotation becomes world (x, 0, +y)
+   - Previously: shape (x, y) → world (x, 0, -y) causing negative Z positioning
+
+2. **client/src/systems/ZoneManager.ts**
+   - Fixed interior zone floor tints: `shape.moveTo(x, -z)` instead of `(x, z)`
+   - Fixed portal zone floor tints: same fix applied
+   - Floor tints now align with boundary lines at positive Z coordinates
+
+### Technical Details
+
+**Root Cause:**
+THREE.js `ShapeGeometry` is created in the XY plane. When rotated by -90° around X axis:
+- Shape point (x, y, 0) becomes world (x, 0, **-y**)
+- The negation of Y was causing shapes to render at negative Z
+- Boundary lines were created directly with `Vector3(x, height, z)` at positive Z
+- Result: Two hexagons visible - one at negative Z (ground/floor tints) and one at positive Z (boundary lines)
+
+**Solution:**
+Negate the Y/Z values when creating shapes so that after the -90° rotation, they map to positive world Z coordinates, matching the boundary lines.
+
+### Git Commits
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | d650f4a | feat: add Living Graph test data seed script |
+| uc-world | d48d7f3 | fix: align ground and zone floor tints with boundary coordinates |
+
+### Issues Resolved
+
+1. **Zone boundaries appearing as separate hexagon** ✅
+   - From SESS-2026-01-21-2 follow-up
+   - Root cause identified: THREE.js coordinate transformation mismatch
+   - Fix deployed and verified working
+
+### Follow-up Items
+- [ ] Re-enable minimap once properly sized and positioned
+- [ ] Complete portal/honeycomb network visualization
+
+### Metrics at Close
+
+**System Health:**
+- Disk: 30%
+- Memory: 50%
+- Load: ~1.4
+- Services: All healthy
+- Uptime: 1 week, 4 days
+
+---
+
 ## SESS-2026-01-21-2
 
 **Date:** 2026-01-21
@@ -103,7 +167,7 @@ Improved the UC World admin mode UI with professional styling, larger minimap, r
    - Potential cause: Coordinate system mismatch between ground mesh and zone visuals
 
 ### Follow-up Items
-- [ ] Investigate zone boundary positioning issue (mirrored hexagon)
+- [x] Investigate zone boundary positioning issue (mirrored hexagon) - **Fixed in SESS-2026-01-21-3**
 - [ ] Re-enable minimap once properly sized and positioned
 - [ ] Complete portal/honeycomb network visualization
 
