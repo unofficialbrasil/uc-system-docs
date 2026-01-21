@@ -41,6 +41,103 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-21-4
+
+**Date:** 2026-01-21
+**Duration:** ~30 minutes
+**Focus Area:** Audit Fixes Continuation & Docker Rebuild
+
+### Summary
+Continued implementing fixes from the comprehensive audit report. Fixed pre-existing TypeScript build errors discovered during container rebuild that were blocking the build process. Successfully rebuilt and restarted all Docker containers.
+
+### Changes Made
+
+**uc-api (10 files):**
+
+1. **src/modules/gamification/ledger.service.ts**
+   - Fixed Prisma model name: `pointsLedger` → `points_ledger`
+
+2. **src/modules/gamification/missions.service.ts**
+   - Fixed Prisma model names: `missionAssignment` → `mission_assignment`, `missionTemplate` → `mission_template`, `missionCompletion` → `mission_completion`
+   - Fixed include relation names to match schema
+   - Fixed one-to-one relation access: `.length > 0` → `!= null`
+   - Added required `updatedAt` field to upserts
+
+3. **src/modules/gamification/streak.service.ts**
+   - Fixed Prisma model name: `streakGraceUse` → `streak_grace_use`
+   - Added required `updatedAt` field to streak create
+
+4. **src/modules/sovc/sovc.service.ts**
+   - Fixed model name: `communitySovcScore` → `community_sovc_scores`
+
+5. **src/routes/gamificationLeaguesCurrentV31.ts**
+   - Added type annotation for `$queryRawUnsafe<RankRow[]>()`
+
+6. **src/routes/gamificationStreakV31.ts**
+   - Added type annotation for `$queryRawUnsafe<StreakRow[]>()`
+
+7. **src/routes/userPointsSummaryV31.ts**
+   - Added type annotation for `$queryRawUnsafe<SummaryRow[]>()`
+
+8. **src/services/adminDashboardService.ts**
+   - Fixed `zone_dwell_times` access to use individual columns
+
+9. **src/services/portalService.ts**
+   - Added JSON type assertions for reason_codes/reason_details
+
+10. **src/services/sovcService.ts**
+    - Fixed field name: `score` → `scoreOverall`
+    - Fixed aggregate count syntax
+
+**uc-webhooks (1 file):**
+
+1. **src/server.ts**
+   - Fixed ESM/CommonJS compatibility: removed `import.meta.url` check
+
+### Git Commits
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-api | 30c0050 | fix: resolve TypeScript build errors in gamification and service modules |
+| uc-webhooks | a1ffeda | fix: remove ESM entry point check for CommonJS compatibility |
+
+### Issues Resolved
+
+1. **TypeScript build errors in uc-api** ✅
+   - Pre-existing errors hidden by Docker build cache
+   - Prisma model name mismatches (camelCase vs snake_case)
+   - Raw query type annotations missing
+   - One-to-one relation treated as array
+
+2. **ESM/CommonJS compatibility in uc-webhooks** ✅
+   - `import.meta.url` not allowed in CommonJS output
+   - Simplified to direct `start()` call
+
+### Metrics at Close
+
+**System Health:**
+- Disk: 32%
+- Memory: 52%
+- Load: 0.66
+- Containers: 19 running / 0 restarting
+
+**Services:**
+- 🟢 Frontend (3000): 10ms response
+- 🟢 API (3010): 4ms response
+- 🟢 World (3005): Running
+- 🟢 Webhooks: Running (internal)
+
+**Infrastructure:**
+- 🟢 Database: Healthy (MySQL running)
+- 🟢 Queue: 0 waiting, 0 failed
+- 🟢 Backup: 2026-01-21_03-00 successful
+
+### Follow-up Items
+- [ ] Add Prometheus metrics to uc-api auth endpoints
+- [ ] Review remaining audit items not yet addressed
+
+---
+
 ## SESS-2026-01-21-3
 
 **Date:** 2026-01-21
