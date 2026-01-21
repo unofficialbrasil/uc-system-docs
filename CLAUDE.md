@@ -121,5 +121,5 @@ git add -A && git commit -m "docs: [description]" && git push origin main
 
 ---
 
-<!-- Last Updated: 2026-01-21 - Session close: ground/zone coordinate fix -->
+<!-- Last Updated: 2026-01-21 - Session close: dual-mode visualization + auth metrics -->
 
