@@ -41,6 +41,100 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-21-5
+
+**Date:** 2026-01-21
+**Duration:** ~2 hours
+**Focus Area:** Dual-Mode Community Visualization
+
+### Summary
+Implemented two new visualization modes for UC World:
+1. **Admin Overworld View** (F3 in admin mode) - Shows all communities in honeycomb grid with extended zoom (50-300)
+2. **User Portal Previews** - Neighbor community names visible at portal edges with distance-based opacity fade
+
+### Changes Made
+
+**uc-world (8 files):**
+
+1. **shared/src/honeycomb.ts** (NEW)
+   - Honeycomb coordinate math utilities
+   - `hexToWorld`, `worldToHex`, `getNeighborOffset`, `getOppositeDirection`
+   - `hexDistance`, `getHexNeighbors`, `getHexVertices`
+
+2. **shared/src/index.ts**
+   - Added honeycomb export
+
+3. **shared/src/messages.ts**
+   - Added `COMMUNITY_NETWORK` message type
+   - Added `CommunityNetworkNode` and `CommunityNetworkPayload` interfaces
+
+4. **server/src/rooms/WorldRoom.ts**
+   - Load community network from API on room init
+   - Send `COMMUNITY_NETWORK` message to admin clients on join
+
+5. **client/src/systems/OverworldRenderer.ts** (NEW)
+   - Three.js renderer for admin overworld view
+   - Hexagon meshes positioned using honeycomb coordinates
+   - Current community highlighted blue, neighbors dimmed
+   - Click-to-travel functionality with confirmation
+
+6. **client/src/systems/PortalPreviewRenderer.ts** (NEW)
+   - HTML labels at portal zone edges
+   - Distance-based opacity fade (100% at 50px → 0% at 400px)
+   - Direction arrows and neighbor names
+
+7. **client/src/core/AdminCameraController.ts**
+   - Added 'overworld' mode with extended zoom (50-300)
+   - Top-down camera with WASD panning
+
+8. **client/src/scenes/GameWorld.ts**
+   - Integrated OverworldRenderer and PortalPreviewRenderer
+   - Added F3 toggle for overworld view (admin only)
+   - Added `handleOverworldCommunityClick()` for travel requests
+
+**uc-api (2 files):**
+
+1. **src/routes/portalRoutes.ts**
+   - Added `GET /v1/communities/network` endpoint
+
+2. **src/services/portalService.ts**
+   - Added `getCommunityNetwork()` function
+   - Returns all communities with grid coordinates
+
+### Git Commits
+
+| Repository | Commit | Message |
+|------------|--------|---------|
+| uc-world | ce931d6 | feat: add dual-mode community visualization (overworld + portal previews) |
+| uc-api | a9d8e13 | feat: add community network endpoint for overworld visualization |
+
+### Technical Details
+
+**Overworld View (Admin):**
+- Extended zoom range: 50-300 (vs normal 2-55)
+- Camera mode: top-down fixed view
+- WASD keys for panning
+- Click community hexagon to request travel
+
+**Portal Previews (All Users):**
+- FADE_NEAR: 50px (100% opacity)
+- FADE_FAR: 400px (0% opacity)
+- Shows arrow + community name + direction label
+
+### Verification
+
+- ✅ API returns 6 test communities with grid coordinates
+- ✅ Portal assignments active for Hub Central (5 neighbors)
+- ✅ All containers running healthy
+- ✅ Client builds successfully
+
+### Follow-up Items
+- [ ] Manual testing of overworld view in browser
+- [ ] Verify portal preview opacity transitions in browser
+- [ ] Complete tabletop exercises (Section 6.5) before pilot exit
+
+---
+
 ## SESS-2026-01-21-4
 
 **Date:** 2026-01-21
