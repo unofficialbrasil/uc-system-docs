@@ -41,6 +41,118 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-22-1
+
+**Date:** 2026-01-22
+**Duration:** ~3 hours
+**Focus Area:** Circuit Breaker Infrastructure & Tabletop Exercises
+
+### Summary
+Implemented comprehensive circuit breaker infrastructure for Living Graph safety, ran all 4 tabletop exercises from Section 6.5 of the Execution Plan, and verified pilot configuration is active.
+
+### Changes Made
+
+**uc-api (6 files, 903 insertions):**
+
+1. **prisma/schema.prisma**
+   - Added `portal_reports` table for tracking user reports about portals
+   - Added `circuit_breaker_events` table for audit trail of breaker activations
+
+2. **prisma/migrations/20260122000000_add_circuit_breaker_tables/migration.sql** (NEW)
+   - Migration for new circuit breaker tables
+
+3. **src/services/circuitBreakerService.ts** (NEW, 14KB)
+   - `checkReportSpike()` - Detects report rate > 10 per 1000 traversals
+   - `checkEdgeCollapse()` - Detects >60% edge count drop vs previous build
+   - `checkKAnonCascade()` - Detects >30% communities below k=30
+   - `checkBuildFailureStreak()` - Detects 3+ consecutive build failures
+   - `tripCircuitBreaker()` - Records activation and action taken
+   - `resolveCircuitBreaker()` - Manual resolution by admin
+   - `runCircuitBreakerChecks()` - Periodic check runner
+   - `checkAndHandleEdgeCollapse()` - Auto-rollback integration
+
+4. **src/lib/metrics.ts**
+   - Added 9 new Prometheus metrics:
+     - `uc_portal_reports_total` - Portal reports counter
+     - `uc_portal_traversals_total` - Traversals counter
+     - `uc_graph_edges_created` - Edge count gauge
+     - `uc_graph_edge_delta_pct` - Edge change percentage
+     - `uc_communities_below_k_anon` - Count below threshold
+     - `uc_communities_below_k_anon_pct` - Percentage below threshold
+     - `uc_circuit_breaker_activations_total` - Activations counter
+     - `uc_graph_build_status` - Build status gauge
+     - `uc_graph_build_duration_ms` - Build duration histogram
+
+5. **src/routes/world/portalRoutes.ts**
+   - Added `POST /world/portals/report` - Submit portal report (rate-limited, deduped)
+   - Added `GET /world/portals/report-rate` - Monitor report rate (admin)
+   - Added traversal metrics increment on portal travel
+
+6. **src/services/communityGraphBuildService.ts**
+   - Integrated edge collapse detection after graph build
+   - Auto-rollback if edge count drops >60%
+   - Metrics recording for build status and duration
+
+### Tabletop Exercises Completed
+
+All 4 exercises from Section 6.5 validated:
+
+| Exercise | Result | Notes |
+|----------|--------|-------|
+| 1. Report Spike | ✅ READY | Automated detection + feature disable |
+| 2. Edge Collapse | ✅ READY | Automated rollback on 60% drop |
+| 3. K-Anon Cascade | ✅ READY | Automated pause on 30% below k=30 |
+| 4. Coordinated Abuse | ⚠️ OK | Manual monitoring required, mitigations exist |
+
+### Pilot Status Verified
+
+Confirmed pilot is **ACTIVE** since 2026-01-20:
+- 6 communities enrolled (1 hub + 5 satellites)
+- A/B split: 3 graph-driven (A) / 3 curated (B)
+- All feature flags enabled
+- Graph builds running daily
+- 10 edges, 10 portals assigned
+
+### Decisions Made
+
+1. **Circuit Breaker Thresholds**
+   - Report spike: 10 per 1000 traversals (24h window)
+   - Edge collapse: 60% drop triggers rollback
+   - K-anon cascade: 30% communities below k=30
+   - Build failure streak: 3 consecutive failures
+   - All configurable via environment variables
+
+2. **Edge Collapse Response**
+   - Automatic rollback (delete current period data)
+   - Previous period's portals remain active
+   - Build marked as 'rolled_back' status
+
+3. **Report Rate Limits**
+   - Max 5 portal reports per user per hour
+   - Duplicate detection (same reporter + communities within 24h)
+
+### Issues Encountered
+
+1. **Prisma Migration in Docker**
+   - Issue: Migration file not in container image
+   - Resolution: Copied migration to container, ran deploy
+
+### Follow-up Items
+
+- [ ] Manual browser testing of overworld view (F3)
+- [ ] Manual browser testing of portal preview opacity
+- [ ] Add Grafana dashboard panels for circuit breaker metrics
+- [ ] Add Prometheus alert rules for thresholds
+- [ ] Monitor pilot metrics for A/B comparison
+
+### Notes
+
+- Commit: `fd5a7c9 feat: add circuit breaker infrastructure for Living Graph safety`
+- All circuit breakers operational and ready for pilot exit
+- Exercise 4 (Coordinated Abuse) acceptable with manual monitoring - recommend adding edge weight anomaly detection post-pilot
+
+---
+
 ## SESS-2026-01-21-5
 
 **Date:** 2026-01-21
