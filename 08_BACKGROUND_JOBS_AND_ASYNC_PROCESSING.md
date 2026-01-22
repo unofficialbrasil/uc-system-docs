@@ -84,7 +84,7 @@ const dailyMissionsJob: JobDefinition = {
   name: 'daily-missions-assignment',
   queue: 'gamification',
   description: 'Assign daily missions to all active members across all communities',
-  schedule: '1 3 * * *',       // 03:01 UTC (00:01 BRT) daily
+  schedule: '1 3 * * *',       // 03:01 UTC = 00:01 BRT (America/Sao_Paulo)
   priority: 'high',
   timeout_ms: 300000,          // 5 minutes
   retry: {
@@ -115,7 +115,7 @@ const dailyFeatureAggregationJob: JobDefinition = {
   name: 'daily-feature-aggregation',
   queue: 'analytics',
   description: 'Aggregate raw events into community-level features for Living Graph',
-  schedule: '0 1 * * *',       // 01:00 America/Sao_Paulo daily
+  schedule: '0 4 * * *',       // 04:00 UTC = 01:00 BRT (America/Sao_Paulo) daily
   priority: 'medium',
   timeout_ms: 600000,          // 10 minutes
   retry: {
@@ -241,7 +241,7 @@ const communityGraphBuildJob: JobDefinition = {
   name: 'community-graph-build',
   queue: 'analytics',
   description: 'Build community graph edges and portal assignments from daily aggregates',
-  schedule: '15 4 * * *',      // 04:15 America/Sao_Paulo daily (after aggregation)
+  schedule: '15 7 * * *',      // 07:15 UTC = 04:15 BRT (America/Sao_Paulo) daily (after aggregation)
   priority: 'medium',
   timeout_ms: 900000,          // 15 minutes
   retry: {
@@ -1553,4 +1553,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 7: Added Automated Circuit Breaker Triggers with pre-flight and post-build checks, recovery procedures -->
+<!-- Last Updated: 2026-01-22 - Fixed UTC/BRT cron schedule comments in job definitions (schedule values now correctly show UTC with BRT mapping) -->

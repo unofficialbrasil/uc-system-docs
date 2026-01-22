@@ -448,6 +448,7 @@ CREATE TABLE community_graph_overrides (
 );
 
 -- Living Graph: User portal preferences (Step 5 - user agency)
+-- PLANNED: Not yet implemented in Prisma schema
 -- Allows users to hide specific portals from their UI
 CREATE TABLE user_portal_preferences (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -464,6 +465,7 @@ CREATE TABLE user_portal_preferences (
 );
 
 -- Living Graph: Portal reports for ops review (Step 5 - user agency)
+-- PLANNED: Not yet implemented in Prisma schema
 -- Allows users to report inappropriate portal connections
 CREATE TABLE portal_reports (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -523,6 +525,13 @@ GROUP BY job_name, grp
 HAVING MAX(target_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY);
 
 -- Living Graph Dashboard Views (Step 6)
+-- NOTE: These views are CONCEPTUAL and reference planned tables.
+-- Currently implemented table: community_day_features (stores daily aggregates)
+-- Planned tables not yet in schema:
+--   - community_activity_daily (referenced by v_community_health)
+--   - portal_activity_daily (referenced by v_portal_performance)
+--   - zone_dwell_daily (referenced by v_proxemic_health)
+-- Views should be updated to reference community_day_features when implemented.
 
 -- View: Community Health Summary
 -- Used by: Community Health Dashboard
@@ -1038,4 +1047,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 6: Added dashboard views (v_community_health, v_portal_performance, v_neighbor_stability, v_graph_build_metrics, v_proxemic_health, v_dashboard_alerts) -->
+<!-- Last Updated: 2026-01-22 - Marked user_portal_preferences and portal_reports as PLANNED (not yet in Prisma), added note about conceptual dashboard views referencing planned tables -->

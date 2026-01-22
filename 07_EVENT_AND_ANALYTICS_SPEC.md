@@ -143,11 +143,15 @@ Examples:
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
-| `webhook.received` | Incoming webhook | `{ source, event_type }` | Webhooks |
-| `webhook.processed` | Successfully handled | `{ source, event_type, duration_ms }` | Webhooks |
-| `webhook.failed` | Processing failed | `{ source, event_type, error_code }` | Webhooks |
-| `webhook.retried` | Retry attempt | `{ source, attempt_number }` | Webhooks |
-| `webhook.dead_lettered` | Max retries exceeded | `{ source, event_type }` | Webhooks |
+| `webhook.received` | Incoming webhook | `{ source, event_type, correlation_id }` | Webhooks |
+| `webhook.processed` | Successfully handled | `{ source, event_type, duration_ms, correlation_id }` | Webhooks |
+| `webhook.failed` | Processing failed (will retry) | `{ source, event_type, error_code, error_type, attempt, max_attempts, will_retry, correlation_id }` | Webhooks |
+| `webhook.retried` | Retry attempt started | `{ source, attempt_number, max_attempts, backoff_ms, correlation_id }` | Webhooks |
+| `webhook.dead_lettered` | Max retries exceeded or non-retryable | `{ source, event_type, error_type, final_attempt, correlation_id }` | Webhooks |
+
+**Error Types** (from uc-webhooks worker):
+- `RetryableError`: Network errors, 5xx responses, 429 rate limits → triggers retry
+- `NonRetryableError`: 4xx client errors (except 429) → sent directly to dead letter
 
 ### 2.8 System Events
 
@@ -894,4 +898,4 @@ Exports follow data minimization principles:
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-19 - Step 6: Added Living Graph Dashboards (Section 9.3-9.5) with community health, portal performance, neighbor stability metrics, alerts, and export functionality -->
+<!-- Last Updated: 2026-01-22 - Updated webhook event properties to match uc-webhooks implementation (RetryableError/NonRetryableError types, correlation_id) -->
