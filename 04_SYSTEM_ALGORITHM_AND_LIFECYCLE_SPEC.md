@@ -789,7 +789,7 @@ FUNCTION update_streak(identity_id, community_id, activity_date):
 
 ### 7.5 Mission Generation
 
-Daily missions are generated at 00:00 UTC-3 (São Paulo timezone):
+Daily missions are generated at 03:00 UTC (00:00 BRT/São Paulo):
 
 ```
 FUNCTION generate_daily_missions(community_id):
@@ -1256,14 +1256,18 @@ CREATE TABLE portal_reports (
 
 ### 9.1 Job Registry
 
-| Job | Queue | Schedule | Idempotent | Dead Letter |
-|-----|-------|----------|------------|-------------|
-| generate_daily_missions | missions | 00:00 BRT daily | Yes | dlq:missions |
-| reset_weekly_rankings | rankings | Monday 00:00 BRT | Yes | dlq:rankings |
-| process_webhook | webhooks | Real-time | Yes | dlq:webhooks |
-| send_streak_reminder | notifications | 18:00 BRT daily | Yes | dlq:notifications |
-| cleanup_expired_sessions | maintenance | 03:00 BRT daily | Yes | - |
-| backup_database | maintenance | 03:00 BRT daily | Yes | - |
+> **Timezone Policy:** All cron schedules are stored and executed in **UTC**. BRT equivalents shown for business context (BRT = UTC-3).
+
+| Job | Queue | Schedule (UTC) | BRT Equivalent | Idempotent | Dead Letter |
+|-----|-------|----------------|----------------|------------|-------------|
+| generate_daily_missions | missions | 03:00 UTC daily | 00:00 BRT | Yes | dlq:missions |
+| reset_weekly_rankings | rankings | Monday 03:00 UTC | Monday 00:00 BRT | Yes | dlq:rankings |
+| process_webhook | webhooks | Real-time | Real-time | Yes | dlq:webhooks |
+| send_streak_reminder | notifications | 21:00 UTC daily | 18:00 BRT | Yes | dlq:notifications |
+| cleanup_expired_sessions | maintenance | 06:00 UTC daily | 03:00 BRT | Yes | - |
+| backup_database | maintenance | 06:00 UTC daily | 03:00 BRT | Yes | - |
+| daily_feature_aggregation | analytics | 04:00 UTC daily | 01:00 BRT | Yes | dlq:analytics |
+| community_graph_build | analytics | 04:15 UTC daily | 01:15 BRT | Yes | dlq:analytics |
 
 ### 9.2 Webhook Processing Flow
 

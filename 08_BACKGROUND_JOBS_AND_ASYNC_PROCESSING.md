@@ -84,7 +84,7 @@ const dailyMissionsJob: JobDefinition = {
   name: 'daily-missions-assignment',
   queue: 'gamification',
   description: 'Assign daily missions to all active members across all communities',
-  schedule: '1 0 * * *',       // 00:01 UTC daily
+  schedule: '1 3 * * *',       // 03:01 UTC (00:01 BRT) daily
   priority: 'high',
   timeout_ms: 300000,          // 5 minutes
   retry: {
@@ -601,19 +601,19 @@ async function postBuildCircuitBreakers(
 
 ### 2.1 Cron Schedule Registry
 
-> **Timezone:** All scheduled jobs run in **America/Sao_Paulo** timezone to align with Brazilian user activity patterns.
+> **Timezone Policy:** All cron expressions are stored and executed in **UTC**. BRT equivalents shown for business context (BRT = UTC-3, America/Sao_Paulo).
 
-| Schedule | Cron Expression | Timezone | Jobs |
-|----------|-----------------|----------|------|
-| Midnight Daily | `0 0 * * *` | America/Sao_Paulo | streak-check |
-| Early Morning | `1 0 * * *` | America/Sao_Paulo | daily-missions-assignment |
-| Post-Midnight | `0 1 * * *` | America/Sao_Paulo | daily-feature-aggregation |
-| Pre-Dawn | `0 2 * * *` | America/Sao_Paulo | data-anonymization |
-| Backup Window | `0 3 * * *` | America/Sao_Paulo | backup-database, session-cleanup |
-| Graph Build | `15 4 * * *` | America/Sao_Paulo | community-graph-build |
-| Weekly Reset | `0 0 * * 0` | America/Sao_Paulo | weekly-ranking-reset |
-| Hourly Health | `0 * * * *` | America/Sao_Paulo | health-check |
-| Every 5 Minutes | `*/5 * * * *` | America/Sao_Paulo | queue-metrics |
+| BRT Time | UTC Cron | UTC Time | Jobs |
+|----------|----------|----------|------|
+| 00:00 BRT | `0 3 * * *` | 03:00 UTC | streak-check |
+| 00:01 BRT | `1 3 * * *` | 03:01 UTC | daily-missions-assignment |
+| 01:00 BRT | `0 4 * * *` | 04:00 UTC | daily-feature-aggregation |
+| 01:15 BRT | `15 4 * * *` | 04:15 UTC | community-graph-build |
+| 02:00 BRT | `0 5 * * *` | 05:00 UTC | data-anonymization |
+| 03:00 BRT | `0 6 * * *` | 06:00 UTC | backup-database, session-cleanup |
+| Sunday 00:00 BRT | `0 3 * * 0` | Sunday 03:00 UTC | weekly-ranking-reset |
+| Every hour | `0 * * * *` | UTC | health-check |
+| Every 5 min | `*/5 * * * *` | UTC | queue-metrics |
 
 ### 2.2 Scheduler Configuration
 
