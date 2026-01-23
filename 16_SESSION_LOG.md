@@ -41,6 +41,84 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-23-1
+
+**Date:** 2026-01-23
+**Duration:** ~2 hours
+**Focus Area:** UC World Camera Controls, Zoom Restrictions & Neighbor Community Preview
+
+### Summary
+Implemented user zoom restrictions, admin-only zoom controls, top-down view mode (F3), and neighbor community preview system that shows neighboring hexagons at portal edges. Also fixed Grafana container permission issue.
+
+### Changes Made
+
+**uc-world (8 files):**
+
+1. **client/src/core/InputManager.ts**
+   - Added `isZoomEnabled` flag to control zoom access
+   - Zoom controls (scroll, +/-) now only work when enabled
+   - Added `setZoomEnabled()` method
+
+2. **client/src/core/ThreeEngine.ts**
+   - Set default user frustum to 10 (fixed zoom level)
+   - Added `USER_FRUSTUM_SIZE` constant
+
+3. **client/src/core/AdminCameraController.ts**
+   - Renamed 'overworld' mode to 'topdown'
+   - F3 now shows perpendicular view of same scene (not honeycomb grid)
+   - Added admin default zoom (frustum 25)
+   - F3 default zoom increased to 80, max to 120
+   - Fixed F3 lag by snapping camera when close to target
+
+4. **client/src/systems/NeighborPreviewRenderer.ts** (NEW)
+   - Renders neighboring community hexagons at portal edges
+   - Distance-based fade for normal users (100-500px)
+   - Always visible in admin mode (F2/F3)
+   - 6-tile gap between communities (matches portal depth)
+
+5. **client/src/systems/PortalPreviewRenderer.ts**
+   - Added zoom-based opacity (labels show when admin zooms out)
+   - Labels appear at frustum >= 15, full opacity at >= 30
+
+6. **client/src/scenes/GameWorld.ts**
+   - Integrated NeighborPreviewRenderer
+   - Admin mode enables zoom controls and neighbor visibility
+   - F3 mode shows top-down view with neighbors visible
+
+7. **client/src/entities/Player.ts**
+   - Fixed method name typo from rebase
+
+8. **CLAUDE.md**
+   - Updated camera controls documentation
+   - Added implementation status for new features
+
+**Infrastructure:**
+- Fixed Grafana container permission issue (changed `/etc/uc/secrets/grafana_admin_password` ownership to UID 472)
+
+### Decisions Made
+- User zoom locked at frustum 10 for consistent gameplay experience
+- F3 repurposed from overworld honeycomb to top-down view of same scene
+- Neighbor gap set to 6 tiles (matching portal zone depth) for symmetry
+- Portal labels use both distance AND zoom-based visibility
+
+### Issues Encountered
+- Grafana container restarting due to secret file permissions → Fixed by chown to grafana UID (472)
+- F3 mode lag from constant camera lerp → Fixed by snapping when close to target
+- TypeScript error after rebase → Fixed method name typo
+
+### Follow-up Items
+- [ ] Manual browser testing: neighbor hexagon preview appearance
+- [ ] Manual browser testing: F3 top-down view performance
+- [ ] Manual browser testing: portal label fade behavior
+- [ ] Consider adding community names to neighbor hexagon previews
+
+### Notes
+- Normal users now have fixed zoom - this improves consistency but limits exploration
+- Admin modes (F2/F3) provide full zoom control for debugging and overview
+- Neighbor preview creates "magical" appearance effect as user approaches portals
+
+---
+
 ## SESS-2026-01-22-1
 
 **Date:** 2026-01-22
