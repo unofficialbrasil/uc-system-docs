@@ -42,6 +42,64 @@ Each session entry follows this structure:
 ---
 
 ## SESS-2026-01-24-3
+## SESS-2026-01-24-4
+
+**Date:** 2026-01-24
+**Duration:** ~2 hours
+**Focus Area:** Multi-Platform Social Tracking Implementation
+
+### Summary
+Implemented extensible tracking architecture for Meta Pixel and Instagram webhooks across three services (frontend, uc-webhooks, uc-api).
+
+### Changes Made
+
+**unofficial-communities (Frontend):**
+- Created `src/lib/tracking/types.ts` - Consent types and TrackingPlatform interface
+- Created `src/lib/tracking/platforms/ga4.ts` - GA4 adapter with LGPD compliance
+- Created `src/lib/tracking/platforms/metaPixel.ts` - Meta Pixel adapter
+- Created `src/lib/tracking/index.ts` - Central tracking orchestrator
+- Modified `src/components/CookieBanner.tsx` - Granular consent UI (essential/analytics/marketing)
+- Modified `src/lib/env.ts` - Added TRACKING config section
+- Created `.dockerignore` - Fixed Docker build issues
+
+**uc-webhooks:**
+- Created `src/meta/instagramMapper.ts` - Maps Instagram payloads to SocialEvent format
+- Created `src/meta/instagramRoute.ts` - Instagram webhook endpoints
+- Modified `src/server.ts` - Registered Instagram route
+- Created `.dockerignore` - Fixed Docker build issues
+
+**uc-api:**
+- Modified `src/services/consentService.ts` - Added `instagram_activity` consent purpose
+- Modified `src/services/analyticsEventsService.ts` - Added Instagram event type mappings
+- Modified `src/services/socialEventsProcessor.ts` - Extended consent checks for Instagram
+
+### Decisions Made
+- Instagram webhooks share same verify token and app secret as WhatsApp (same Meta App)
+- Extensible TrackingPlatform interface allows easy addition of future platforms (TikTok, X, etc.)
+- Consent UI shows three options: Essential Only, Customize (toggle analytics/marketing), Accept All
+- Debug logging removed from tracking module to pass pre-commit hooks
+
+### Issues Encountered
+- **Docker build error**: `cannot replace to directory @types/node with file` - Fixed by creating `.dockerignore` files to exclude pnpm symlinked `node_modules`
+- **TypeScript error**: FBQ type missing `callMethod` property - Added optional property to type definition
+- **Pre-commit hook blocking console.log** - Converted debug logging to no-op function
+
+### Follow-up Items
+- [ ] Configure Meta webhook credentials (META_WHATSAPP_VERIFY_TOKEN, META_WHATSAPP_APP_SECRET)
+- [ ] Configure tracking IDs (NEXT_PUBLIC_GA_ID, NEXT_PUBLIC_META_PIXEL_ID)
+- [ ] Subscribe Instagram webhooks in Meta Developer Dashboard
+- [ ] Create TrackingProvider component for automatic page view tracking
+- [ ] Update /cookies page to reflect active Meta Pixel usage
+- [ ] Restart uc-webhooks after credentials configured
+
+### Notes
+- uc-webhooks container is in restart loop - needs Meta credentials to start
+- Frontend and uc-api deployed and running successfully
+- Architecture supports adding new platforms with minimal code changes
+
+---
+
+## SESS-2026-01-24-3
 
 **Date:** 2026-01-24
 **Duration:** ~3 hours
