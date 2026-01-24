@@ -41,6 +41,77 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-24-2
+
+**Date:** 2026-01-24
+**Duration:** ~2 hours
+**Focus Area:** Portal Travel Implementation (Living Graph Step 5)
+
+### Summary
+Implemented end-to-end portal travel functionality in UC World 3D. Users can now travel between community worlds by pressing E or clicking the Travel button when in a portal zone.
+
+### Changes Made
+
+**uc-world/server/src/rooms/WorldRoom.ts:**
+- Added `PORTAL_TRAVEL_EXECUTE` message after validating travel
+- Fixed destination URL domain (unofficial.com.br → unofficialcommunities.com.br)
+- Added logging for communityId on room creation
+
+**uc-world/client/src/network/ColyseusClient.ts:**
+- Added `onPortalTravelExecute` callback handler
+- Import `PortalTravelExecutePayload` type
+
+**uc-world/client/src/systems/ZoneManager.ts:**
+- Added Travel button to portal info card
+- Added `requestTravel()`, `canTravel()`, `resetTravelingState()` methods
+- Added `setTravelRequestCallback()` for wiring up travel requests
+- Added `pointer-events: auto` to fix button clicks
+- Added loading state with spin animation
+
+**uc-world/client/src/core/InputManager.ts:**
+- Added E key handler for interact/travel action
+- Added `InteractCallback` type and `setInteractCallback()` method
+
+**uc-world/client/src/scenes/GameWorld.ts:**
+- Wired up ZoneManager travel callback to ColyseusClient
+- Added `handleInteract()` for E key
+- Added `executePortalTravel()` with URL navigation
+
+**uc-world/client/src/main.ts:**
+- Fixed: Preserve `communityId` from URL when fetching identity from API
+
+**uc-world/client/index.html:**
+- Added `@keyframes spin` CSS animation
+
+### Decisions Made
+- Portal travel uses page navigation (window.location.href) rather than in-place room switching for simplicity
+- Identity params (identityId, username) are preserved across navigation
+- communityId is always read from URL params to support portal travel
+
+### Issues Encountered
+1. **Wrong domain**: Default URL was `world.unofficial.com.br` instead of `world.unofficialcommunities.com.br` - Fixed
+2. **Button not clickable**: Label container had `pointer-events: none` - Added `pointer-events: auto` to card
+3. **communityId lost**: When identity fetched from API, URL communityId was ignored - Fixed to always preserve URL communityId
+
+### Follow-up Items
+- [ ] Sentry error tracking setup
+- [ ] UptimeRobot monitoring
+- [ ] Google Analytics 4 configuration
+- [ ] Email service implementation
+- [ ] Character animations in UC World
+- [ ] Private chat / whisper system
+
+### Notes
+Portal travel flow:
+1. Player enters portal zone → portal info card appears
+2. Player presses E or clicks Travel button
+3. Client sends PORTAL_TRAVEL_REQUEST to server
+4. Server validates via uc-api, sends PORTAL_TRAVEL_RESPONSE
+5. If allowed, server sends PORTAL_TRAVEL_EXECUTE with destination URL
+6. Client shows loading, disconnects, navigates to new community URL
+
+---
+
 ## SESS-2026-01-24-1
 
 **Date:** 2026-01-24
