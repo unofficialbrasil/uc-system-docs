@@ -41,6 +41,59 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-25-1
+
+**Date:** 2026-01-25
+**Duration:** ~2 hours
+**Focus Area:** Multi-Domain Configuration & SEO Foundation
+
+### Summary
+Configured dual-domain setup with `unofficialbrasil.com.br` as the canonical domain and `unofficialcommunities.com.br` as secondary. Set up SEO foundation for launch readiness.
+
+### Changes Made
+
+**Nginx Configuration:**
+- Added SSL certificate for unofficialbrasil.com.br (Let's Encrypt)
+- Configured HTTPS server block for unofficialbrasil.com.br
+- Both domains now proxy to same Next.js app with canonical headers
+
+**unofficial-communities (Frontend):**
+- `src/app/layout.tsx` - Changed BASE_URL to unofficialbrasil.com.br, added Google verification for unofficialcommunities.com.br
+- `src/app/robots.ts` - Updated baseUrl to unofficialbrasil.com.br
+- `src/app/sitemap.ts` - Updated BASE_URL to unofficialbrasil.com.br
+
+**DNS (Hostinger):**
+- unofficialbrasil.com.br A record → 72.61.134.35
+- Removed lendasvip subdomain
+- Cleaned up Hostinger email records from unofficialcommunities.com.br
+
+**Google Search Console:**
+- Added unofficialbrasil.com.br property with sitemap
+- Added unofficialcommunities.com.br property (verification only, no sitemap)
+- Cleaned up old lendasvip sitemap references
+
+### Decisions Made
+- unofficialbrasil.com.br as canonical domain (matches @unofficialbrasil social handles)
+- unofficialcommunities.com.br as secondary domain with canonical tags pointing to primary
+- Don't submit sitemap for secondary domain - let Google discover canonical relationship naturally
+
+### Issues Encountered
+- Old lendasvip sitemaps in Search Console showing 404 errors cannot be deleted (Google limitation) - ignored, no impact
+- Meta Business Support form not accepting phone number - switched to alternative request type
+
+### Follow-up Items
+- [ ] Wait for Meta Business Support response on WhatsApp display name change
+- [ ] Update social media bio links when ready to launch
+- [ ] Submit sitemap when marketing site is complete
+- [ ] Configure other parked domains when needed (unofficialcommunities.app, unofficial.com.br)
+
+### Notes
+- Domain strategy documented: unofficialbrasil.com.br (canonical), unofficialcommunities.com.br (secondary), plus parked domains for future
+- PWA recommended as first mobile app approach before native wrapper
+- All SEO foundation in place - ready for launch when site is complete
+
+---
+
 ## SESS-2026-01-24-3
 ## SESS-2026-01-24-4
 
