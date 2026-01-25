@@ -3277,3 +3277,55 @@ Completed all Week 3 tasks from the Launch Execution Plan. System is now at COND
 - Sitemap and robots.txt verified accessible
 
 ---
+
+---
+
+## SESS-2026-01-25-1
+
+**Date:** 2026-01-25
+**Focus Area:** Social Platform Opt-In Flow - Instagram Webhook Handler
+
+### Summary
+Completed the Instagram verification DM webhook handler for the social opt-in flow. Users can now connect their Instagram accounts by sending a verification code (UC-XXXXXX) as a DM to @unofficialbrasil.
+
+### Changes Made
+
+**uc-api:**
+- `src/routes/social/socialRoutes.ts` - Added internal endpoint `/internal/social/instagram/verify-dm`
+- `src/services/socialConnectionService.ts` - Updated Instagram handle to @unofficialbrasil
+- `src/services/analyticsEventsService.ts` - Added WhatsApp group event mappings
+
+**uc-webhooks:**
+- `src/meta/instagramVerificationHandler.ts` (new) - Detects UC-XXXXXX codes in DMs
+- `src/meta/instagramRoute.ts` - Integrated verification handler before normal event processing
+- `src/meta/whatsappMapper.ts` - Added group event support
+- `src/socialEvent.ts` - Added group lifecycle event types
+
+**unofficial-communities:**
+- `src/app/(members)/dashboard/sections/SocialConnections.tsx` - Updated Instagram handle to @unofficialbrasil
+
+### Commits Pushed
+- uc-api: `367dfa7` feat(social): add WhatsApp/Instagram opt-in verification flow
+- uc-api: `982150f` feat(analytics): add WhatsApp group event mappings
+- uc-webhooks: `5608bc7` feat(instagram): add verification DM handler for social opt-in
+- unofficial-communities: `43f4218` feat(profile): add social connections UI for WhatsApp/Instagram
+
+### Verification Flow
+```
+User sends DM "UC-ABC123" to @unofficialbrasil
+    → Meta Webhook → uc-webhooks (port 4101)
+    → instagramRoute detects verification pattern
+    → Calls uc-api /internal/social/instagram/verify-dm
+    → uc-api verifies code, links Instagram account
+    → User's dashboard shows "Instagram conectado"
+```
+
+### Follow-up Items
+- [ ] Test WhatsApp OTP flow end-to-end (requires WhatsApp Business API template)
+- [ ] Test Instagram DM verification with real DM to @unofficialbrasil
+- [ ] Enable FEATURE_IDENTITY_RESOLUTION flag in production when ready
+
+### Notes
+- Internal endpoint secured by Docker network IP check + service token
+- Verification codes expire after 10 minutes, max 3 attempts
+- All repos clean and synced to GitHub
