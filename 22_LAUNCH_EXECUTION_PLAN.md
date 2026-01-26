@@ -280,18 +280,17 @@ Week 2 (Jan 27 - Feb 2):
 
 ### Week 1 GO/NO-GO Checklist
 
-- [ ] 4 policy pages published
-- [ ] Cookie banner working (blocks GA4 without consent)
-- [ ] Age gate blocking <18
-- [ ] Footer with company data
-- [ ] SSL A+ rating
-- [ ] Security headers configured
-- [ ] Sentry capturing errors
-- [ ] UptimeRobot monitoring active
-- [ ] Backups verified
+- [x] 4 policy pages published
+- [x] Cookie banner working (blocks GA4 without consent)
+- [x] Age gate blocking <18
+- [x] Footer with company data
+- [x] SSL A+ rating
+- [x] Security headers configured
+- [x] Sentry capturing errors
+- [x] UptimeRobot monitoring active
+- [x] Backups verified
 
-**If ALL checked → Proceed to Week 2**
-**If blockers → Fix before Monday**
+**Week 1: ALL PASSED (verified 2026-01-26)**
 
 ---
 
@@ -311,15 +310,15 @@ Week 2 (Jan 27 - Feb 2):
 
 ### Week 2 GO/NO-GO Checklist
 
-- [ ] Homepage complete (hero, features, pricing CTA, FAQ)
-- [ ] Pricing page with 4 tiers
-- [ ] 3 landing pages live
-- [ ] Trust center published
-- [ ] Blog with 3 posts
-- [ ] SEO basics (meta tags, sitemap)
-- [ ] GA4 tracking active
-- [ ] GSC verified + sitemap submitted
-- [ ] Mobile responsive on all pages
+- [x] Homepage complete (hero, features, pricing CTA, FAQ)
+- [x] Pricing page with 3 tiers (Starter R$0, Pro R$149, Business R$499)
+- [x] 3 landing pages live (ecommerce, infoprodutores, agencias)
+- [x] Trust center published (/seguranca)
+- [x] Blog with 3 posts (gamificacao-etica, guia-retencao, living-graph)
+- [x] SEO basics (meta tags, sitemap with 16 URLs, robots.txt, JSON-LD structured data)
+- [ ] GA4 tracking active (infrastructure ready, needs measurement ID)
+- [x] GSC verified + sitemap submitted
+- [ ] Mobile responsive on all pages (needs manual testing)
 
 ---
 
@@ -502,3 +501,5 @@ mkdir -p src/app/\(site\)/reembolso
 ---
 
 *This document consolidates estrategia-lancamento.md, cronograma-3-semanas.md, guia-tecnico-seguranca-seo.md, estrategia-completa-pt1.md, politicas-conteudo.md, and resumo-executivo.md into an actionable execution plan.*
+
+<!-- Last Updated: 2026-01-26 - Marked Week 1 GO/NO-GO as passed, updated Week 2 checklist (7/9 done, GA4 and mobile testing pending) -->

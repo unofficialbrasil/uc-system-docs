@@ -86,15 +86,16 @@
 ## Pre-Launch Action Items
 
 ### Required Before Launch
-1. [ ] Rebuild Docker container with new code (includes seguranca page, performance optimizations)
-2. [ ] Configure UptimeRobot monitoring
-3. [ ] Configure Sentry (add SENTRY_DSN to environment)
+1. [x] Rebuild Docker container with new code (includes seguranca page, performance optimizations) - Done 2026-01-26
+2. [x] Configure UptimeRobot monitoring - Done 2026-01-26 (4 monitors)
+3. [x] Configure Sentry (add SENTRY_DSN to environment) - Done 2026-01-26
 4. [ ] Verify CNPJ registration and update footer
 
 ### Recommended Before Launch
 1. [ ] Create Playwright E2E test suite for critical paths
 2. [ ] Set up alerting rules in Grafana
 3. [ ] Document runbook for on-call
+4. [ ] Configure GA4 tracking (infrastructure ready, needs measurement ID)
 
 ### Post-Launch
 1. [ ] Run Lighthouse audit and verify scores > 90
@@ -106,8 +107,11 @@
 ## Final Verdict
 
 **CONDITIONAL GO** - Ready for launch with the following conditions:
-1. Container rebuild required for new features
+1. ~~Container rebuild required for new features~~ - Done 2026-01-26
 2. CNPJ needs to be updated in footer when registration completes
-3. Sentry/UptimeRobot setup should be completed before go-live
+3. ~~Sentry/UptimeRobot setup should be completed before go-live~~ - Done 2026-01-26
 
 All critical systems operational. Security posture is strong. LGPD compliance verified.
+All 16 marketing pages verified live in production (2026-01-26).
+
+<!-- Last Updated: 2026-01-26 - Marked container rebuild, Sentry, UptimeRobot as done; added GA4 to recommended items -->
