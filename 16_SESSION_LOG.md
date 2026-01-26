@@ -41,6 +41,68 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-25-2
+
+**Date:** 2026-01-25
+**Duration:** ~1 hour
+**Focus Area:** Domain Alignment & Mobile App Preparation
+
+### Summary
+Extended canonical domain setup to include API and World subdomains on `unofficialbrasil.com.br`. Audited entire codebase and updated all domain references for consistency. Prepared infrastructure for upcoming mobile app development.
+
+### Changes Made
+
+**Nginx Configuration:**
+- Added `api.unofficialbrasil.com.br` with SSL certificate
+- Added `world.unofficialbrasil.com.br` with SSL certificate and WebSocket support
+- Both new domains proxy to existing services (uc-api:3010, uc-world:3005)
+
+**docker-compose.prod.yml:**
+- Updated `VITE_WS_URL` to `wss://world.unofficialbrasil.com.br`
+- Updated `NEXT_PUBLIC_API_BASE_URL` to `https://api.unofficialbrasil.com.br`
+- Updated `NEXT_PUBLIC_UC_WORLD_URL` to `https://world.unofficialbrasil.com.br`
+
+**unofficial-communities (Frontend):**
+- `src/app/api/verify/confirm/route.ts` - Updated API URL comment
+- `src/app/api/v1/auth/login/route.ts` - Updated world domain comment
+- `src/app/api/v1/auth/signup/route.ts` - Updated world domain comment
+- `src/app/(site)/admin/components/AdminLoginCard.tsx` - Updated placeholder email
+- `src/components/world/WorldExperience.tsx` - Updated fallback URL
+
+**uc-world:**
+- `server/src/rooms/WorldRoom.ts` - Updated UC_WORLD_BASE_URL fallback
+- `client/src/config.ts` - Updated apiUrl fallback
+
+**uc-system-docs:**
+- `11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md` - Fixed staging URLs to match reality (unofficialcommunities.com.br)
+
+### Domain Architecture (Final)
+
+| Domain | Type | Purpose |
+|--------|------|---------|
+| unofficialbrasil.com.br | Canonical | Main site |
+| api.unofficialbrasil.com.br | Canonical | API (new) |
+| world.unofficialbrasil.com.br | Canonical | UC World (new) |
+| unofficialcommunities.com.br | Secondary | Redirects to canonical |
+| api.unofficialcommunities.com.br | Secondary | Still works (backwards compat) |
+| staging.unofficialcommunities.com.br | Staging | Staging site |
+| staging-api.unofficialcommunities.com.br | Staging | Staging API |
+
+### DNS Records Fixed
+- Removed duplicate A record (212.85.6.149) from unofficialcommunities.com.br
+- Recommended removal of AAAA record pointing to wrong IPv6
+
+### Follow-up Items
+- [x] Rebuild and deploy containers with new domain config
+- [ ] Remove AAAA record from unofficialcommunities.com.br (points to wrong server)
+
+### Notes
+- Mobile app should use `api.unofficialbrasil.com.br` as API base URL
+- Both domain sets point to same backend - existing integrations won't break
+- Staging remains on unofficialcommunities.com.br (no change needed)
+
+---
+
 ## SESS-2026-01-25-1
 
 **Date:** 2026-01-25
