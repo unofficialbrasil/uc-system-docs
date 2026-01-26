@@ -41,6 +41,41 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-25-3
+
+**Date:** 2026-01-25
+**Focus Area:** DNS Cleanup, Session Prompt Self-Update, Branch Management
+
+### Summary
+Reviewed pending reminders from previous sessions. Created main-1 branch in uc-world. Enhanced session prompts with staging checks, branch warnings, and self-update mechanism. Completed DNS configuration for both domains, obtained SSL certificates for staging subdomains, and established the dual-domain architecture (DEC-0013): canonical domain gets all subdomains, secondary domain gets only essentials.
+
+### Changes Made
+
+**uc-system-docs:**
+- `17_CLAUDE_CODE_PROMPTS.md` - Added staging API health check, branch warnings, self-update check (Phase 2.1), staging DB check to close prompt, updated GO/NO-GO and SAFE TO LEAVE criteria
+- `15_DECISION_LOG.md` - Added DEC-0013: Dual-Domain Architecture
+- `11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md` - Updated staging URLs to unofficialbrasil.com.br
+
+**Nginx:**
+- `/etc/nginx/conf.d/unofficial.conf` - Staging HTTP blocks now only serve unofficialbrasil.com.br
+- `/etc/nginx/conf.d/30-staging-https.conf` - Rewritten with only unofficialbrasil.com.br staging blocks
+
+**SSL Certificates:**
+- Obtained cert for staging.unofficialbrasil.com.br + staging-api.unofficialbrasil.com.br
+
+**uc-world:**
+- Created and pushed `main-1` branch for version tracking
+
+### Decisions Made
+- DEC-0013: Staging subdomains only on canonical domain (unofficialbrasil.com.br), not on secondary (unofficialcommunities.com.br)
+- Session prompts must self-update when new features need monitoring (Phase 2.1)
+
+### Follow-up Items
+- [ ] Deploy staging frontend when needed (port 3002 currently empty → staging.unofficialbrasil.com.br returns 502)
+- [ ] Wait for Meta Business Support response on WhatsApp display name change
+
+---
+
 ## SESS-2026-01-25-2
 
 **Date:** 2026-01-25
