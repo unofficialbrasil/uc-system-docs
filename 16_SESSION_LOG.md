@@ -41,6 +41,41 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-26-1
+
+**Date:** 2026-01-26
+**Focus Area:** Session Command Hardening & Documentation Consistency Enforcement
+
+### Summary
+Audited uc-open and uc-close session commands and found three divergent versions (home, project, 17_ reference) with weak documentation enforcement. Rewrote both commands with mandatory consistency checks. Updated canonical index to include docs 22-24 that were on disk but unregistered.
+
+### Changes Made
+- `uc-system-docs/01_SYSTEM_CANONICAL_INDEX.md`: Added docs 22-24 to registry, updated count 21→24
+- `uc-system-docs/CLAUDE.md`: Updated document registry table and counts 21→24
+- `uc-system-docs/README.md`: Updated overview table and counts 21→24
+- `uc-system-docs/17_CLAUDE_CODE_PROMPTS.md`: Rewritten as v2.0 reference doc (command files are authoritative)
+- `/home/caue/.claude/commands/uc-open.md`: Rewritten with 10 phases (added Phase 9: Documentation Consistency Audit, staging probe, branch warnings)
+- `/home/caue/.claude/commands/uc-close.md`: Rewritten with 7 phases (mandatory doc updates, self-update check, consistency validation gate)
+- `/srv/unofficial/prod/app/.claude/commands/uc-open.md`: Synced from home
+- `/srv/unofficial/prod/app/.claude/commands/uc-close.md`: Synced from home
+
+### Documentation Updated
+- `01_SYSTEM_CANONICAL_INDEX.md`: Added 3 missing doc entries (22-24), updated count and date
+- `CLAUDE.md` (uc-system-docs): Updated registry table, counts, current status
+- `README.md` (uc-system-docs): Updated overview table, counts, structure diagram
+- `17_CLAUDE_CODE_PROMPTS.md`: Complete rewrite to v2.0 matching new command structure
+
+### Decisions Made
+- Home-level command files (`/home/caue/.claude/commands/`) are the authoritative source
+- Project-level copies must be identical (enforced by md5 hash check)
+- 17_CLAUDE_CODE_PROMPTS.md is a reference document, not the source of truth
+- Documentation consistency audit runs at both session open (Phase 9) and close (Phase 6)
+
+### Follow-up Items
+- [ ] Monitor first full cycle of new uc-open/uc-close to verify all checks work correctly
+
+---
+
 ## SESS-2026-01-25-3
 
 **Date:** 2026-01-25

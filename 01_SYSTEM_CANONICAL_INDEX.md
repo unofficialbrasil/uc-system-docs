@@ -1,7 +1,7 @@
 # System Canonical Index
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-25
 **Version:** 2.2.0
 **Maintainer:** Engineering Team
 
@@ -25,7 +25,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 
 ---
 
-## 2. Document Registry (21 Files)
+## 2. Document Registry (24 Files)
 
 | # | Document | Purpose | Status |
 |---|----------|---------|--------|
@@ -50,6 +50,9 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 | 19 | `19_EXECUTION_PLAN.md` | System execution plan and implementation guide | Active |
 | 20 | `20_ADULT_BY_DESIGN_SPEC.md` | 18+ age verification and enforcement policy | Active |
 | 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` | Admin camera controls and debug tools | Active |
+| 22 | `22_LAUNCH_EXECUTION_PLAN.md` | Launch execution plan and timeline | Active |
+| 23 | `23_MONITORING_SETUP.md` | Monitoring setup guide and health endpoints | Active |
+| 24 | `24_LAUNCH_GO_NO_GO_CHECKLIST.md` | Launch go/no-go checklist | Active |
 
 ---
 
@@ -151,4 +154,4 @@ For audit trail:
 *This document is the entry point for understanding the Unofficial Communities system.*
 *All other documents in this folder are discoverable from here.*
 
-<!-- Last Updated: 2026-01-19 - Added 21_UC_WORLD_ADMIN_CONTROLS.md to registry -->
+<!-- Last Updated: 2026-01-25 - Added docs 22-24 (launch plan, monitoring, go/no-go checklist) to registry -->

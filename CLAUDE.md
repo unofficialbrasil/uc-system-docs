@@ -21,12 +21,12 @@ All documents must be:
 | Property | Value |
 |----------|-------|
 | Location | `/srv/unofficial/prod/app/uc-system-docs/` |
-| Documents | 21 numbered files |
+| Documents | 24 numbered files |
 | Purpose | Platform-wide specifications and governance |
 
 ---
 
-## Document Registry (21 Files)
+## Document Registry (24 Files)
 
 | # | File | Purpose | Update When |
 |---|------|---------|-------------|
@@ -51,6 +51,9 @@ All documents must be:
 | 19 | `19_EXECUTION_PLAN.md` | Execution plan | Execution steps change |
 | 20 | `20_ADULT_BY_DESIGN_SPEC.md` | Adult-by-Design policy | Age verification changes |
 | 21 | `21_UC_WORLD_ADMIN_CONTROLS.md` | Admin camera & debug tools | Admin features change |
+| 22 | `22_LAUNCH_EXECUTION_PLAN.md` | Launch plan & timeline | Launch milestones change |
+| 23 | `23_MONITORING_SETUP.md` | Monitoring & health endpoints | Monitoring config changes |
+| 24 | `24_LAUNCH_GO_NO_GO_CHECKLIST.md` | Launch go/no-go checklist | Launch readiness changes |
 
 ---
 
@@ -114,12 +117,12 @@ git add -A && git commit -m "docs: [description]" && git push origin main
 
 ## Current Status
 
-- **21 documents** covering all platform aspects
-- **Numbered** (01-21) for ordered display
+- **24 documents** covering all platform aspects
+- **Numbered** (01-24) for ordered display
 - **Session prompts** v6.1 with comprehensive checks
 - **Backup monitoring** integrated into session prompts
 
 ---
 
-<!-- Last Updated: 2026-01-21 - Session close: dual-mode visualization + auth metrics -->
+<!-- Last Updated: 2026-01-25 - Updated document registry to 24 files -->
 

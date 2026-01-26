@@ -4,7 +4,7 @@ System-wide documentation for Unofficial Communities platform - the authoritativ
 
 ## Overview
 
-This repository contains 21 numbered documents covering all aspects of the Unofficial Communities platform:
+This repository contains 24 numbered documents covering all aspects of the Unofficial Communities platform:
 
 | # | Document | Purpose |
 |---|----------|---------|
@@ -29,13 +29,16 @@ This repository contains 21 numbered documents covering all aspects of the Unoff
 | 19 | Execution Plan | Execution steps and timeline |
 | 20 | Adult-by-Design Spec | Age verification policy |
 | 21 | UC World Admin Controls | Admin camera and debug tools |
+| 22 | Launch Execution Plan | Launch execution plan and timeline |
+| 23 | Monitoring Setup | Monitoring setup guide and health endpoints |
+| 24 | Launch Go/No-Go Checklist | Launch readiness checklist |
 
 ## Documentation Structure
 
 ```
 Unofficial Communities Documentation
 ├── uc-system-docs/           # Platform-wide (this repo)
-│   └── 21 numbered documents
+│   └── 24 numbered documents
 │
 └── Per-repository:
     ├── CLAUDE.md             # Technical reference
@@ -59,4 +62,4 @@ Start with `01_SYSTEM_CANONICAL_INDEX.md` - it provides the reading order and do
 
 Proprietary - Unofficial Communities
 
-<!-- Last Reviewed: 2026-01-21 - Updated document count to 21 -->
+<!-- Last Reviewed: 2026-01-25 - Updated document count to 24 -->
