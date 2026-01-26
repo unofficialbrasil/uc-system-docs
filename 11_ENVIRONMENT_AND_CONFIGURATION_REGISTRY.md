@@ -447,7 +447,7 @@ REDIS_PORT=6379
 # Security
 SESSION_SECRET=${SESSION_SECRET}
 OTP_SECRET=${OTP_SECRET}
-CORS_ORIGINS=https://staging.unofficialcommunities.com.br
+CORS_ORIGINS=https://staging.unofficialbrasil.com.br
 
 # Integrations (sandbox)
 META_API_VERSION=v21.0
@@ -456,8 +456,8 @@ WHATSAPP_PHONE_ID=${WHATSAPP_PHONE_ID_STAGING}
 WEBHOOK_VERIFY_TOKEN=${WEBHOOK_VERIFY_TOKEN}
 
 # URLs
-NEXT_PUBLIC_API_URL=https://staging-api.unofficialcommunities.com.br
-NEXT_PUBLIC_WS_URL=wss://staging.unofficialcommunities.com.br
+NEXT_PUBLIC_API_URL=https://staging-api.unofficialbrasil.com.br
+NEXT_PUBLIC_WS_URL=wss://staging.unofficialbrasil.com.br
 
 # Features
 FEATURE_UC_WORLD=true
@@ -531,7 +531,7 @@ METRICS_PORT=9090
 | `NODE_ENV` | development | staging | production |
 | `LOG_LEVEL` | debug | info | info |
 | `LOG_FORMAT` | pretty | json | json |
-| `CORS_ORIGINS` | localhost:* | staging.unofficialcommunities.* | unofficialbrasil.* |
+| `CORS_ORIGINS` | localhost:* | staging.unofficialbrasil.* | unofficialbrasil.* |
 | `RATE_LIMIT_MAX` | 1000 | 100 | 60 |
 | `SESSION_TTL_DAYS` | 30 | 7 | 7 |
 | `FEATURE_WHATSAPP_OTP` | false | true | true |

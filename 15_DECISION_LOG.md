@@ -481,6 +481,56 @@ gl_Position = vec4(position.xy, 0.0, 1.0);
 
 ---
 
+### DEC-0013: Dual-Domain Architecture
+**Date:** 2026-01-25
+**Status:** Accepted
+
+#### Context
+The platform operates with two domains: `unofficialbrasil.com.br` and `unofficialcommunities.com.br`. Needed to clarify which is canonical, how staging should be configured, and minimize redundant infrastructure.
+
+#### Options Considered
+1. **Full parity** - Both domains have all subdomains (api, world, staging, staging-api)
+2. **Canonical + minimal secondary** - Full subdomains on canonical, only essentials on secondary
+3. **Single domain** - Deprecate one domain entirely
+
+#### Decision
+Option 2: Canonical domain with minimal secondary for backwards compatibility.
+
+**Canonical (unofficialbrasil.com.br):**
+- @ (root) - Main site
+- www - Main site
+- api - API endpoints
+- world - UC World 3D
+- staging - Staging frontend
+- staging-api - Staging API
+
+**Secondary (unofficialcommunities.com.br):**
+- @ (root) - Redirects/serves with canonical header
+- www - Same as root
+- api - Backwards compatibility for existing integrations
+
+Staging subdomains are NOT needed on secondary domain since:
+- Staging is for internal development/testing
+- No external integrations rely on staging URLs
+- Reduces SSL certificate management overhead
+- Simplifies nginx configuration
+
+#### Trade-offs
+- Must maintain two domain configurations
+- Secondary domain still requires SSL certificates for @, www, api
+- Old documentation may reference wrong domain
+
+#### Rejected Alternatives
+- Full parity: Unnecessary complexity, more SSL certs to manage
+- Single domain: Would break existing integrations using unofficialcommunities.com.br
+
+#### Revisit Criteria
+- If external integrations require staging on secondary domain
+- If maintaining two domains becomes burdensome
+- If rebranding requires domain consolidation
+
+---
+
 ## Decision Index
 
 | ID | Title | Date | Status |
@@ -497,9 +547,10 @@ gl_Position = vec4(position.xy, 0.0, 1.0);
 | DEC-0010 | Prometheus + Grafana for Monitoring | 2026-01-11 | Accepted |
 | DEC-0011 | Adult-by-Design (18+) Policy | 2026-01-17 | Accepted |
 | DEC-0012 | Screen-Space Shader Quad for Background | 2026-01-20 | Accepted |
+| DEC-0013 | Dual-Domain Architecture | 2026-01-25 | Accepted |
 
 ---
 
-*Next Decision ID: DEC-0013*
+*Next Decision ID: DEC-0014*
 
-<!-- Last Updated: 2026-01-21 - Removed duplicate Decision Index table -->
+<!-- Last Updated: 2026-01-25 - Added DEC-0013 Dual-Domain Architecture -->
