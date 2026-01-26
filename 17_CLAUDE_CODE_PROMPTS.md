@@ -1,8 +1,8 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-25
 
-These prompts are **self-maintaining** - they dynamically discover files, services, and configuration at runtime. No manual updates needed.
+These prompts are **self-maintaining** - they dynamically discover files, services, and configuration at runtime. The close prompt includes a self-update phase to ensure this file stays current.
 
 ---
 
@@ -95,6 +95,11 @@ done
 REDIS_PASS=$(cat /etc/uc/secrets/redis_password 2>/dev/null)
 REDIS_STATUS=$(docker exec app-uc-redis-1 redis-cli -a "$REDIS_PASS" ping 2>/dev/null || echo "DOWN")
 [ "$REDIS_STATUS" = "PONG" ] && echo "🟢 Redis: $REDIS_STATUS" || echo "🔴 Redis: $REDIS_STATUS"
+
+echo ""
+echo "── Staging Environment ──"
+STAGING_API=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3011/health 2>/dev/null || echo "DOWN")
+[ "$STAGING_API" = "200" ] && echo "🟢 Staging API (3011): HTTP $STAGING_API" || echo "🟡 Staging API (3011): HTTP $STAGING_API"
 ```
 
 ## PHASE 5: DATABASE STATUS
@@ -156,6 +161,7 @@ echo "╚═══════════════════════�
 echo ""
 
 cd /srv/unofficial/prod/app
+NON_MAIN_BRANCHES=""
 for repo in $(find . -maxdepth 2 -name ".git" -type d 2>/dev/null | sed 's|/\.git||' | sed 's|^\./||' | sort); do
   CHANGES=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l)
   UNPUSHED=$(git -C "$repo" log @{u}..HEAD --oneline 2>/dev/null | wc -l)
@@ -166,8 +172,20 @@ for repo in $(find . -maxdepth 2 -name ".git" -type d 2>/dev/null | sed 's|/\.gi
   [ "$UNPUSHED" -gt 0 ] && STATUS="$STATUS ⚠️ $UNPUSHED unpushed"
   [ -z "$STATUS" ] && STATUS="✓ Clean"
 
-  echo "📁 $repo ($BRANCH): $STATUS"
+  # Warn if not on main branch
+  BRANCH_WARN=""
+  if [ "$BRANCH" != "main" ]; then
+    BRANCH_WARN=" 🔀 NOT ON MAIN"
+    NON_MAIN_BRANCHES="$NON_MAIN_BRANCHES $repo:$BRANCH"
+  fi
+
+  echo "📁 $repo ($BRANCH): $STATUS$BRANCH_WARN"
 done
+
+if [ -n "$NON_MAIN_BRANCHES" ]; then
+  echo ""
+  echo "⚠️  WARNING: Some repos not on main branch:$NON_MAIN_BRANCHES"
+fi
 ```
 
 ## PHASE 8: BACKUP STATUS
@@ -202,13 +220,15 @@ SESSION START SUMMARY
 Date: [current date/time]
 Files loaded: [count from Phase 1]
 Services: [healthy/total from Phase 4]
+Staging: [status from Phase 4]
 Database: [status from Phase 5]
 Queue: [status from Phase 6]
 Git: [repos with uncommitted/unpushed changes]
+Branches: [any repos not on main]
 
 DECISION: [GO / CAUTION / NO-GO]
-- GO: All systems healthy
-- CAUTION: Minor issues, can proceed with awareness
+- GO: All systems healthy, all repos on main
+- CAUTION: Minor issues or feature branches active
 - NO-GO: Critical issues must be resolved first
 
 What would you like to work on?
@@ -260,6 +280,25 @@ echo ""
 echo "System documentation:"
 ls /srv/unofficial/prod/app/uc-system-docs/*.md 2>/dev/null
 ```
+
+### 2.1 Self-Update Check (CRITICAL)
+
+**If this session added new features that need monitoring, update `17_CLAUDE_CODE_PROMPTS.md`:**
+
+Ask yourself:
+1. Did I add a new service/port? → Add to health probes
+2. Did I add a new environment (staging, etc.)? → Add environment check
+3. Did I add new infrastructure (database, cache, queue)? → Add status check
+4. Did I add new security concerns? → Add to security scan
+5. Did I change git workflow (new branches, etc.)? → Add branch check
+
+If YES to any, update:
+- **Open prompt**: Add discovery/health check
+- **Close prompt**: Add verification step
+- **GO/NO-GO criteria**: Update thresholds
+- **SAFE TO LEAVE criteria**: Update conditions
+
+### 2.2 Session Log
 
 **ALWAYS update 16_SESSION_LOG.md** with a session entry:
 
@@ -332,6 +371,10 @@ echo ""
 MYSQL_CONTAINER=$(docker ps --filter "name=mysql" --filter "status=running" --format "{{.Names}}" | head -1)
 [ -n "$MYSQL_CONTAINER" ] && docker exec "$MYSQL_CONTAINER" mysqladmin ping -h localhost 2>/dev/null | grep -q "alive" && echo "🟢 MySQL: Running" || echo "🔴 MySQL: Check required"
 
+# Staging MySQL check
+STAGING_MYSQL=$(docker ps --filter "name=staging.*mysql\|staging.*db" --filter "status=running" --format "{{.Names}}" | head -1)
+[ -n "$STAGING_MYSQL" ] && echo "🟢 Staging DB: Running ($STAGING_MYSQL)" || echo "🟡 Staging DB: Not found"
+
 # Queue check
 REDIS_PASS=$(cat /etc/uc/secrets/redis_password 2>/dev/null)
 FAILED=$(docker exec app-uc-redis-1 redis-cli -a "$REDIS_PASS" ZCARD "bull:social-events-queue:failed" 2>/dev/null || echo "?")
@@ -402,10 +445,15 @@ Commits pushed: [count]
 
 System status:
 - Services: [running/healthy]
+- Staging: [status]
 - Database: [status]
 - Queue failed jobs: [count]
 - Secrets scan: [pass/fail]
 - Git sync: [all synced / pending changes]
+- Branches: [all on main / feature branches active]
+
+Self-update check:
+- Session prompts (17_): [updated / no changes needed]
 
 SAFE TO LEAVE: [YES / NO - list pending items]
 ```
@@ -448,10 +496,12 @@ curl -s http://localhost:[PORT]/health
 |-------|-----|-------|
 | Database | Connected | Connection failed |
 | API health | Returns 200 | Down |
+| Staging API | Returns 200 | Down (warning only) |
 | Redis | PONG | Connection failed |
 | Queue failed jobs | <10 | >10 |
 | Container restarts | 0 | >5 |
 | Secrets in staged files | None | Any detected |
+| Branches | All on main | Feature branches (caution) |
 
 ### SAFE TO LEAVE Criteria
 
@@ -461,7 +511,8 @@ curl -s http://localhost:[PORT]/health
 | Failed jobs | <10 | >=10 |
 | Database | Connected | Disconnected |
 | Containers | All running | Any restarting |
+| Session prompts | Reviewed/updated | New features uncaptured |
 
 ---
 
-*This file is self-maintaining. Service ports, file counts, and configurations are discovered at runtime.*
+*This file is self-maintaining. Service ports, file counts, and configurations are discovered at runtime. The close prompt includes a self-update check (Phase 2.1) to ensure new features are captured in session checks.*
