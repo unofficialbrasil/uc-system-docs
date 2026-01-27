@@ -41,6 +41,37 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-27-1
+
+**Date:** 2026-01-27
+**Focus Area:** Stale Documentation Review, Session Open/Close Housekeeping
+
+### Summary
+Opened session with full health check (all systems healthy). Identified 6 stale documents (>7 days since last review): docs 03, 04, 09, 11, 12, 13. Reviewed all 6 against current system state. Five needed only review stamps (content still accurate). Doc 11 (Environment & Configuration Registry) required a content update to register SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN env vars that were added during session 01-26-3 but never documented in the config registry. Also fixed doc 13 header date inconsistency (said 01-16, content was last changed 01-19).
+
+### Changes Made
+- `uc-system-docs/03_TECHNICAL_ARCHITECTURE.md`: Review stamp added
+- `uc-system-docs/04_SYSTEM_ALGORITHM_AND_LIFECYCLE_SPEC.md`: Review stamp added
+- `uc-system-docs/09_SECURITY_AND_AUTHORIZATION_SPEC.md`: Review stamp added
+- `uc-system-docs/11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md`: Added SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN to observability config (Section 2.5), version bumped to 1.2.1, header date updated
+- `uc-system-docs/12_COMPLIANCE_AND_DATA_PROTECTION.md`: Review stamp added
+- `uc-system-docs/13_RISK_REGISTER.md`: Review stamp added, fixed header date 01-16 → 01-19
+
+### Documentation Updated
+- 6 system docs reviewed and stamped (see Changes Made)
+- Session log entry added (this entry)
+
+### Decisions Made
+- Sentry DSN env vars registered as observability config (not security), consistent with existing LOG_LEVEL, ENABLE_METRICS placement
+- Doc 13 header date corrected to match actual last content change (01-19, not 01-16)
+
+### Follow-up Items
+- [ ] Configure GA4 measurement ID (carried from SESS-2026-01-26-4)
+- [ ] Manual mobile responsive testing (carried from SESS-2026-01-26-4)
+- [ ] Week 3 tasks begin Feb 3: Lighthouse audit, cross-browser testing, support structure
+
+---
+
 ## SESS-2026-01-26-4
 
 **Date:** 2026-01-26
