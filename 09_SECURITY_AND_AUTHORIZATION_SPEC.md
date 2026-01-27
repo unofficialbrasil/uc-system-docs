@@ -1206,3 +1206,4 @@ CREATE TABLE security_audit_log (
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
 
 <!-- Last Updated: 2026-01-19 - Step 6: Added dashboard permissions and endpoints to authorization matrix (Sections 2.2, 3.2) -->
+<!-- Last Reviewed: 2026-01-27 - No updates needed. Auth flows and security specs unchanged. -->

@@ -650,3 +650,4 @@ docker-compose.prod.yml
 *This document describes the technical architecture as implemented. Changes require updates to this document and logging in DECISION_LOG.md.*
 
 <!-- Last Updated: 2026-01-19 - Step 6: Added Admin Dashboard API Endpoints (Section 2.4) with data, export, and rate limits -->
+<!-- Last Reviewed: 2026-01-27 - No updates needed. Architecture matches running services. -->

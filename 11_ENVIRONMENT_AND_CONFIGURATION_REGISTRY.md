@@ -1,8 +1,8 @@
 # Environment and Configuration Registry
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.2.0
+**Last Updated:** 2026-01-27
+**Version:** 1.2.1
 
 ---
 
@@ -109,6 +109,8 @@
 | `METRICS_PORT` | Metrics endpoint port | number | No | `9090` |
 | `ENABLE_TRACING` | Enable distributed tracing | boolean | No | `false` |
 | `TRACING_ENDPOINT` | Tracing collector URL | URL | No | - |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN (frontend) | URL | No | - |
+| `SENTRY_DSN` | Sentry error tracking DSN (build arg + runtime) | URL | No | - |
 
 ---
 
@@ -1058,4 +1060,5 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Updated: 2026-01-19 - Step 7: Added Circuit Breaker Behavior Specification (Section 6.4.1) with automated triggers, k-anon gating, churn limiter, and exploration slot logic -->
+<!-- Last Updated: 2026-01-27 - Added SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN to Observability Configuration (Section 2.5) -->
+<!-- Last Reviewed: 2026-01-27 - All configuration entries verified against running system. -->

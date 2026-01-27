@@ -1626,3 +1626,4 @@ Session: created → active → expired
 *This document is the authoritative specification for all system behavior. If code differs from this document, the code is incorrect.*
 
 <!-- Last Updated: 2026-01-19 - Step 5: Added Section 8.5 Portal Rendering and Travel with visitor mode, travel gating, and user controls -->
+<!-- Last Reviewed: 2026-01-27 - No updates needed. Algorithms and lifecycles unchanged. -->
