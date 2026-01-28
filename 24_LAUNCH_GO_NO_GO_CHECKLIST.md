@@ -95,7 +95,7 @@
 1. [ ] Create Playwright E2E test suite for critical paths
 2. [ ] Set up alerting rules in Grafana
 3. [ ] Document runbook for on-call
-4. [ ] Configure GA4 tracking (infrastructure ready, needs measurement ID)
+4. [x] Configure GA4 tracking (G-H2G0PRBYS2, consent-gated) - Done 2026-01-28
 
 ### Post-Launch
 1. [ ] Run Lighthouse audit and verify scores > 90
@@ -114,4 +114,4 @@
 All critical systems operational. Security posture is strong. LGPD compliance verified.
 All 16 marketing pages verified live in production (2026-01-26).
 
-<!-- Last Updated: 2026-01-26 - Marked container rebuild, Sentry, UptimeRobot as done; added GA4 to recommended items -->
+<!-- Last Updated: 2026-01-28 - GA4 tracking configured (G-H2G0PRBYS2) -->

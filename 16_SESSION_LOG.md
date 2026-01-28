@@ -41,6 +41,43 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-28-1
+
+**Date:** 2026-01-28
+**Focus Area:** GA4 Configuration, Cookie Banner Brand Alignment
+
+### Summary
+Configured Google Analytics 4 (measurement ID G-H2G0PRBYS2) as a build arg in Dockerfile and docker-compose.prod.yml. Verified GA4 ID is inlined in the client JS bundle and consent-gated via the existing LGPD cookie banner. Updated cookie banner to use Neon Noir brand colors (Surface 1 `#161b22` background, Ruby `#fc3151` CTA buttons, Azure `#0797f2` toggles) replacing off-brand teal `#134252` and emerald. Removed specific tool names (Google Analytics, Meta Pixel) from banner text, keeping generic LGPD-compliant language with details delegated to the /cookies policy page. Rebuilt container 3 times during session (GA4 addition, brand colors, text cleanup). Decided Meta Pixel should wait until ad campaigns are active.
+
+### Changes Made
+- `unofficial-communities/Dockerfile`: Added `NEXT_PUBLIC_GA_ID` as build ARG + ENV
+- `unofficial-communities/src/components/CookieBanner.tsx`: Brand colors (bg, buttons, toggles), removed tool names from text
+- `docker-compose.prod.yml`: Added G-H2G0PRBYS2 to build args + environment (not git-tracked)
+- `uc-system-docs/11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md`: Registered NEXT_PUBLIC_GA_ID in observability config (Section 2.5), version 1.2.2
+- `uc-system-docs/22_LAUNCH_EXECUTION_PLAN.md`: Marked GA4 items as done, Week 2 now 8/9 complete
+- `uc-system-docs/24_LAUNCH_GO_NO_GO_CHECKLIST.md`: Marked GA4 tracking as done
+
+### Documentation Updated
+- `unofficial-communities/CLAUDE.md`: Added GA4 and cookie banner to Current Status
+- `uc-system-docs/11_ENVIRONMENT_AND_CONFIGURATION_REGISTRY.md`: NEXT_PUBLIC_GA_ID registered
+- `uc-system-docs/22_LAUNCH_EXECUTION_PLAN.md`: GA4 checklist items marked done
+- `uc-system-docs/24_LAUNCH_GO_NO_GO_CHECKLIST.md`: GA4 marked done
+- `uc-system-docs/16_SESSION_LOG.md`: This entry
+
+### Decisions Made
+- GA4 configured now (provides analytics value pre-launch), Meta Pixel deferred until ad campaigns begin
+- Cookie banner uses generic language ("cookies de analytics", "cookies de marketing") instead of naming Google Analytics / Meta Pixel - tool specifics belong in the cookie policy page
+- Cookie banner background changed from teal `#134252` to Surface 1 `#161b22` for brand consistency
+
+### Follow-up Items
+- [ ] Manual mobile responsive testing (carried forward)
+- [ ] Week 3 tasks begin Feb 3: Lighthouse audit, cross-browser testing, support structure
+- [ ] Configure Meta Pixel when ad campaigns start (infrastructure ready)
+- [ ] CNPJ registration verification and footer update
+- [ ] Review GA4 real-time analytics after traffic starts flowing
+
+---
+
 ## SESS-2026-01-27-1
 
 **Date:** 2026-01-27

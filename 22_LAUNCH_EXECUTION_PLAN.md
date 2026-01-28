@@ -176,7 +176,7 @@ Week 2 (Jan 27 - Feb 2):
 - [ ] Structured data (Schema.org)
 - [ ] OG images (1200x630)
 - [ ] Google Search Console verification
-- [ ] Google Analytics 4 setup
+- [x] Google Analytics 4 setup
 
 #### Security/Infrastructure (Priority: CRITICAL)
 - [ ] SSL A+ rating verification
@@ -316,7 +316,7 @@ Week 2 (Jan 27 - Feb 2):
 - [x] Trust center published (/seguranca)
 - [x] Blog with 3 posts (gamificacao-etica, guia-retencao, living-graph)
 - [x] SEO basics (meta tags, sitemap with 16 URLs, robots.txt, JSON-LD structured data)
-- [ ] GA4 tracking active (infrastructure ready, needs measurement ID)
+- [x] GA4 tracking active (G-H2G0PRBYS2 configured, consent-gated)
 - [x] GSC verified + sitemap submitted
 - [ ] Mobile responsive on all pages (needs manual testing)
 
@@ -502,4 +502,4 @@ mkdir -p src/app/\(site\)/reembolso
 
 *This document consolidates estrategia-lancamento.md, cronograma-3-semanas.md, guia-tecnico-seguranca-seo.md, estrategia-completa-pt1.md, politicas-conteudo.md, and resumo-executivo.md into an actionable execution plan.*
 
-<!-- Last Updated: 2026-01-26 - Marked Week 1 GO/NO-GO as passed, updated Week 2 checklist (7/9 done, GA4 and mobile testing pending) -->
+<!-- Last Updated: 2026-01-28 - GA4 measurement ID configured (G-H2G0PRBYS2), Week 2 checklist 8/9 done (mobile testing pending) -->

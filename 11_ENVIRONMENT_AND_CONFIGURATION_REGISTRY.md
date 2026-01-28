@@ -1,8 +1,8 @@
 # Environment and Configuration Registry
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-27
-**Version:** 1.2.1
+**Last Updated:** 2026-01-28
+**Version:** 1.2.2
 
 ---
 
@@ -111,6 +111,7 @@
 | `TRACING_ENDPOINT` | Tracing collector URL | URL | No | - |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN (frontend) | URL | No | - |
 | `SENTRY_DSN` | Sentry error tracking DSN (build arg + runtime) | URL | No | - |
+| `NEXT_PUBLIC_GA_ID` | Google Analytics 4 measurement ID (build arg, consent-gated) | string | No | - |
 
 ---
 
@@ -1060,5 +1061,5 @@ services:
 
 *This document defines all configuration for the system. New configuration variables must be added to this registry before use.*
 
-<!-- Last Updated: 2026-01-27 - Added SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN to Observability Configuration (Section 2.5) -->
+<!-- Last Updated: 2026-01-28 - Added NEXT_PUBLIC_GA_ID to Observability Configuration (Section 2.5) -->
 <!-- Last Reviewed: 2026-01-27 - All configuration entries verified against running system. -->
