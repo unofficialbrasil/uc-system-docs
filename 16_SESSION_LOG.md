@@ -3723,3 +3723,55 @@ User sends DM "UC-ABC123" to @unofficialbrasil
 - Internal endpoint secured by Docker network IP check + service token
 - Verification codes expire after 10 minutes, max 3 attempts
 - All repos clean and synced to GitHub
+
+---
+
+## SESS-2026-01-28-2
+
+**Date:** 2026-01-28
+**Focus Area:** Visual redesign of legal pages and site-wide brand consistency
+
+### Summary
+Complete visual overhaul of all legal/policy pages (termos, privacidade, cookies, reembolso) from plain prose articles to card-based component layouts matching the seguranca page. Unified button styles, backgrounds, cookie banner, and sobre page across the entire site.
+
+### Changes Made
+
+**Commit 1: `27576ce` feat: redesign legal pages with card-based layout and consolidate brand identity**
+- `tailwind.config.ts`: Added @tailwindcss/typography plugin (was installed but not enabled)
+- `globals.css`: Added `.prose-brand` CSS layer for brand-colored prose elements
+- `termos/page.tsx`: Full rewrite from prose to card-based layout (507 lines) with hero, definitions, eligibility, payments, acceptable use, policy links, CTA
+- `privacidade/page.tsx`: Full rewrite with data collection cards, LGPD rights with article references, retention table, security measures grid
+- `cookies/page.tsx`: Full rewrite with cookie tables as cards, browser management instructions, similar technologies section
+- `reembolso/page.tsx`: Full rewrite with guarantee cards, cancellation flow, special situations, CDC rights, processing times
+- `seguranca/page.tsx`: Email consolidation (dpo@, seguranca@ → contato@)
+- `contato/page.tsx`: Email consolidation (caue@ → contato@)
+- `marketing/footer.tsx`: Company name update, CNPJ removal, email consolidation
+- `marketing/features.tsx`, `cta.tsx`, `contact.tsx`: Added border-t dividers for homepage sections
+- `marketing/landing-page.tsx`: Fixed emerald off-brand color to uc-azure
+- `marketing/blog-post.tsx`: Added prose-brand class
+- `Footer.tsx` (legacy): Removed CNPJ
+
+**Commit 2: `084ef88` fix: unify button styles, backgrounds, cookie banner, and sobre page layout**
+- `termos/page.tsx`, `cookies/page.tsx`, `reembolso/page.tsx`: CTA buttons changed from bg-uc-ruby to bg-uc-azure
+- `contato/page.tsx`: "Criar conta grátis" button changed to gradient ruby-to-azure
+- `precos/page.tsx`: Highlighted plan button changed to gradient ruby-to-azure
+- `landing-page.tsx`: Both CTA buttons changed to gradient ruby-to-azure (affects all 3 solution pages)
+- `sobre/page.tsx`: Full redesign with icon hero, vision cards grid, origins/how-it-works/future sections, related links, CTA footer
+- `layout.tsx`: Added red bottom glow radial gradient to mirror blue top glow
+- `hero.tsx`: Enhanced homepage background with 4-layer gradient mesh
+- `CookieBanner.tsx`: Background changed from dark surface to navy-blue gradient with backdrop blur
+
+### Documentation Updated
+- `unofficial-communities/CLAUDE.md`: Updated Current Status with all new features and changes
+
+### Decisions Made
+- Card-based layout pattern (from seguranca page) adopted as standard for all content pages
+- Gradient ruby-to-azure button adopted as primary CTA style across the site, matching homepage hero
+- Azure (blue) adopted as standard color for legal page contact buttons
+- Navy-blue gradient chosen for cookie banner to match brand identity
+- Dual-glow background (blue top, red bottom) standardized in site layout
+
+### Follow-up Items
+- [ ] Verify cookie banner visibility and styling across all pages in browser
+- [ ] Review transparencia page if it exists
+- [ ] Consider adding structured data (JSON-LD) to legal pages for SEO
