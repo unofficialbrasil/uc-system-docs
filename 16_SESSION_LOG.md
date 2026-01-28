@@ -3775,3 +3775,72 @@ Complete visual overhaul of all legal/policy pages (termos, privacidade, cookies
 - [ ] Verify cookie banner visibility and styling across all pages in browser
 - [ ] Review transparencia page if it exists
 - [ ] Consider adding structured data (JSON-LD) to legal pages for SEO
+
+---
+
+## SESS-2026-01-28-3
+
+**Date:** 2026-01-28
+**Focus Area:** Layout unification, CookieBanner on all pages, visual consistency cleanup
+
+### Summary
+Fixed cookie banner (LGPD) not appearing on all public pages by deleting conflicting root `page.tsx` and adding CookieBanner to login/signup. Removed fixed gradient overlays from site layout that were bleeding into footer. Moved homepage gradients to page-level absolute positioning. Removed BorderBeam animations from landing-page, precos, and contato. Fixed crown emoji color (replaced bitmap emoji with ♛ text character). Unified all card backgrounds to `bg-uc-surface` token. Removed per-section gradient overlays from features, pricing, and blog newsletter. Redesigned blog newsletter CTA section. Reviewed and updated 5 stale documentation files.
+
+### Changes Made
+
+**Commit: `41e1074` (uc-system-docs) docs: review 5 stale documents**
+- `10_DEPLOYMENT_AND_ROLLBACK_RUNBOOK.md`: Fixed service ports (3001→3010, 3002→4101, 2567→3005), backup path
+- `14_ASSUMPTION_REGISTER.md`: Review stamp
+- `18_BEHAVIORAL_SCIENCE_FRAMEWORK.md`: Review stamp
+- `20_ADULT_BY_DESIGN_SPEC.md`: Review stamp
+- `21_UC_WORLD_ADMIN_CONTROLS.md`: Added F3 top-down view, neighbor preview, updated zoom ranges
+
+**Commit: `81e70f0` (unofficial-communities) fix: unify layout consistency and add CookieBanner**
+- Deleted `/app/page.tsx` (was overriding route group homepage)
+- Added CookieBanner to `login/LoginClient.tsx` and `signup/page.tsx`
+
+**Commit: `15a2bd7` (unofficial-communities) fix: remove fixed gradient overlays**
+- `(site)/layout.tsx`: Removed 5 fixed gradient divs, changed to `bg-uc-bg`
+
+**Commit: `ef71037` (unofficial-communities) fix: unify backgrounds, remove animations, polish**
+- `(site)/page.tsx`: Added page-level absolute gradient overlays
+- `hero.tsx`: Replaced 👑 with ♛ + inline gold color, removed section gradients
+- `features.tsx`: Removed blue gradient overlay, `bg-uc-surface` cards
+- `pricing.tsx`: Removed red bottom gradient, `bg-uc-surface` cards
+- `social-proof.tsx`: `bg-uc-surface` cards
+- `cta.tsx`: Removed internal gradient decorations, `bg-uc-surface`
+- `footer.tsx`: Fixed accents (ç), `bg-uc-surface`
+- `landing-page.tsx`: Removed all BorderBeam usages
+- `precos/page.tsx`: Removed BorderBeam from button
+- `contato/page.tsx`: Removed BorderBeam, professional CTA card
+- `blog/page.tsx`: Redesigned newsletter section, removed gradient
+
+### Git Commits
+
+| Repository | Commit | Message |
+|-----------|--------|---------|
+| uc-system-docs | `41e1074` | docs: review 5 stale documents, update deployment ports and UC World admin controls |
+| unofficial-communities | `81e70f0` | fix: unify layout consistency and add CookieBanner to all public pages |
+| unofficial-communities | `15a2bd7` | fix: remove fixed gradient overlays and unify background to bg-uc-bg |
+| unofficial-communities | `ef71037` | fix: unify backgrounds, remove button animations, polish pages |
+
+### Issues Encountered
+- Root `/app/page.tsx` overriding `(site)/page.tsx` — Next.js App Router precedence
+- `fixed` CSS gradients bleeding into footer and cookie banner — changed to `absolute`
+- CSS `color` doesn't affect bitmap color emojis — replaced with text character ♛
+- `bg-uc-surface` and `bg-[#0d1117]` resolve to same value — also needed to remove internal decorations
+
+### Decisions Made
+- Deleted root page.tsx in favor of route group convention
+- Homepage gradients moved to page-level (absolute) instead of layout-level (fixed)
+- BorderBeam animations removed site-wide for cleaner professional look
+- Text character ♛ preferred over emoji for CSS color control
+
+### Follow-up Items
+- [ ] Verify cookie banner in incognito mode (requires clearing localStorage)
+- [ ] Consider removing remaining BorderBeam usage from precos card border
+
+### Metrics at Close
+- **Containers:** 19 running, 0 unhealthy
+- **Disk:** 34%
+- **Memory:** 6.1Gi / 15Gi (41%)
