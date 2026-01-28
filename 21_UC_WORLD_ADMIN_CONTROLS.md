@@ -1,8 +1,8 @@
 # UC World Admin Controls
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-19
-**Version:** 1.0.0
+**Last Updated:** 2026-01-28
+**Version:** 1.6.0
 **Component:** uc-world (3D Virtual World)
 
 ---
@@ -89,11 +89,13 @@ if (options.identityId) {
 | Key | Action | Description |
 |-----|--------|-------------|
 | **F2** | Toggle Admin Mode | Switches between normal and admin camera |
+| **F3** | Toggle Top-Down View | Perpendicular view looking straight down (admin only) |
 
 When admin mode is activated:
 - Camera unlocks from player position
 - Extended zoom range becomes available
 - Ghost mode is automatically enabled
+- Portal labels become visible when zoomed out (zoom >= 15)
 
 ### 3.2 Orbit Camera Controls (Admin Mode)
 
@@ -124,12 +126,28 @@ When admin mode is activated:
 | **Space** | Fly Up | Camera ascends vertically |
 | **Shift** | Fly Down | Camera descends vertically |
 
-### 3.4 Zoom Range Comparison
+### 3.4 Top-Down View Mode (F3)
 
-| Mode | Minimum Zoom | Maximum Zoom |
-|------|--------------|--------------|
-| Normal User | 5 units | 30 units |
-| Admin Mode | 2 units | 50 units |
+**In Top-Down View Mode (Admin Only):**
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| **W/A/S/D** | Pan Camera | Move camera position horizontally |
+| **Scroll** | Zoom | Adjust zoom level (range: 10-55) |
+
+**Features:**
+- Perpendicular camera looking straight down at the scene
+- Same hexagon, avatars, and zones visible from directly above
+- Useful for monitoring large areas and zone occupancy
+- All neighbor community hexagons always visible in this mode
+
+### 3.5 Zoom Range Comparison
+
+| Mode | Minimum Zoom | Maximum Zoom | Notes |
+|------|--------------|--------------|-------|
+| Normal User | 10 units | 10 units | Fixed zoom, no zoom controls |
+| Admin Mode (F2) | 2 units | 55 units | Full zoom range |
+| Top-Down (F3) | 10 units | 55 units | Panning + zoom |
 
 ---
 
@@ -225,13 +243,42 @@ Admins can manually toggle ghost mode:
 
 ---
 
-## 6. Minimap
+## 6. Neighbor Community Preview
 
 ### 6.1 Overview
 
+Neighboring community hexagons appear at portal edges, helping users understand the spatial relationship to adjacent communities in the honeycomb network.
+
+### 6.2 Visibility Rules
+
+| Mode | Visibility |
+|------|------------|
+| Normal User | Neighbors fade in as player approaches portal (100-500px distance) |
+| Admin Mode (F2) | All neighbors always visible |
+| Top-Down (F3) | All neighbors always visible |
+
+### 6.3 Visual Features
+
+- Neighboring hexagons rendered at portal edges
+- Community name labels on neighbor hexagons
+- Distance-based opacity fade for normal users
+- Portal labels show destination community name
+
+### 6.4 Key File
+
+| File | Purpose |
+|------|---------|
+| `client/src/systems/NeighborPreviewRenderer.ts` | Neighbor hexagon rendering |
+
+---
+
+## 7. Minimap
+
+### 7.1 Overview
+
 The minimap displays the community network visualization showing connected communities in a honeycomb pattern.
 
-### 6.2 Features
+### 7.2 Features
 
 | Feature | Description |
 |---------|-------------|
@@ -240,29 +287,29 @@ The minimap displays the community network visualization showing connected commu
 | **Player Dots** | Aggregate player counts per community |
 | **Portal Indicators** | Shows active portal connections |
 
-### 6.3 Interaction
+### 7.3 Interaction
 
 - **Click on adjacent community:** Initiates portal travel request
 - **Hover:** Shows community name and player count
 
 ---
 
-## 7. Admin Message Types
+## 8. Admin Message Types
 
-### 7.1 Client → Server Messages
+### 8.1 Client → Server Messages
 
 | Message Type | Payload | Description |
 |--------------|---------|-------------|
 | `ADMIN_TOGGLE_GHOST_MODE` | `{ enabled: boolean }` | Toggle ghost visibility |
 
-### 7.2 Server → Client Messages
+### 8.2 Server → Client Messages
 
 | Message Type | Payload | Description |
 |--------------|---------|-------------|
 | `ADMIN_STATUS` | `{ isAdmin, role }` | Initial admin status on join |
 | `ADMIN_PLAYER_LIST` | `{ players[], timestamp }` | Full player list with positions |
 
-### 7.3 Payload Interfaces
+### 8.3 Payload Interfaces
 
 ```typescript
 interface AdminStatusPayload {
@@ -292,12 +339,14 @@ interface AdminPlayerInfo {
 
 ---
 
-## 8. Key Source Files
+## 9. Key Source Files
 
 | File | Purpose |
 |------|---------|
-| `client/src/core/AdminCameraController.ts` | Camera orbit and free-fly logic |
+| `client/src/core/AdminCameraController.ts` | Camera orbit, free-fly, and top-down logic |
 | `client/src/systems/DebugOverlay.ts` | Debug panels and tile tooltip |
+| `client/src/systems/NeighborPreviewRenderer.ts` | Neighbor community hexagon rendering |
+| `client/src/systems/PortalPreviewRenderer.ts` | Portal edge labels with distance fade |
 | `client/src/ui/Minimap.ts` | Community network visualization |
 | `client/src/entities/Player.ts` | Ghost mode rendering |
 | `server/src/rooms/WorldRoom.ts` | Admin verification and message handlers |
@@ -305,7 +354,7 @@ interface AdminPlayerInfo {
 
 ---
 
-## 9. Keyboard Reference Card
+## 10. Keyboard Reference Card
 
 ### Quick Reference (Print-Friendly)
 
@@ -313,13 +362,14 @@ interface AdminPlayerInfo {
 ╔═══════════════════════════════════════════════════════════╗
 ║              UC WORLD ADMIN CONTROLS                       ║
 ╠═══════════════════════════════════════════════════════════╣
-║  F2          Toggle Admin Mode                             ║
+║  F2          Toggle Admin Mode (orbit camera)              ║
+║  F3          Toggle Top-Down View (admin only)             ║
 ║  ` (backtick) Toggle Debug Overlay                         ║
 ╠═══════════════════════════════════════════════════════════╣
-║  ORBIT CAMERA (Admin Mode):                                ║
+║  ORBIT CAMERA (F2 Admin Mode):                             ║
 ║  Q / E       Rotate camera left / right                    ║
 ║  R / F       Pitch camera up / down                        ║
-║  Scroll      Zoom in / out (range: 2-50)                   ║
+║  Scroll      Zoom in / out (range: 2-55)                   ║
 ║  Home        Reset to default view                         ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  FREE-FLY CAMERA (Press G to toggle):                      ║
@@ -327,16 +377,22 @@ interface AdminPlayerInfo {
 ║  Space       Fly up                                        ║
 ║  Shift       Fly down                                      ║
 ╠═══════════════════════════════════════════════════════════╣
-║  Note: Ghost mode auto-enables in admin mode               ║
-║  Your avatar becomes semi-transparent with [ADMIN] label   ║
+║  TOP-DOWN VIEW (F3):                                       ║
+║  W/A/S/D     Pan camera                                    ║
+║  Scroll      Zoom (range: 10-55)                           ║
+╠═══════════════════════════════════════════════════════════╣
+║  Notes:                                                    ║
+║  - Ghost mode auto-enables in admin mode                   ║
+║  - Avatar becomes semi-transparent with [ADMIN] label      ║
+║  - Normal users have fixed zoom (no zoom controls)         ║
 ╚═══════════════════════════════════════════════════════════╝
 ```
 
 ---
 
-## 10. Ethical Considerations
+## 11. Ethical Considerations
 
-### 10.1 Transparency Principles
+### 11.1 Transparency Principles
 
 | Principle | Implementation |
 |-----------|----------------|
@@ -344,7 +400,7 @@ interface AdminPlayerInfo {
 | **Admin Identification** | [ADMIN] label cannot be hidden |
 | **Audit Trail** | Admin actions logged server-side |
 
-### 10.2 Go / No-Go Rules
+### 11.2 Go / No-Go Rules
 
 | GO | NO-GO |
 |----|-------|
@@ -355,9 +411,9 @@ interface AdminPlayerInfo {
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
-### 11.1 Admin Mode Not Activating
+### 12.1 Admin Mode Not Activating
 
 **Symptom:** F2 does nothing
 
@@ -368,7 +424,7 @@ interface AdminPlayerInfo {
 
 **Solution:** Verify admin status in uc-api database
 
-### 11.2 Ghost Mode Not Rendering
+### 12.2 Ghost Mode Not Rendering
 
 **Symptom:** Avatar appears solid despite admin mode
 
@@ -378,7 +434,7 @@ interface AdminPlayerInfo {
 
 **Solution:** Check browser console for Three.js errors
 
-### 11.3 Debug Overlay Not Showing
+### 12.3 Debug Overlay Not Showing
 
 **Symptom:** Backtick key does nothing
 
@@ -390,11 +446,11 @@ interface AdminPlayerInfo {
 
 ---
 
-## 12. Known Issues
+## 13. Known Issues
 
 Currently no known issues.
 
-### 12.1 Background Strip at Max Zoom (RESOLVED)
+### 13.1 Background Strip at Max Zoom (RESOLVED)
 
 **Status:** ✅ Fixed (2026-01-20)
 
@@ -408,9 +464,9 @@ Currently no known issues.
 
 ---
 
-## 13. Technical Notes
+## 14. Technical Notes
 
-### 13.1 Why F2 Instead of F1?
+### 14.1 Why F2 Instead of F1?
 
 The admin mode toggle uses **F2** because F1 is reserved by browsers:
 - **Chrome/Edge**: F1 opens browser help
@@ -421,10 +477,12 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-## 14. Version History
+## 15. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6.0 | 2026-01-28 | Added neighbor community preview section, updated zoom ranges |
+| 1.5.0 | 2026-01-23 | Added F3 top-down view mode, camera zoom restrictions for normal users |
 | 1.4.0 | 2026-01-20 | Background strip issue RESOLVED with screen-space shader quad |
 | 1.3.0 | 2026-01-20 | Added Known Issues section documenting background strip at max zoom |
 | 1.2.0 | 2026-01-19 | Fixed direct access: uses frontend BFF with CORS, cookie domain sharing |
@@ -434,4 +492,4 @@ F2 is not reserved by any major browser, making it safe for application use.
 
 ---
 
-<!-- Last Updated: 2026-01-20 - Background strip issue fixed with screen-space shader quad -->
+<!-- Last Reviewed: 2026-01-28 - Added F3 top-down view, neighbor preview section, updated zoom ranges (2-55), renumbered sections -->

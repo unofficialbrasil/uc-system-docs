@@ -1,7 +1,7 @@
 # Deployment and Rollback Runbook
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-28
 **Version:** 1.0.0
 
 ---
@@ -31,12 +31,12 @@
 
 | Service | Container | Port | Build Context |
 |---------|-----------|------|---------------|
-| unofficial-communities | uc-frontend | 3000 | ./unofficial-communities |
-| uc-api | uc-api | 3001 | ./uc-api |
-| uc-webhooks | uc-webhooks | 3002 | ./uc-webhooks |
-| uc-world | uc-world | 2567 | ./uc-world |
-| MySQL | mysql | 3306 | Official image |
-| Redis | redis | 6379 | Official image |
+| unofficial-communities | unofficial-communities | 3000 | ./unofficial-communities |
+| uc-api | app-uc-api-1 | 3010 | ./uc-api |
+| uc-webhooks | app-uc-webhooks-1 | 4101 | ./uc-webhooks |
+| uc-world | app-uc-world-1 | 3005 | ./uc-world |
+| MySQL | app-uc-api-db-1 | 3306 | Official image |
+| Redis | app-uc-redis-1 | 6379 | Official image |
 
 ### 1.3 Deployment Frequency
 
@@ -73,7 +73,7 @@ for repo in unofficial-communities uc-api uc-webhooks uc-world; do
 done
 
 # 6. Verify database backup exists (within last 24h)
-ls -la /srv/unofficial/backups/
+sudo ls -la /root/uc-backups/
 
 # 7. Check error logs for critical issues
 docker logs uc-api --tail 100 2>&1 | grep -i error
@@ -86,7 +86,7 @@ docker logs uc-api --tail 100 2>&1 | grep -i error
 | Disk Space | `df -h /` | < 80% used | > 90% used |
 | Memory | `free -h` | < 85% used | > 95% used |
 | All Containers | `docker ps` | All running | Any down |
-| Database Backup | `ls /srv/unofficial/backups/` | < 24h old | > 48h old |
+| Database Backup | `sudo ls /root/uc-backups/` | < 24h old | > 48h old |
 | Error Rate | Log check | < 1% errors | > 5% errors |
 | Load Average | `uptime` | < 2.0 | > 5.0 |
 
@@ -393,14 +393,14 @@ echo "Full rollback complete"
 
 ### 5.1 Service Health Endpoints
 
-| Service | Endpoint | Expected Response | Timeout |
-|---------|----------|-------------------|---------|
-| uc-frontend | `GET /` | 200 OK | 5s |
-| uc-api | `GET /health` | `{"status":"ok"}` | 3s |
-| uc-webhooks | `GET /health` | `{"status":"ok"}` | 3s |
-| uc-world | `GET /health` | `{"status":"ok"}` | 3s |
-| MySQL | TCP 3306 | Connection success | 5s |
-| Redis | `PING` | `PONG` | 2s |
+| Service | Port | Endpoint | Expected Response | Timeout |
+|---------|------|----------|-------------------|---------|
+| unofficial-communities | 3000 | `GET /` | 200/404 OK | 5s |
+| uc-api | 3010 | `GET /health` | `{"status":"ok"}` | 3s |
+| uc-webhooks | 4101 | `GET /health` | `{"status":"ok"}` | 3s |
+| uc-world | 3005 | `GET /health` | 200 OK | 3s |
+| MySQL | 3306 | TCP | Connection success | 5s |
+| Redis | 6379 | `PING` | `PONG` | 2s |
 
 ### 5.2 Health Check Script
 
@@ -417,7 +417,7 @@ ERRORS=0
 
 # Frontend
 echo -n "Frontend (3000): "
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -q "200"; then
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -qE "200|404"; then
   echo "OK"
 else
   echo "FAIL"
@@ -425,8 +425,8 @@ else
 fi
 
 # API
-echo -n "API (3001): "
-API_HEALTH=$(curl -s http://localhost:3001/health)
+echo -n "API (3010): "
+API_HEALTH=$(curl -s http://localhost:3010/health)
 if echo "$API_HEALTH" | grep -q '"status":"ok"'; then
   echo "OK"
 else
@@ -435,8 +435,8 @@ else
 fi
 
 # Webhooks
-echo -n "Webhooks (3002): "
-WEBHOOK_HEALTH=$(curl -s http://localhost:3002/health)
+echo -n "Webhooks (4101): "
+WEBHOOK_HEALTH=$(curl -s http://localhost:4101/health)
 if echo "$WEBHOOK_HEALTH" | grep -q '"status":"ok"'; then
   echo "OK"
 else
@@ -445,12 +445,12 @@ else
 fi
 
 # World Server
-echo -n "World (2567): "
-WORLD_HEALTH=$(curl -s http://localhost:2567/health)
-if echo "$WORLD_HEALTH" | grep -q '"status":"ok"'; then
+echo -n "World (3005): "
+WORLD_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3005/health)
+if [ "$WORLD_HEALTH" = "200" ]; then
   echo "OK"
 else
-  echo "FAIL - $WORLD_HEALTH"
+  echo "FAIL - HTTP $WORLD_HEALTH"
   ((ERRORS++))
 fi
 
@@ -823,4 +823,4 @@ alerts:
 
 *This runbook must be followed for all deployments. Update after each incident.*
 
-<!-- Last Reviewed: 2026-01-20 - No updates needed -->
+<!-- Last Reviewed: 2026-01-28 - Updated service ports (3010, 4101, 3005), container names, backup path (/root/uc-backups/) -->
