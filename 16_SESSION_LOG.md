@@ -4069,3 +4069,31 @@ Executed a comprehensive 100% codebase audit across all repositories (uc-api, uc
 - [ ] Rebuild and redeploy uc-api and uc-webhooks containers to apply code fixes
 - [ ] Review remaining 49 medium and 36 low audit findings in future sessions
 - [ ] Implement planned Prometheus metrics in uc-webhooks (received_total, processed_total, errors_total, queue_size)
+
+## SESS-2026-01-29-4
+
+**Date:** 2026-01-29
+**Focus Area:** Session command improvements and development roadmap review
+
+### Summary
+Reviewed project status and next development steps. Identified that uc-close and uc-open commands lacked cross-document content-level auditing — they only checked structural consistency (file counts, indexing) but not whether documents requiring updates to other documents had those updates fulfilled. Added a new phase to both commands to catch this.
+
+### Changes Made
+- **~/.claude/commands/uc-open.md**: Added Phase 10 (Cross-Document Dependency & Content Audit) with 3 checks: pending cross-doc updates, Last Updated header vs git dates, stale status fields. Old Phase 10 (Summary) became Phase 11.
+- **~/.claude/commands/uc-close.md**: Added Phase 6 (Cross-Document Dependency & Content Audit) with same 3 checks. Old Phases 6-7 became 7-8.
+- **/srv/unofficial/prod/app/.claude/commands/**: Both project-level copies synced.
+- **uc-system-docs/17_CLAUDE_CODE_PROMPTS.md**: Updated to v2.1 — documented new phases, updated phase counts (11 open, 8 close), added cross-doc deps to GO/NO-GO and SAFE TO LEAVE criteria tables.
+
+### Documentation Updated
+- 17_CLAUDE_CODE_PROMPTS.md: v2.0 → v2.1, reflects new phase structure
+- 16_SESSION_LOG.md: This entry
+
+### Decisions Made
+- Cross-document dependency check scans for unchecked `- [ ]` items referencing other doc numbers — this catches cases like doc 25 Section 14 requiring updates to docs 07/08/06/12/09 before implementation
+- Header vs git date check catches when files are modified but Last Updated not bumped
+- Status field review flags "pending"/"draft"/"active execution" statuses for awareness
+
+### Follow-up Items
+- [ ] Complete Living Graph Steps 4-8 (doc 19)
+- [ ] Perform 5 canonical doc updates required by doc 25 Section 14 (07, 08, 06, 12, 09) before Pillar 2 implementation
+- [ ] Update doc 22 status table to reflect completed work (currently shows stale percentages from Jan 24)
