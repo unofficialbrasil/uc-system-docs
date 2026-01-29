@@ -3890,3 +3890,38 @@ Implemented Phase 3 of the security hardening plan: fetch timeouts across uc-wor
 - **Containers:** 19 running, 0 unhealthy
 - **Disk:** 36%
 - **Memory:** 39%
+
+## SESS-2026-01-28-3
+
+**Date:** 2026-01-28
+**Focus Area:** Living Graph Step 7 — Guardrails Phase 1 Schema Migration
+
+### Summary
+Applied Prisma schema migration for Step 7 guardrails gap-fill (Phase 1 of 8). Added `guardrail_alerts` and `feature_flags` tables, and `portal_slot_type` column to `portal_traversals`. Migration applied successfully with backup.
+
+### Changes Made
+- **uc-api/prisma/schema.prisma** (both /var/www and /srv/unofficial/prod/app): Added `guardrail_alerts` model, `feature_flags` model, `portal_slot_type` column on `portal_traversals`
+- **uc-api/prisma/migrations/20260129000000_step7_guardrails_alerts_flags/migration.sql**: New migration file
+
+### Documentation Updated
+- uc-api/CLAUDE.md: Updated Current Status with Step 7 Phase 1 migration details, updated Last Reviewed
+- uc-system-docs/16_SESSION_LOG.md: This entry
+
+### Decisions Made
+- Used manual migration file (matching existing pattern) since `prisma migrate dev` requires shadow DB permissions not available to the `uc` user
+- Pre-migration backup taken via same method as daily backup script (70KB, consistent with daily backups)
+
+### Follow-up Items
+- [ ] Step 7 Phase 2: Runtime feature flags (async getDbFlags, setFeatureFlag)
+- [ ] Step 7 Phase 3: Alert system + post-build anomaly detection
+- [ ] Step 7 Phase 4: K-anon cascade pre-check
+- [ ] Step 7 Phase 5: Report spike detection (Redis-based)
+- [ ] Step 7 Phase 6: Edge hysteresis thresholds
+- [ ] Step 7 Phase 7: Exploration slot metrics
+- [ ] Step 7 Phase 8: Admin API endpoints for flags/alerts
+- [ ] Rebuild uc-api container after all phases complete
+
+### Metrics at Close
+- **Containers:** 19 running, 0 unhealthy
+- **Disk:** 36%
+- **Memory:** 39%
