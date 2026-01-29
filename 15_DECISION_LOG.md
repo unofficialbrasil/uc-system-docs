@@ -1,7 +1,7 @@
 # Decision Log
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-29
 **Version:** 1.0.0
 
 ---
@@ -531,6 +531,86 @@ Staging subdomains are NOT needed on secondary domain since:
 
 ---
 
+### DEC-0014: GA4 Now, Meta Pixel Deferred
+**Date:** 2026-01-28
+**Status:** Accepted
+
+#### Context
+The platform needed analytics tracking before launch. Both Google Analytics 4 and Meta Pixel were candidates for implementation.
+
+#### Options Considered
+1. **Both GA4 and Meta Pixel at launch** - Full tracking from day one
+2. **GA4 now, Meta Pixel later** - Analytics first, ad tracking when campaigns start
+3. **Neither until launch** - Wait for traffic
+
+#### Decision
+Option 2: Configure GA4 immediately (measurement ID G-H2G0PRBYS2) as build arg in Dockerfile and docker-compose.prod.yml. Consent-gated via existing LGPD cookie banner. Meta Pixel deferred until ad campaigns are active.
+
+#### Trade-offs
+- GA4 provides immediate analytics value for pre-launch monitoring
+- Meta Pixel infrastructure is ready but unused (no wasted ad spend)
+
+#### Revisit Criteria
+- When paid ad campaigns begin (activate Meta Pixel)
+
+---
+
+### DEC-0015: Cookie Banner Brand Alignment
+**Date:** 2026-01-28
+**Status:** Accepted
+
+#### Context
+The LGPD cookie banner used off-brand colors (teal `#134252`, emerald accents) that clashed with the Neon Noir design system.
+
+#### Decision
+Updated cookie banner to use Neon Noir brand colors: Surface 1 `#161b22` background, Ruby `#fc3151` CTA buttons, Azure `#0797f2` toggles. Removed specific tool names (Google Analytics, Meta Pixel) from banner text, keeping generic LGPD-compliant language. Tool specifics delegated to the /cookies policy page.
+
+#### Revisit Criteria
+- If design system colors change
+
+---
+
+### DEC-0016: Sentry DSN as Observability Config
+**Date:** 2026-01-27
+**Status:** Accepted
+
+#### Context
+Sentry DSN environment variables (SENTRY_DSN, NEXT_PUBLIC_SENTRY_DSN) needed to be registered in the configuration registry. Question was whether to categorize them under security or observability.
+
+#### Decision
+Registered as observability config (Section 2.5 of doc 11), consistent with existing LOG_LEVEL and ENABLE_METRICS placement. Sentry is an error-tracking tool, not a security credential.
+
+#### Revisit Criteria
+- If Sentry DSN is reclassified as sensitive
+
+---
+
+### DEC-0017: Contact Form via Mailto
+**Date:** 2026-01-26
+**Status:** Accepted
+
+#### Context
+Homepage contact form needed a backend. Options were building an API route with email service integration or using a simple mailto link.
+
+#### Options Considered
+1. **API route + email service** - Server-side email sending
+2. **Mailto link** - Client-side email client invocation
+3. **Third-party form service** - Typeform, Google Forms embed
+
+#### Decision
+Option 2: Contact form uses `mailto:contato@unofficialbrasil.com.br`. No email packages installed, no API route needed. Simplest solution for pre-launch.
+
+#### Trade-offs
+- Depends on user having email client configured
+- No server-side logging of contact attempts
+- Minimal implementation effort
+
+#### Revisit Criteria
+- If contact volume justifies server-side processing
+- If analytics on contact form submissions becomes important
+
+---
+
 ## Decision Index
 
 | ID | Title | Date | Status |
@@ -548,9 +628,13 @@ Staging subdomains are NOT needed on secondary domain since:
 | DEC-0011 | Adult-by-Design (18+) Policy | 2026-01-17 | Accepted |
 | DEC-0012 | Screen-Space Shader Quad for Background | 2026-01-20 | Accepted |
 | DEC-0013 | Dual-Domain Architecture | 2026-01-25 | Accepted |
+| DEC-0014 | GA4 Now, Meta Pixel Deferred | 2026-01-28 | Accepted |
+| DEC-0015 | Cookie Banner Brand Alignment | 2026-01-28 | Accepted |
+| DEC-0016 | Sentry DSN as Observability Config | 2026-01-27 | Accepted |
+| DEC-0017 | Contact Form via Mailto | 2026-01-26 | Accepted |
 
 ---
 
-*Next Decision ID: DEC-0014*
+*Next Decision ID: DEC-0018*
 
-<!-- Last Updated: 2026-01-25 - Added DEC-0013 Dual-Domain Architecture -->
+<!-- Last Updated: 2026-01-29 - Added DEC-0014 through DEC-0017 from sessions 01-26 to 01-28 -->

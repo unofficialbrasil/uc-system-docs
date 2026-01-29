@@ -4026,3 +4026,46 @@ Created the canonical Two-Pillar SaaS Strategy document (doc 25) defining the du
 - [ ] Design partner admin portal for lead access
 - [ ] Set up DPA template for brand partners
 - [ ] Phase 0 validation: control test with 1,000+ users before scaling
+
+---
+
+## SESS-2026-01-29-3
+
+**Date:** 2026-01-29
+**Focus Area:** Full codebase security audit and remediation
+
+### Summary
+Executed a comprehensive 100% codebase audit across all repositories (uc-api, uc-webhooks, unofficial-communities, uc-world, uc-system-docs, Docker/infra, Prisma schema). Identified 121 findings (11 critical, 25 high, 49 medium, 36+ low). Autonomously fixed all critical and high-priority items across 10 task categories.
+
+### Changes Made
+- **uc-api/src/lib/adminAuth.ts**: Hardened admin auth — added NODE_ENV=development guard for ADMIN_AUTH_DISABLED bypass, replaced string comparison with crypto.timingSafeEqual
+- **uc-api/src/services/socialEventsProcessor.ts**: Migrated 4 `$executeRawUnsafe` calls to safe `$executeRaw` tagged template literals
+- **uc-api/src/routes/userPointsSummaryV31.ts**: Migrated `$queryRawUnsafe` to `$queryRaw`
+- **uc-api/src/routes/gamificationLeaguesCurrentV31.ts**: Migrated `$queryRawUnsafe` to `$queryRaw`
+- **uc-api/src/routes/gamificationStreakV31.ts**: Migrated `$queryRawUnsafe` to `$queryRaw`
+- **uc-api/src/services/adminDashboardService.ts**: Added try/catch around JSON.parse for metrics field
+- **uc-api/src/routes/w3CommunityRoutes.ts**: Added try/catch around 2 JSON.parse calls (visibilityRaw, interestsRaw)
+- **uc-api/prisma/schema.prisma**: Added onDelete: Cascade to codes.identity_id and user_tiers.identity_id FK relations
+- **uc-webhooks/src/queues/socialEventsWorker.ts**: Fixed UC_API_URL default from localhost:3333 to http://uc-api:3010, added worker.on("error") handler
+- **uc-webhooks/src/queues/socialEventsQueue.ts**: Added queue.on("error") handler
+- **uc-webhooks/CLAUDE.md**: Added Instagram files to project structure, corrected metrics documentation
+- **unofficial-communities/infra/prometheus.yml**: Fixed scrape target from uc-api:3000 to uc-api:3010
+- **uc-system-docs/15_DECISION_LOG.md**: Added DEC-0014 through DEC-0017 (GA4, Cookie Banner, Sentry DSN, Contact Form decisions)
+- **docker-compose.prod.yml**: Added mem_limit and cpus to all services (already had them — verified consistent)
+
+### Documentation Updated
+- uc-api/CLAUDE.md: Updated Current Status with security audit results
+- uc-webhooks/CLAUDE.md: Corrected project structure and metrics docs
+- unofficial-communities/CLAUDE.md: Added Prometheus config fix note
+- uc-system-docs/15_DECISION_LOG.md: Added 4 decision entries
+- uc-system-docs/16_SESSION_LOG.md: This entry
+
+### Decisions Made
+- Migrated all raw SQL to Prisma tagged templates even though parameterized `?` placeholders were functionally safe — consistency and type safety benefit
+- Added cascade deletes only to FK relations where orphan records are clearly undesirable (codes, user_tiers)
+
+### Follow-up Items
+- [ ] Run `npx prisma db push` to apply cascade delete schema changes
+- [ ] Rebuild and redeploy uc-api and uc-webhooks containers to apply code fixes
+- [ ] Review remaining 49 medium and 36 low audit findings in future sessions
+- [ ] Implement planned Prometheus metrics in uc-webhooks (received_total, processed_total, errors_total, queue_size)
