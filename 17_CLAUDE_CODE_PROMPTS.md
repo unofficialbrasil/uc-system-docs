@@ -1,7 +1,7 @@
 # Claude Code Session Prompts
 
-**Last Updated:** 2026-01-25
-**Version:** 2.0
+**Last Updated:** 2026-01-29
+**Version:** 2.1
 
 These prompts are **self-maintaining** - they dynamically discover files, services, and configuration at runtime. The close prompt includes a self-update phase to ensure all command files and this reference document stay current.
 
@@ -23,7 +23,7 @@ All four command files must always be in sync. The uc-close command (Phase 2.4 a
 
 ## 1. Open Session Command (`/uc-open`)
 
-**10 Phases:**
+**11 Phases:**
 
 | Phase | Name | Purpose |
 |-------|------|---------|
@@ -36,7 +36,8 @@ All four command files must always be in sync. The uc-close command (Phase 2.4 a
 | 7 | Git Status | Uncommitted changes, unpushed commits, branch warnings |
 | 8 | Backup Status | Last backup date, success verification |
 | 9 | Documentation Consistency Audit | **Count validation, index sync, staleness, command sync** |
-| 10 | Summary | GO / CAUTION / NO-GO decision |
+| 10 | Cross-Document Dependency & Content Audit | **Pending cross-doc updates, header vs git dates, stale status fields** |
+| 11 | Summary | GO / CAUTION / NO-GO decision |
 
 ### Phase 9: Documentation Consistency Audit (Key Phase)
 
@@ -49,11 +50,19 @@ This phase prevents documentation drift by checking:
 
 **If any issues are found, they must be fixed before starting work.**
 
+### Phase 10: Cross-Document Dependency & Content Audit (Key Phase)
+
+This phase catches **content-level drift** that structural checks miss:
+
+1. **Pending cross-document updates**: Scans all numbered docs for unchecked `- [ ]` items that reference other documents (e.g., doc 25 Section 14 requiring updates to docs 07, 08, 06, 12, 09). Surfaces them as blockers before implementation begins.
+2. **Last Updated header vs git modification**: Detects when a file was committed more recently than its `Last Updated` header claims.
+3. **Stale status fields**: Flags documents with action-pending statuses like "ACTIVE EXECUTION", "Implementation Pending", "Draft" for review.
+
 ---
 
 ## 2. Close Session Command (`/uc-close`)
 
-**7 Phases:**
+**8 Phases:**
 
 | Phase | Name | Purpose |
 |-------|------|---------|
@@ -62,8 +71,9 @@ This phase prevents documentation drift by checking:
 | 3 | Git Status & Commit | Review changes, commit, push |
 | 4 | Database & Queue Check | MySQL (prod + staging), queue failed jobs |
 | 5 | Security Scan | Secrets detection in staged/changed files |
-| 6 | Documentation Consistency Validation | **Same audit as open Phase 9 - gate before leaving** |
-| 7 | Final Verification | All repos synced check |
+| 6 | Cross-Document Dependency & Content Audit | **Pending cross-doc updates, header vs git dates, stale status fields** |
+| 7 | Documentation Consistency Validation | **Same audit as open Phase 9 - gate before leaving** |
+| 8 | Final Verification | All repos synced check |
 
 ### Phase 2: Mandatory Documentation Updates (Key Phase)
 
@@ -77,13 +87,17 @@ This phase has 5 enforced sub-steps:
 | 2.4 | Self-Update Check | If infrastructure/services/workflow changed, update command files and sync all 4 locations + this doc |
 | 2.5 | Session Log Entry | **ALWAYS** add entry to 16_SESSION_LOG.md with changes, docs updated, decisions, follow-ups |
 
-### Phase 6: Documentation Consistency Validation (Gate)
+### Phase 6: Cross-Document Dependency & Content Audit (Key Phase)
+
+Same checks as uc-open Phase 10 (see above). At close time, verifies that any cross-doc pending items were addressed during the session or documented as follow-up items in the session log.
+
+### Phase 7: Documentation Consistency Validation (Gate)
 
 Runs the same audit script as uc-open Phase 9. This is the final gate:
 - All counts must match
 - All files must be indexed
 - Command files must be synced across locations
-- **If any issue remains, go back and fix before proceeding to Phase 7**
+- **If any issue remains, go back and fix before proceeding to Phase 8**
 
 ---
 
@@ -134,6 +148,7 @@ curl -s http://localhost:[PORT]/health
 | Container restarts | 0 | - | Any restarting |
 | Branches | All on main | Feature branches | - |
 | Doc consistency | All match | Stale docs (>7d) | Count mismatches |
+| Cross-doc deps | No pending items | Status fields to review | Blocking updates unresolved |
 | Command sync | Hashes match | - | Files differ |
 
 ### SAFE TO LEAVE Criteria (Close)
@@ -149,10 +164,12 @@ curl -s http://localhost:[PORT]/health
 | Database | Connected | Disconnected |
 | Containers | All running | Any restarting |
 | Secrets scan | None detected | Secrets in changed files |
+| Cross-doc deps | Addressed or logged as follow-up | Blocking items unresolved |
 | Self-update | Reviewed + updated if needed | New features uncaptured |
 
 ---
 
 *The command files (`/home/caue/.claude/commands/`) are the authoritative source. This document is a reference. When commands are updated, this file must also be updated to match (enforced by uc-close Phase 2.4).*
 
-<!-- Last Updated: 2026-01-25 - v2.0: Rewrote to match new 10-phase open and 7-phase close commands with documentation consistency enforcement -->
+<!-- Last Updated: 2026-01-29 - v2.1: Added Phase 10 (open) and Phase 6 (close) for cross-document dependency & content audit -->
+<!-- Last Reviewed: 2026-01-29 -->
