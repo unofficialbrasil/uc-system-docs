@@ -3976,3 +3976,53 @@ Implemented all remaining guardrails phases (2 through 8) for the Living Graph s
 ### Follow-up Items
 - [ ] Monitor guardrail alerts and circuit breaker behavior in production
 - [ ] Step 8: Scale readiness (if planned)
+
+## SESS-2026-01-29-3
+
+**Date:** 2026-01-29
+**Focus Area:** Two-Pillar SaaS Strategy — canonical document creation and system doc alignment
+
+### Summary
+Created the canonical Two-Pillar SaaS Strategy document (doc 25) defining the dual-core architecture: Pillar 1 (Social Engagement / UC World 3D) + Pillar 2 (Branded Virtual Spaces / Managed Showrooms) connected by The Bridge intelligence layer. Then aligned 8 existing system docs with the new strategy. Also removed the 3 superseded strategy upload files.
+
+### Changes Made
+
+**uc-system-docs (new):**
+- `25_TWO_PILLAR_SAAS_STRATEGY.md`: Full canonical strategy document (~800 lines, 15 sections) covering architecture, both pillars, The Bridge, ethical framework, data schemas, events, jobs, metrics, risk mitigation, implementation phases, and open decisions
+
+**uc-system-docs (updated):**
+- `01_SYSTEM_CANONICAL_INDEX.md`: Registry count 24→25, added doc 25 row
+- `06_DATA_ARCHITECTURE_AND_LIFECYCLE.md`: Added Conversion domain with 7 tables (showrooms, showroom_layouts, showroom_leads, showroom_bot_sessions, showroom_bot_tests, showroom_performance_daily, cohort_membership), showroom_lead_sharing consent field, retention rules
+- `07_EVENT_AND_ANALYTICS_SPEC.md`: Added 11 showroom.* events, 2 brand_zone.* events, 4 new aggregates, bot transcript prohibition, consent gate rules
+- `08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md`: Added 4 jobs (intent-readiness-build, showroom-performance-build, showroom-variant-deployment, lead-retention-cleanup), compliance queue, cron schedule, dependency diagram
+- `09_SECURITY_AND_AUTHORIZATION_SPEC.md`: Added showroom_admin/partner_admin roles, 11 showroom permissions, 8 showroom endpoints, age-gated showroom access (level 2+)
+- `12_COMPLIANCE_AND_DATA_PROTECTION.md`: Added SHOWROOM_LEAD_SHARING consent, lead capture compliance, DPA requirements, 15-point monthly audit checklist, showroom retention rules
+- `CLAUDE.md`: File counts 24→25, added doc 25 to registry
+- `README.md`: File counts 24→25, added doc 25 to table
+
+**uc-system-docs (deleted):**
+- `Integration-Guide.md`: Superseded by doc 25
+- `Two-Pillar-Strategy-FINAL-v2.md`: Superseded by doc 25
+- `Two-Pillar SaaS Strategy Refinement.txt`: Superseded by doc 25
+
+### Decisions Made
+1. UC builds and operates all showrooms (managed service model) — not self-serve
+2. No external embeddable showrooms — in-platform branded spaces only
+3. Revenue via per-qualified-lead and/or monthly fee, starting cheap with science-backed minimum requirements
+4. Community-to-brand affinity integrated into existing Living Graph logic (not separate system)
+5. Bot logs metadata only — conversation text NEVER stored (LGPD compliance)
+6. Age assurance level 2+ required for showroom access
+7. Dual consent model for lead sharing (UC + partner)
+
+### Documentation Updated
+- All 8 system docs versioned up to x.3.0 (or x.2.0 for compliance)
+- All Last Updated stamps set to 2026-01-29
+- Canonical index, CLAUDE.md, README.md all consistent at 25 documents
+
+### Follow-up Items
+- [ ] Implement Conversion domain Prisma schema when development begins
+- [ ] Create showroom API endpoints in uc-api
+- [ ] Build intent-readiness-build and showroom-performance-build jobs
+- [ ] Design partner admin portal for lead access
+- [ ] Set up DPA template for brand partners
+- [ ] Phase 0 validation: control test with 1,000+ users before scaling
