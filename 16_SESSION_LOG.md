@@ -3919,9 +3919,60 @@ Applied Prisma schema migration for Step 7 guardrails gap-fill (Phase 1 of 8). A
 - [ ] Step 7 Phase 6: Edge hysteresis thresholds
 - [ ] Step 7 Phase 7: Exploration slot metrics
 - [ ] Step 7 Phase 8: Admin API endpoints for flags/alerts
-- [ ] Rebuild uc-api container after all phases complete
+- [x] Rebuild uc-api container after all phases complete
 
 ### Metrics at Close
 - **Containers:** 19 running, 0 unhealthy
 - **Disk:** 36%
 - **Memory:** 39%
+
+---
+
+## SESS-2026-01-29-2
+
+**Date:** 2026-01-29
+**Focus Area:** Step 7 Guardrails Phases 2-8 Implementation
+
+### Summary
+Implemented all remaining guardrails phases (2 through 8) for the Living Graph safety system. Each phase was built, deployed, and verified healthy. All changes committed as `d95886f` and pushed to origin/main.
+
+### Changes Made
+
+**uc-api/src/services/guardrailsService.ts:**
+- Phase 2: Added `FLAG_KEYS` constants, `getFeatureFlagsAsync()`, `setFeatureFlag()`, `deleteFeatureFlag()`, `getAllDbFlags()`
+- Updated `getGuardrailStatus()` to use async DB-backed flags
+
+**uc-api/src/services/circuitBreakerService.ts:**
+- Phase 3: `tripCircuitBreaker()` now enforces DB flag changes and creates `guardrail_alerts`; added alert CRUD functions and `runPostBuildAnomalyDetection()`
+- Phase 4: Fixed `checkKAnonCascade()` MySQL compatibility; added `runKAnonPreCheck()` with WAU trend detection
+- Phase 5: Redis sliding window counters for report spike detection
+
+**uc-api/src/services/communityGraphBuildService.ts:**
+- Phase 3: Wired post-build anomaly detection
+- Phase 4: K-anon pre-check as Step 1b pre-build gate
+- Phase 6: Two-pass hysteresis (retain ≥ 0.08, add ≥ 0.15)
+
+**uc-api/src/services/portalService.ts:**
+- Phase 7: `resolvePortalSlotType()`, `portal_slot_type` in traversal logging
+
+**uc-api/src/services/adminDashboardService.ts:**
+- Phase 7: Real `explorationSlotUsage` and `diversityScore` (Shannon entropy)
+
+**uc-api/src/routes/adminDashboardRoutes.ts:**
+- Phase 8: 7 new admin endpoints under `/v1/admin/guardrails/`
+
+**uc-api/src/routes/world/portalRoutes.ts:**
+- Phases 5+7: Redis recording calls, slot type resolution, Prometheus metrics
+
+**uc-api/src/lib/metrics.ts:**
+- Phase 7: `portalTraversalsBySlotType` Prometheus counter
+
+### Decisions Made
+1. DB flag values override env-var defaults
+2. Redis sorted sets with 1-hour TTL for spike detection, DB fallback
+3. Asymmetric hysteresis thresholds (add=0.15, remove=0.08)
+4. Diversity measured via normalized Shannon entropy
+
+### Follow-up Items
+- [ ] Monitor guardrail alerts and circuit breaker behavior in production
+- [ ] Step 8: Scale readiness (if planned)
