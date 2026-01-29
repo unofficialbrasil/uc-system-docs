@@ -3844,3 +3844,49 @@ Fixed cookie banner (LGPD) not appearing on all public pages by deleting conflic
 - **Containers:** 19 running, 0 unhealthy
 - **Disk:** 34%
 - **Memory:** 6.1Gi / 15Gi (41%)
+
+---
+
+## SESS-2026-01-28-2
+
+**Date:** 2026-01-28
+**Focus Area:** Security Hardening Phase 3 — MEDIUM severity fixes
+
+### Summary
+Implemented Phase 3 of the security hardening plan: fetch timeouts across uc-world and uc-webhooks, and CSP Report-Only header on the frontend. Console.log cleanup and `as any` type safety deferred to Phase 4.
+
+### Changes Made
+- **uc-world/server/src/rooms/WorldRoom.ts**: Added `fetchWithTimeout` helper (5s default AbortController timeout), replaced all 6 `fetch()` calls to uc-api
+- **uc-webhooks/src/queues/socialEventsWorker.ts**: Added 30s AbortController timeout to POST /social/events
+- **uc-webhooks/src/meta/instagramVerificationHandler.ts**: Added 10s AbortController timeout to POST /internal/social/instagram/verify-dm
+- **unofficial-communities/next.config.mjs**: Added `Content-Security-Policy-Report-Only` header with directives for Next.js, Google Fonts, Sentry, API, and World WS
+
+### Commits Pushed
+
+| Repository | Commit | Message |
+|-----------|--------|---------|
+| uc-world | `fdb7fe4` | fix(security): add fetch timeouts to prevent indefinite hangs on uc-api calls |
+| uc-webhooks | `5bd19c3` | fix(security): add fetch timeouts to webhook API calls |
+| unofficial-communities | `ad30e86` | fix(security): add Content-Security-Policy-Report-Only header |
+
+### Documentation Updated
+- uc-world/CLAUDE.md: Added security hardening entry, updated Last Reviewed
+- uc-webhooks/CLAUDE.md: Added fetch timeouts to Current Status, updated Last Reviewed
+- unofficial-communities/CLAUDE.md: Added CSP Report-Only entry, updated Last Reviewed
+- uc-system-docs/16_SESSION_LOG.md: This entry
+
+### Decisions Made
+- CSP in Report-Only mode first to avoid breaking production; switch to enforcing after monitoring
+- `fetchWithTimeout` helper in uc-world vs inline AbortController in uc-webhooks (fewer calls, simpler inline)
+- Console.log cleanup (103 occurrences, 24 files) deferred — code quality, not security
+- `as any` type safety (119+ instances) deferred — large refactor scope
+
+### Follow-up Items
+- [ ] Monitor browser console for CSP Report-Only violations before switching to enforcing
+- [ ] Phase 4: Console.log cleanup (uc-api, 24 files)
+- [ ] Phase 4: `as any` type safety (119+ instances)
+
+### Metrics at Close
+- **Containers:** 19 running, 0 unhealthy
+- **Disk:** 36%
+- **Memory:** 39%
