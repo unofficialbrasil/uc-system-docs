@@ -1,8 +1,8 @@
 # Security and Authorization Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.2.0
+**Last Updated:** 2026-01-29
+**Version:** 1.3.0
 
 ---
 
@@ -255,6 +255,8 @@ async function checkAgeAuthorization(
 | Direct messaging | 1 | Adult status confirmed |
 | Community creation | 2 | Revalidated via Gate B |
 | Moderator role | 2 | Revalidated via Gate B |
+| Showroom access | 2 | Revalidated — required for branded space entry |
+| Showroom lead form | 2 | Revalidated — required for lead capture |
 | Monetization | 3 | ID verification required |
 
 ### 2.2 Endpoint Authorization Matrix
@@ -278,6 +280,14 @@ async function checkAgeAuthorization(
 | `GET /api/admin/dashboard/graph-builds` | Yes | Ops only | 2+ | 60/min |
 | `GET /api/admin/dashboard/alerts` | Yes | Admin+, Ops | 2+ | 120/min |
 | `GET /api/admin/dashboard/export` | Yes | Admin+, Ops | 2+ | 10/hour |
+| `GET /api/v1/showrooms/:id` | Yes | Any Authenticated | 2+ | 60/min |
+| `POST /api/v1/showrooms/:id/enter` | Yes | Any Authenticated | 2+ | 30/min |
+| `POST /api/v1/showrooms/:id/lead` | Yes | Any Authenticated | 2+ | 10/min |
+| `GET /api/v1/conversion/community-readiness` | Yes | Showroom Admin, Ops | 2+ | 60/min |
+| `POST /api/admin/showrooms` | Yes | Showroom Admin | 2+ | 10/hour |
+| `PUT /api/admin/showrooms/:id` | Yes | Showroom Admin | 2+ | 30/min |
+| `GET /api/admin/showrooms/:id/performance` | Yes | Showroom Admin, Partner Admin | 2+ | 60/min |
+| `GET /api/admin/showrooms/:id/leads` | Yes | Showroom Admin, Partner Admin | 2+ | 30/min |
 
 ### 2.3 Resource-Level Authorization
 
@@ -397,6 +407,51 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 ];
 ```
 
+### 3.1A Showroom Roles (Two-Pillar Strategy)
+
+Two additional roles support the branded virtual spaces:
+
+```typescript
+// Showroom-specific roles (extend MemberRole for showroom context)
+enum ShowroomRole {
+  SHOWROOM_ADMIN = 'showroom_admin',     // UC staff managing showrooms
+  PARTNER_ADMIN = 'partner_admin'        // Brand partner with read-only access
+}
+
+const SHOWROOM_ROLE_DEFINITIONS = [
+  {
+    role: ShowroomRole.SHOWROOM_ADMIN,
+    description: 'UC team member managing branded virtual spaces',
+    permissions: [
+      'showroom:create',
+      'showroom:edit',
+      'showroom:pause',
+      'showroom:archive',
+      'showroom:view_performance',
+      'showroom:view_leads',
+      'showroom:export_leads',
+      'showroom:manage_variants',
+      'showroom:manage_bot',
+      'conversion:view_readiness'
+    ]
+  },
+  {
+    role: ShowroomRole.PARTNER_ADMIN,
+    description: 'Brand partner with read-only access to their showroom data',
+    permissions: [
+      'showroom:view_performance',     // Own showroom only
+      'showroom:view_leads',           // Own showroom only
+      'showroom:export_leads'          // Own showroom only, with DPA in place
+    ]
+  }
+];
+```
+
+**Access Scope:**
+- `showroom_admin` has access across all showrooms
+- `partner_admin` is scoped to a single showroom (their brand's)
+- Both require age assurance level 2+
+
 ### 3.2 Permission Catalog
 
 | Permission | Description | Roles |
@@ -432,6 +487,16 @@ const ROLE_DEFINITIONS: RoleCapabilities[] = [
 | `dashboard:view_graph_stability` | View graph stability metrics | Ops only |
 | `dashboard:view_alerts` | View dashboard alerts | Admin+, Ops |
 | `dashboard:export` | Export dashboard data | Admin+, Ops |
+| `showroom:create` | Create new branded space | Showroom Admin |
+| `showroom:edit` | Edit showroom configuration | Showroom Admin |
+| `showroom:pause` | Pause active showroom | Showroom Admin |
+| `showroom:archive` | Archive showroom | Showroom Admin |
+| `showroom:view_performance` | View showroom analytics | Showroom Admin, Partner Admin |
+| `showroom:view_leads` | View lead records | Showroom Admin, Partner Admin |
+| `showroom:export_leads` | Export leads (requires DPA) | Showroom Admin, Partner Admin |
+| `showroom:manage_variants` | Create/edit A/B test variants | Showroom Admin |
+| `showroom:manage_bot` | Configure bot prompts and modes | Showroom Admin |
+| `conversion:view_readiness` | View community readiness scores | Showroom Admin |
 
 ### 3.3 Visitor Mode (Portal Travel) - Living Graph Step 5
 
@@ -1205,5 +1270,4 @@ CREATE TABLE security_audit_log (
 
 *This document defines the security boundaries of the system. All authentication and authorization logic must adhere to these specifications.*
 
-<!-- Last Updated: 2026-01-19 - Step 6: Added dashboard permissions and endpoints to authorization matrix (Sections 2.2, 3.2) -->
-<!-- Last Reviewed: 2026-01-27 - No updates needed. Auth flows and security specs unchanged. -->
+<!-- Last Updated: 2026-01-29 - Added showroom_admin/partner_admin roles, showroom permissions, showroom endpoints, age-gated showroom access per 25_TWO_PILLAR_SAAS_STRATEGY.md -->

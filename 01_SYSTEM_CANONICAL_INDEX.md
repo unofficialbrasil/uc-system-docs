@@ -25,7 +25,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 
 ---
 
-## 2. Document Registry (24 Files)
+## 2. Document Registry (25 Files)
 
 | # | Document | Purpose | Status |
 |---|----------|---------|--------|
@@ -53,6 +53,7 @@ This folder (`/srv/unofficial/prod/app/uc-system-docs/`) is the **authoritative 
 | 22 | `22_LAUNCH_EXECUTION_PLAN.md` | Launch execution plan and timeline | Active |
 | 23 | `23_MONITORING_SETUP.md` | Monitoring setup guide and health endpoints | Active |
 | 24 | `24_LAUNCH_GO_NO_GO_CHECKLIST.md` | Launch go/no-go checklist | Active |
+| 25 | `25_TWO_PILLAR_SAAS_STRATEGY.md` | Two-Pillar SaaS strategy (engagement + conversion) | Active |
 
 ---
 
@@ -154,4 +155,4 @@ For audit trail:
 *This document is the entry point for understanding the Unofficial Communities system.*
 *All other documents in this folder are discoverable from here.*
 
-<!-- Last Updated: 2026-01-25 - Added docs 22-24 (launch plan, monitoring, go/no-go checklist) to registry -->
+<!-- Last Updated: 2026-01-29 - Added doc 25 (Two-Pillar SaaS Strategy) to registry, count 24→25 -->

@@ -21,12 +21,12 @@ All documents must be:
 | Property | Value |
 |----------|-------|
 | Location | `/srv/unofficial/prod/app/uc-system-docs/` |
-| Documents | 24 numbered files |
+| Documents | 25 numbered files |
 | Purpose | Platform-wide specifications and governance |
 
 ---
 
-## Document Registry (24 Files)
+## Document Registry (25 Files)
 
 | # | File | Purpose | Update When |
 |---|------|---------|-------------|
@@ -54,6 +54,7 @@ All documents must be:
 | 22 | `22_LAUNCH_EXECUTION_PLAN.md` | Launch plan & timeline | Launch milestones change |
 | 23 | `23_MONITORING_SETUP.md` | Monitoring & health endpoints | Monitoring config changes |
 | 24 | `24_LAUNCH_GO_NO_GO_CHECKLIST.md` | Launch go/no-go checklist | Launch readiness changes |
+| 25 | `25_TWO_PILLAR_SAAS_STRATEGY.md` | Two-Pillar SaaS strategy | Strategy or conversion changes |
 
 ---
 
@@ -117,13 +118,12 @@ git add -A && git commit -m "docs: [description]" && git push origin main
 
 ## Current Status
 
-- **24 documents** covering all platform aspects
-- **Numbered** (01-24) for ordered display
+- **25 documents** covering all platform aspects
+- **Numbered** (01-25) for ordered display
 - **Session prompts** v6.1 with comprehensive checks
 - **Backup monitoring** integrated into session prompts
 
 ---
 
-<!-- Last Updated: 2026-01-25 - Updated document registry to 24 files -->
-<!-- Last Reviewed: 2026-01-28 - Session SESS-2026-01-28-3 logged -->
+<!-- Last Updated: 2026-01-29 - Updated document registry to 25 files, added doc 25 (Two-Pillar SaaS Strategy) -->
 

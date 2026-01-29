@@ -1,8 +1,8 @@
 # Data Architecture and Lifecycle
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.2.0
+**Last Updated:** 2026-01-29
+**Version:** 1.3.0
 
 ---
 
@@ -32,6 +32,25 @@
 │  │ • rooms         │  │ • api_keys      │  │ • reports       │             │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
 │                                                                              │
+│  ┌─────────────────┐                                                       │
+│  │   CONVERSION    │                                                       │
+│  │                 │                                                       │
+│  │ • showrooms     │                                                       │
+│  │ • showroom_     │                                                       │
+│  │   layouts       │                                                       │
+│  │ • showroom_     │                                                       │
+│  │   leads         │                                                       │
+│  │ • showroom_     │                                                       │
+│  │   bot_sessions  │                                                       │
+│  │ • showroom_     │                                                       │
+│  │   bot_tests     │                                                       │
+│  │ • showroom_     │                                                       │
+│  │   performance_  │                                                       │
+│  │   daily         │                                                       │
+│  │ • cohort_       │                                                       │
+│  │   membership    │                                                       │
+│  └─────────────────┘                                                       │
+│                                                                              │
 │  ┌─────────────────────────────────────────────────────────────┐            │
 │  │                      LIVING GRAPH                            │            │
 │  │                                                              │            │
@@ -52,6 +71,7 @@
 | UC World | World Server | Real-time | Low |
 | Integration | Webhook Service | Write-heavy | Medium |
 | Analytics | Analytics Service | Read-heavy | Low (aggregated) |
+| Conversion | API + Analytics Jobs | Mixed (daily batch + event-driven) | High (leads contain PII) |
 | Living Graph | Graph Build Job | Daily batch | Low (aggregated) |
 
 ---
@@ -109,6 +129,7 @@ CREATE TABLE consents (
     marketing BOOLEAN DEFAULT FALSE,         -- Opt-in
     telemetry BOOLEAN DEFAULT TRUE,          -- Default on, opt-out
     whatsapp_activity BOOLEAN DEFAULT FALSE, -- Opt-in for Living Graph (WhatsApp event counts)
+    showroom_lead_sharing BOOLEAN DEFAULT FALSE, -- Opt-in for lead data sharing with brand partners
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
@@ -733,6 +754,175 @@ WHERE status = 'failed'
   AND started_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR);
 ```
 
+### 2.6 Conversion Domain (Two-Pillar Strategy)
+
+Tables for Pillar 2 (Branded Virtual Spaces). Full schema and rationale in `25_TWO_PILLAR_SAAS_STRATEGY.md` §8.
+
+```sql
+-- Branded virtual spaces (managed by UC)
+CREATE TABLE showrooms (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    community_id INT NOT NULL,
+    brand_name VARCHAR(200) NOT NULL,
+    brand_type ENUM('high_consideration', 'low_consideration') NOT NULL,
+    status ENUM('draft', 'active', 'paused', 'archived') DEFAULT 'draft',
+    contract_start DATE NULL,
+    contract_end DATE NULL,
+    active_variant_id VARCHAR(50) NULL,
+    config JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    INDEX idx_status (status),
+    INDEX idx_community (community_id)
+);
+
+-- Showroom layout variants (A/B testing)
+CREATE TABLE showroom_layouts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    showroom_id INT NOT NULL,
+    variant_id VARCHAR(50) NOT NULL,
+    hero_headline TEXT,
+    hero_subheadline TEXT,
+    cta_button_text VARCHAR(100),
+    cta_button_position ENUM('above_fold', 'middle', 'bottom'),
+    form_fields JSON,
+    form_submit_text VARCHAR(100),
+    form_privacy_text TEXT,
+    bot_opening_prompt TEXT,
+    bot_mode ENUM('educational', 'consultative', 'sales_oriented'),
+    bot_allowed_hard_sell BOOLEAN DEFAULT FALSE,
+    bot_fallback_text TEXT,
+    data_collection_intensity ENUM('minimal', 'moderate', 'full'),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_variant (showroom_id, variant_id)
+);
+
+-- Lead capture records (PII — retention-managed)
+CREATE TABLE showroom_leads (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    showroom_id INT NOT NULL,
+    identity_id INT NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    company VARCHAR(200) NULL,
+    specific_need TEXT NULL,
+    optional_field TEXT NULL,
+    lead_quality_score DECIMAL(3,1) NULL,
+    intent_stage ENUM('exploratory', 'qualitative', 'transactional') NOT NULL,
+    consent_timestamp TIMESTAMP NOT NULL,
+    consent_withdrawn_at TIMESTAMP NULL,
+    exported_at TIMESTAMP NULL,
+    retention_expires_at DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    INDEX idx_showroom (showroom_id, created_at),
+    INDEX idx_retention (retention_expires_at),
+    INDEX idx_consent (consent_withdrawn_at)
+);
+
+-- Bot session metadata (NO conversation text stored)
+CREATE TABLE showroom_bot_sessions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    showroom_id INT NOT NULL,
+    identity_id INT NOT NULL,
+    variant_id VARCHAR(50) NOT NULL,
+    bot_mode ENUM('educational', 'consultative', 'sales_oriented') NOT NULL,
+    user_question_count INT DEFAULT 0,
+    bot_answer_count INT DEFAULT 0,
+    intent_keywords JSON NULL,
+    intent_signal_strength DECIMAL(3,2) NULL,
+    user_sentiment_proxy ENUM('positive', 'neutral', 'negative') NULL,
+    resolution_type ENUM('form_started', 'question_answered', 'timeout', 'user_exit', 'escalated') NULL,
+    dwell_seconds INT DEFAULT 0,
+    escalated_to_human BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE,
+    INDEX idx_showroom_date (showroom_id, created_at)
+);
+
+-- A/B test tracking
+CREATE TABLE showroom_bot_tests (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    showroom_id INT NOT NULL,
+    test_variant_id VARCHAR(50) NOT NULL,
+    control_variant_id VARCHAR(50) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    status ENUM('active', 'completed', 'paused') DEFAULT 'active',
+    winner_variant_id VARCHAR(50) NULL,
+    winning_metric DECIMAL(8,2) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE CASCADE
+);
+
+-- Daily showroom performance aggregates
+CREATE TABLE showroom_performance_daily (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    period_start DATE NOT NULL,
+    showroom_id INT NOT NULL,
+    variant_id VARCHAR(50) NULL,
+    entrance_count INT DEFAULT 0,
+    form_start_count INT DEFAULT 0,
+    form_completion_count INT DEFAULT 0,
+    lead_capture_count INT DEFAULT 0,
+    avg_dwell_sec DECIMAL(8,2) DEFAULT 0,
+    question_count_total INT DEFAULT 0,
+    question_count_avg DECIMAL(6,2) DEFAULT 0,
+    bot_interaction_count_total INT DEFAULT 0,
+    exit_type_distribution JSON NULL,
+    intent_signal_strength_avg DECIMAL(5,2) DEFAULT 0,
+    avg_lead_quality_score DECIMAL(5,2) DEFAULT 0,
+    intent_improvement_pct DECIMAL(6,2) DEFAULT 0,
+    form_abandon_rate DECIMAL(5,2) DEFAULT 0,
+    bot_fallback_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_showroom_date (showroom_id, period_start, variant_id),
+    FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE CASCADE
+);
+
+-- Intent readiness tracking (cohort-level, not individual)
+CREATE TABLE cohort_membership (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    community_id INT NOT NULL,
+    cohort_type VARCHAR(50) NOT NULL,
+    intent_stage ENUM('latent', 'exploratory', 'qualitative', 'transactional') NOT NULL,
+    count_users INT DEFAULT 0,
+    avg_engagement_score DECIMAL(5,2) DEFAULT 0,
+    zone_diversity DECIMAL(4,2) DEFAULT 0,
+    brand_zone_optins INT DEFAULT 0,
+    d7_retention BOOLEAN DEFAULT FALSE,
+    computed_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_cohort (community_id, cohort_type, computed_date),
+    INDEX idx_date (computed_date)
+);
+```
+
+**Data Classification:**
+
+| Table | Classification | PII | Retention |
+|-------|---------------|-----|-----------|
+| showrooms | Internal | No | Permanent |
+| showroom_layouts | Internal | No | Permanent |
+| showroom_leads | PII (High) | Yes (name, email) | 90d (unexported) / 1yr (exported) |
+| showroom_bot_sessions | Sensitive | Yes (identity linkable) | 90d then anonymize |
+| showroom_bot_tests | Internal | No | 1yr then archive |
+| showroom_performance_daily | Internal | No | 5yr then archive |
+| cohort_membership | Internal | No (cohort-level) | Permanent |
+
 ---
 
 ## 3. Data Ownership and Stewardship
@@ -749,6 +939,11 @@ WHERE status = 'failed'
 | gamification_* | System | Engineering | Product |
 | webhook_events | System | Engineering | Engineering |
 | analytics_* | System | Engineering | Product |
+| showrooms, showroom_layouts | System | Engineering | Business |
+| showroom_leads | User | Engineering | Legal/Business |
+| showroom_bot_sessions | System | Engineering | Product |
+| showroom_performance_daily | System | Engineering | Product |
+| cohort_membership | System | Engineering | Product |
 
 ### 3.2 Data Classification
 
@@ -831,6 +1026,12 @@ WHERE status = 'failed'
 | Age verification logs | 2 years | Archive | Legal requirement |
 | Possible minor cases | 5 years (resolved) | Archive | Legal requirement |
 | ID verification docs | 30 days after verification | Delete | Minimization |
+| Showroom leads (not exported) | 90 days | Hard delete | Legitimate interest |
+| Showroom leads (exported) | 1 year | Hard delete | Contract |
+| Withdrawn leads | 7-day soft delete window | Hard delete | LGPD right to withdrawal |
+| Bot session metadata | 90 days | Anonymize | Legitimate interest |
+| Showroom performance aggregates | 5 years | Archive | Business need |
+| A/B test records | 1 year | Archive | Business need |
 
 ### 5.2 Retention Implementation
 
@@ -1047,4 +1248,4 @@ All foreign keys use appropriate ON DELETE behavior:
 
 *This document defines how data flows through the system and its lifecycle. Implementation must conform to these specifications.*
 
-<!-- Last Updated: 2026-01-22 - Marked user_portal_preferences and portal_reports as PLANNED (not yet in Prisma), added note about conceptual dashboard views referencing planned tables -->
+<!-- Last Updated: 2026-01-29 - Added Conversion domain (showrooms, leads, bot sessions, A/B tests, performance aggregates, cohort membership) per 25_TWO_PILLAR_SAAS_STRATEGY.md -->

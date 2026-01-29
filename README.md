@@ -4,7 +4,7 @@ System-wide documentation for Unofficial Communities platform - the authoritativ
 
 ## Overview
 
-This repository contains 24 numbered documents covering all aspects of the Unofficial Communities platform:
+This repository contains 25 numbered documents covering all aspects of the Unofficial Communities platform:
 
 | # | Document | Purpose |
 |---|----------|---------|
@@ -32,13 +32,14 @@ This repository contains 24 numbered documents covering all aspects of the Unoff
 | 22 | Launch Execution Plan | Launch execution plan and timeline |
 | 23 | Monitoring Setup | Monitoring setup guide and health endpoints |
 | 24 | Launch Go/No-Go Checklist | Launch readiness checklist |
+| 25 | Two-Pillar SaaS Strategy | Engagement + conversion strategy |
 
 ## Documentation Structure
 
 ```
 Unofficial Communities Documentation
 ├── uc-system-docs/           # Platform-wide (this repo)
-│   └── 24 numbered documents
+│   └── 25 numbered documents
 │
 └── Per-repository:
     ├── CLAUDE.md             # Technical reference

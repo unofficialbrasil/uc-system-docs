@@ -1,8 +1,8 @@
 # Background Jobs and Async Processing
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.2.0
+**Last Updated:** 2026-01-29
+**Version:** 1.3.0
 
 ---
 
@@ -57,6 +57,10 @@ All background jobs in the system are managed through BullMQ with Redis as the b
 | `notification-send` | notifications | Event-driven | Medium | 10 |
 | `xp-calculation` | gamification | Event-driven | High | 3 |
 | `world-state-sync` | world | Event-driven | High | 2 |
+| `intent-readiness-build` | analytics | Cron (06:00 America/Sao_Paulo) | Medium | 1 |
+| `showroom-performance-build` | analytics | Cron (08:00 America/Sao_Paulo) | Medium | 1 |
+| `showroom-variant-deployment` | analytics | Cron (08:30 America/Sao_Paulo) | Medium | 1 |
+| `lead-retention-cleanup` | compliance | Cron (02:30 America/Sao_Paulo) | Medium | 1 |
 | `age-revalidation-prompt` | age | Cron (08:00 America/Sao_Paulo) | Medium | 1 |
 | `minor-detection-scan` | age | Cron (04:00 America/Sao_Paulo) | Medium | 1 |
 | `age-data-cleanup` | age | Cron (Sun 02:00 America/Sao_Paulo) | Low | 1 |
@@ -585,6 +589,125 @@ async function postBuildCircuitBreakers(
 }
 ```
 
+### 1.5 Two-Pillar Strategy Jobs
+
+The Two-Pillar Strategy (doc 25) introduces four new jobs for intent readiness, showroom performance, variant deployment, and lead retention.
+
+#### intent-readiness-build
+
+**Purpose:** Compute cohort intent stages and community readiness scores from aggregated behavioral data.
+
+```typescript
+const intentReadinessBuildJob: JobDefinition = {
+  name: 'intent-readiness-build',
+  queue: 'analytics',
+  description: 'Compute cohort intent stages and community readiness scores',
+  schedule: '0 9 * * *',       // 09:00 UTC = 06:00 BRT (America/Sao_Paulo) daily
+  priority: 'medium',
+  timeout_ms: 600000,          // 10 minutes
+  retry: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 60000 }
+  },
+  concurrency: 1,
+  data_schema: {
+    type: 'object',
+    properties: {
+      date: { type: 'string', format: 'date' },
+      community_ids: { type: 'array', items: { type: 'number' } }
+    }
+  }
+};
+```
+
+**Depends on:** `community-graph-build` (04:15 BRT) must complete first.
+
+#### showroom-performance-build
+
+**Purpose:** Aggregate showroom performance metrics per variant for A/B test evaluation.
+
+```typescript
+const showroomPerformanceBuildJob: JobDefinition = {
+  name: 'showroom-performance-build',
+  queue: 'analytics',
+  description: 'Aggregate showroom performance metrics per variant',
+  schedule: '0 11 * * *',      // 11:00 UTC = 08:00 BRT (America/Sao_Paulo) daily
+  priority: 'medium',
+  timeout_ms: 600000,          // 10 minutes
+  retry: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 60000 }
+  },
+  concurrency: 1,
+  data_schema: {
+    type: 'object',
+    properties: {
+      date: { type: 'string', format: 'date' },
+      showroom_ids: { type: 'array', items: { type: 'number' } }
+    }
+  }
+};
+```
+
+**Depends on:** `intent-readiness-build` (06:00 BRT) must complete first.
+
+#### showroom-variant-deployment
+
+**Purpose:** Select and deploy A/B test winners based on 14-day performance data.
+
+```typescript
+const showroomVariantDeploymentJob: JobDefinition = {
+  name: 'showroom-variant-deployment',
+  queue: 'analytics',
+  description: 'Select and deploy A/B test winners',
+  schedule: '30 11 * * *',     // 11:30 UTC = 08:30 BRT (America/Sao_Paulo) daily
+  priority: 'medium',
+  timeout_ms: 300000,          // 5 minutes
+  retry: {
+    attempts: 2,
+    backoff: { type: 'fixed', delay: 60000 }
+  },
+  concurrency: 1,
+  data_schema: {
+    type: 'object',
+    properties: {
+      showroom_ids: { type: 'array', items: { type: 'number' } },
+      min_test_days: { type: 'number', default: 14 }
+    }
+  }
+};
+```
+
+**Depends on:** `showroom-performance-build` (08:00 BRT) must complete first.
+
+#### lead-retention-cleanup
+
+**Purpose:** Delete expired leads (90d unexported / 1yr exported), anonymize bot sessions >90d, hard-delete withdrawn leads after 7-day window.
+
+```typescript
+const leadRetentionCleanupJob: JobDefinition = {
+  name: 'lead-retention-cleanup',
+  queue: 'compliance',
+  description: 'Delete expired leads and anonymize bot sessions per retention policy',
+  schedule: '30 5 * * *',      // 05:30 UTC = 02:30 BRT (America/Sao_Paulo) daily
+  priority: 'medium',
+  timeout_ms: 600000,          // 10 minutes
+  retry: {
+    attempts: 3,
+    backoff: { type: 'fixed', delay: 60000 }
+  },
+  concurrency: 1,
+  data_schema: {
+    type: 'object',
+    properties: {
+      dry_run: { type: 'boolean', default: false }
+    }
+  }
+};
+```
+
+**Runs before:** `data-anonymization` (02:00 BRT) and `backup-database` (03:00 BRT).
+
 **Circuit Breaker Recovery Procedures:**
 
 | Trigger | Auto-Recovery | Manual Recovery Steps |
@@ -608,9 +731,13 @@ async function postBuildCircuitBreakers(
 | 00:00 BRT | `0 3 * * *` | 03:00 UTC | streak-check |
 | 00:01 BRT | `1 3 * * *` | 03:01 UTC | daily-missions-assignment |
 | 01:00 BRT | `0 4 * * *` | 04:00 UTC | daily-feature-aggregation |
-| 01:15 BRT | `15 4 * * *` | 04:15 UTC | community-graph-build |
 | 02:00 BRT | `0 5 * * *` | 05:00 UTC | data-anonymization |
+| 02:30 BRT | `30 5 * * *` | 05:30 UTC | lead-retention-cleanup |
 | 03:00 BRT | `0 6 * * *` | 06:00 UTC | backup-database, session-cleanup |
+| 04:15 BRT | `15 7 * * *` | 07:15 UTC | community-graph-build |
+| 06:00 BRT | `0 9 * * *` | 09:00 UTC | intent-readiness-build |
+| 08:00 BRT | `0 11 * * *` | 11:00 UTC | showroom-performance-build |
+| 08:30 BRT | `30 11 * * *` | 11:30 UTC | showroom-variant-deployment |
 | Sunday 00:00 BRT | `0 3 * * 0` | Sunday 03:00 UTC | weekly-ranking-reset |
 | Every hour | `0 * * * *` | UTC | health-check |
 | Every 5 min | `*/5 * * * *` | UTC | queue-metrics |
@@ -717,13 +844,28 @@ async function initializeScheduler(queue: Queue): Promise<void> {
 │          │   └── Depends on: aggregation complete                   │
 │          │   └── Anonymizes: events > 90 days                       │
 │          │                                                           │
+│  02:30 ──┼── lead-retention-cleanup                     ← NEW      │
+│          │   └── Deletes expired leads, anonymizes bot sessions     │
+│          │                                                           │
 │  03:00 ──┼── backup-database + session-cleanup                      │
 │          │   └── Runs in low-traffic window                         │
 │          │                                                           │
-│  04:15 ──┴── community-graph-build                                  │
-│              └── Depends on: daily-feature-aggregation complete     │
-│              └── Outputs: community_edges, community_portals,       │
-│                           community_graph_runs                       │
+│  04:15 ──┼── community-graph-build                                  │
+│          │   └── Depends on: daily-feature-aggregation complete     │
+│          │   └── Outputs: community_edges, community_portals,       │
+│          │                community_graph_runs                       │
+│          │                                                           │
+│  06:00 ──┼── intent-readiness-build                     ← NEW      │
+│          │   └── Depends on: community-graph-build complete         │
+│          │   └── Outputs: cohort_membership, readiness scores       │
+│          │                                                           │
+│  08:00 ──┼── showroom-performance-build                 ← NEW      │
+│          │   └── Depends on: intent-readiness-build complete        │
+│          │   └── Outputs: showroom_performance_daily                │
+│          │                                                           │
+│  08:30 ──┴── showroom-variant-deployment                ← NEW      │
+│              └── Depends on: showroom-performance-build complete    │
+│              └── Deploys A/B test winners                           │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -1075,9 +1217,14 @@ async function sendNotification(data: NotificationData): Promise<void> {
 │  │  └──────────────┘  └──────────────┘  └──────────────┘  │        │
 │  │                                                          │        │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │        │
-│  │  │  analytics   │  │ notifications│  │  dead-letter │  │        │
+│  │  │  analytics   │  │ notifications│  │  compliance  │  │        │
 │  │  │    queue     │  │    queue     │  │    queue     │  │        │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘  │        │
+│  │                                                          │        │
+│  │  ┌──────────────┐                                        │        │
+│  │  │  dead-letter │                                        │        │
+│  │  │    queue     │                                        │        │
+│  │  └──────────────┘                                        │        │
 │  │                                                          │        │
 │  └─────────────────────────────────────────────────────────┘        │
 │                                                                      │
@@ -1122,6 +1269,14 @@ const QUEUE_CONFIG: Record<string, QueueOptions> = {
     }
   },
   analytics: {
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'fixed', delay: 60000 },
+      removeOnComplete: { count: 30 },
+      removeOnFail: { count: 100 }
+    }
+  },
+  compliance: {
     defaultJobOptions: {
       attempts: 3,
       backoff: { type: 'fixed', delay: 60000 },
@@ -1553,4 +1708,4 @@ async function getJobSystemHealth(): Promise<JobSystemHealth> {
 
 *This document defines all background processing in the system. New jobs must be added to the registry before implementation.*
 
-<!-- Last Updated: 2026-01-22 - Fixed UTC/BRT cron schedule comments in job definitions (schedule values now correctly show UTC with BRT mapping) -->
+<!-- Last Updated: 2026-01-29 - Added 4 Two-Pillar jobs (intent-readiness-build, showroom-performance-build, showroom-variant-deployment, lead-retention-cleanup) per 25_TWO_PILLAR_SAAS_STRATEGY.md -->

@@ -1,8 +1,8 @@
 # Compliance and Data Protection
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.1.0
+**Last Updated:** 2026-01-29
+**Version:** 1.2.0
 
 ---
 
@@ -70,6 +70,9 @@
 | Age Verification Logs | Compliance audit | Legal Obligation (II) | 2 years |
 | Minor Detection Cases | Child safety | Legal Obligation (II) | 5 years |
 | ID Verification Docs | Enhanced verification | Consent (I) | 30 days post-verification |
+| Showroom Leads (name, email) | Lead qualification | Consent (I) + Legitimate Interest (IX) | 90d (not exported) / 1yr (exported) |
+| Bot Session Metadata | Service optimization | Legitimate Interest (IX) | 90 days |
+| Lead Sharing (to brand partners) | Commercial conversion | Explicit Consent (I) | Until withdrawal |
 
 ### 2.2 Data Processing Principles (Art. 6)
 
@@ -160,6 +163,7 @@ enum ConsentType {
   MARKETING = 'marketing',                    // Optional
   ANALYTICS = 'analytics',                    // Optional (but default on) - aka "telemetry"
   WHATSAPP_ACTIVITY = 'whatsapp_activity',    // Optional (default off) - Living Graph
+  SHOWROOM_LEAD_SHARING = 'showroom_lead_sharing', // Optional (default off) - Two-Pillar lead sharing with brand partners
   THIRD_PARTY_SHARING = 'third_party'         // Optional
 }
 
@@ -332,6 +336,7 @@ The Living Graph (community-to-community similarity graph) requires explicit con
 |--------------|------------------|---------|-----------|
 | `whatsapp.*` | `WHATSAPP_ACTIVITY` | **OFF** | Event dropped (not stored) |
 | `world.*`, `user.*`, etc. | `ANALYTICS` | ON | Anonymized (identity_id = NULL) |
+| `showroom.*` | `ANALYTICS` | ON | Anonymized (identity_id = NULL) |
 | `age.*`, `system.*` | None | N/A | Always stored (safety/ops) |
 
 #### WhatsApp Activity Consent
@@ -389,6 +394,89 @@ async function handleWhatsAppWebhook(event: WhatsAppEvent): Promise<void> {
   });
 }
 ```
+
+### 3.6 Showroom Lead Capture Compliance (Two-Pillar Strategy)
+
+Lead capture in branded virtual spaces requires **dual consent**: UC platform consent (data processing) + partner-specific lead sharing consent.
+
+#### Consent Requirements
+
+| Action | Consent Required | Default | If Denied |
+|--------|------------------|---------|-----------|
+| Enter showroom | `ANALYTICS` | ON | Anonymized visit |
+| Submit lead form | `SHOWROOM_LEAD_SHARING` | **OFF** | Form submission blocked |
+| Share lead with brand | `SHOWROOM_LEAD_SHARING` | **OFF** | Lead stays internal to UC |
+| Bot conversation | `ANALYTICS` | ON | No metadata stored |
+
+#### Lead Data Restrictions
+
+**Allowed form fields (approved list):**
+- Name
+- Email
+- Company (optional)
+- Specific need / interest (free text, optional)
+- One configurable optional field
+
+**Prohibited form fields (HARD BLOCK):**
+- Phone number (already in identity — no double collection)
+- Address / location
+- CPF / government ID
+- Financial information
+- Health information
+
+#### Consent Withdrawal
+
+Users may withdraw `SHOWROOM_LEAD_SHARING` consent at any time:
+
+1. **One-click withdrawal** in profile settings
+2. **Effect:** All unexported leads marked for deletion within 7 days
+3. **Exported leads:** Brand notified to delete (contractual obligation via DPA)
+4. **Bot sessions:** Anonymized within 7 days
+5. **Confirmation:** User receives confirmation of withdrawal action
+
+#### Partner Data Processing Agreement (DPA)
+
+All brand partners MUST sign a DPA before receiving any lead data. Required DPA clauses:
+
+| Clause | Requirement |
+|--------|-------------|
+| Purpose limitation | Leads may only be used for the stated commercial purpose |
+| Data retention | Partner must delete leads within 1 year of receipt |
+| Withdrawal compliance | Partner must delete leads within 7 days of UC notification |
+| No re-sharing | Partner may not share leads with third parties |
+| Audit rights | UC may audit partner data handling annually |
+| Breach notification | Partner must notify UC within 48 hours of any breach involving lead data |
+
+#### Monthly Compliance Audit (15-Point Checklist)
+
+Per `25_TWO_PILLAR_SAAS_STRATEGY.md` §7.3, the following audit must be performed monthly (90 minutes):
+
+**Category 1: Consent & PII**
+- [ ] No leads exist without `SHOWROOM_LEAD_SHARING` consent
+- [ ] No prohibited form fields in any active showroom layout
+- [ ] All withdrawals processed within 7 days
+- [ ] No leads from users with age assurance level < 2
+
+**Category 2: Age Assurance**
+- [ ] No underage users accessed showrooms
+- [ ] Revalidation enforced for level 1 users attempting showroom entry
+
+**Category 3: Data Minimization**
+- [ ] No conversation text in analytics events or bot session records
+- [ ] Bot logs contain metadata only (question count, keywords, sentiment proxy)
+- [ ] Form fields in all active layouts match approved list
+
+**Category 4: No Dark Patterns**
+- [ ] No urgency language in showroom layouts ("limited time", "only today")
+- [ ] No streak punishment mechanics in showroom offers
+- [ ] Frequency caps enforced (max 3 offers/month per user)
+
+**Category 5: User Feedback**
+- [ ] Consent withdrawal rate < 10%
+- [ ] Satisfaction score > 4/5 (if survey deployed)
+- [ ] "Felt pressured" < 5% (if survey deployed)
+
+**Report:** Monthly audit report with PASS/WARN/FAIL per category. Legal review required for any FAIL.
 
 ---
 
@@ -822,6 +910,11 @@ async function generateComplianceReport(
 | Consent records | 5 years after revocation | Legal obligation | Delete |
 | Backup data | 30 days | Recovery | Overwrite |
 | Deletion request records | 5 years | Legal obligation | Delete |
+| Showroom leads (not exported) | 90 days | Legitimate interest | Hard delete |
+| Showroom leads (exported) | 1 year | Contract | Hard delete |
+| Withdrawn leads | 7 days | LGPD right to withdrawal | Hard delete |
+| Bot session metadata | 90 days | Legitimate interest | Anonymize |
+| Showroom performance aggregates | 5 years | Business need | Retain |
 
 ---
 
@@ -979,5 +1072,4 @@ const stats = await db.gamification.aggregate({
 
 *This document defines compliance requirements. All features must undergo privacy review before launch.*
 
-<!-- Last Updated: 2026-01-19 - Added WHATSAPP_ACTIVITY consent type and Living Graph consent requirements (Section 3.5) -->
-<!-- Last Reviewed: 2026-01-27 - No updates needed. LGPD compliance verified on 01-26 (all pages, cookie banner, footer links). -->
+<!-- Last Updated: 2026-01-29 - Added SHOWROOM_LEAD_SHARING consent, lead capture compliance, DPA requirements, monthly audit checklist per 25_TWO_PILLAR_SAAS_STRATEGY.md -->

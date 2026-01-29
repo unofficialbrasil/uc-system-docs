@@ -1,8 +1,8 @@
 # Event and Analytics Specification
 
 **System:** Unofficial Communities
-**Last Updated:** 2026-01-17
-**Version:** 1.2.0
+**Last Updated:** 2026-01-29
+**Version:** 1.3.0
 
 ---
 
@@ -108,7 +108,36 @@ Examples:
 | `portal_w` | West Portal | Portal |
 | `portal_nw` | Northwest Portal | Portal |
 
-### 2.5 WhatsApp Activity Events (Living Graph)
+### 2.5 Showroom Events (Two-Pillar Strategy)
+
+| Event Name | Trigger | Properties | Source |
+|------------|---------|------------|--------|
+| `showroom.entered` | User enters branded space | `{ showroom_id, variant_id, intent_stage, community_id }` | Server |
+| `showroom.exited` | User leaves branded space | `{ showroom_id, dwell_seconds, exit_reason, community_id }` | Server |
+| `showroom.bot_started` | Bot conversation begins | `{ showroom_id, bot_mode, variant_id }` | Server |
+| `showroom.bot_ended` | Bot conversation ends | `{ showroom_id, resolution_type, dwell_seconds, question_count }` | Server |
+| `showroom.form_started` | User begins lead form | `{ showroom_id }` | Frontend |
+| `showroom.form_completed` | User submits lead form | `{ showroom_id, lead_quality_score }` | API |
+| `showroom.form_abandoned` | User abandons lead form | `{ showroom_id, fields_completed, abandon_field }` | Frontend |
+| `showroom.opt_in_clicked` | User clicks soft conversion offer | `{ offer_type, showroom_id, community_id }` | Frontend |
+| `showroom.offer_shown` | Soft conversion offer displayed | `{ offer_type, showroom_id, community_id }` | Frontend |
+| `showroom.offer_dismissed` | User dismisses conversion offer | `{ offer_type, showroom_id, community_id }` | Frontend |
+| `showroom.escalated` | Bot escalates to human | `{ showroom_id, reason, dwell_seconds }` | Server |
+
+> **Privacy Rules:**
+> - Bot sessions log **metadata only** — conversation text is NEVER stored
+> - Lead capture requires explicit dual consent (UC + partner)
+> - Age assurance level 2+ required for showroom access
+> - See `25_TWO_PILLAR_SAAS_STRATEGY.md` for full ethical framework
+
+### 2.6 Brand Zone Events (Two-Pillar Strategy)
+
+| Event Name | Trigger | Properties | Source |
+|------------|---------|------------|--------|
+| `brand_zone.entered` | User enters brand zone | `{ community_id, brand_zone_id }` | Server |
+| `brand_zone.dwell` | User dwell in brand zone | `{ community_id, brand_zone_id, dwell_seconds }` | Server |
+
+### 2.8 WhatsApp Activity Events (Living Graph)
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -124,7 +153,7 @@ Examples:
 > - Collection requires explicit consent (`consents.whatsapp_activity = true`)
 > - `identity_id` is anonymized after 90 days per retention policy
 
-### 2.6 Age Verification Events (Adult-by-Design)
+### 2.9 Age Verification Events (Adult-by-Design)
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -139,7 +168,7 @@ Examples:
 | `age.appeal_resolved` | Appeal completed | `{ case_id, outcome }` | API |
 | `age.level_upgraded` | Assurance level increased | `{ old_level, new_level, reason }` | API |
 
-### 2.7 Webhook Events
+### 2.10 Webhook Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -153,7 +182,7 @@ Examples:
 - `RetryableError`: Network errors, 5xx responses, 429 rate limits → triggers retry
 - `NonRetryableError`: 4xx client errors (except 429) → sent directly to dead letter
 
-### 2.8 System Events
+### 2.11 System Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
@@ -208,6 +237,8 @@ interface BaseEvent {
 | `gamification.*` | `identity_id`, `community_id`, `event_version` | `telemetry` |
 | `community.*` | `community_id`, `event_version` | `telemetry` |
 | `world.*` | `community_id`, `event_version` | `telemetry` |
+| `showroom.*` | `showroom_id`, `community_id`, `event_version` | `telemetry` |
+| `brand_zone.*` | `community_id`, `event_version` | `telemetry` |
 | `whatsapp.*` | `community_id`, `identity_id`, `event_version` | `whatsapp_activity` |
 | `age.*` | `identity_id`, `event_version` | None (required for safety) |
 | `webhook.*` | `event_version` | None (system event) |
@@ -305,6 +336,7 @@ interface BaseEvent {
 
 **Consent Gate Rules:**
 - `whatsapp.*` events → Require `whatsapp_activity` consent → DROP if denied
+- `showroom.*`, `brand_zone.*` events → Require `telemetry` consent → Anonymize if denied
 - `user.*`, `world.*`, etc. → Require `telemetry` consent → Anonymize if denied
 - `age.*`, `system.*` → No consent required (safety/operational)
 
@@ -484,6 +516,23 @@ These aggregates are required for the Living Graph community-to-community simila
 - WhatsApp aggregates only include consented users (`whatsapp_activity = true`)
 - All aggregates run at **04:00 America/Sao_Paulo** daily
 - Backfill capability required for 28 days (pilot requirement)
+
+### 7.1.2 Two-Pillar Strategy Aggregates (Showroom + Intent)
+
+These aggregates support the Bridge intelligence layer and showroom optimization.
+
+| Aggregate Type | Window | Dimensions | Metrics | Purpose |
+|----------------|--------|------------|---------|---------|
+| `intent_readiness_daily` | 1 day | `{community_id, cohort_type}` | `{mission_completion_rate, zone_diversity_avg, brand_optins, social_reciprocity_pct}` | Daily community readiness assessment |
+| `community_readiness_trends` | 7 days | `{community_id}` | `{readiness_score, trend_direction, stability}` | Weekly readiness forecasting |
+| `showroom_performance_daily` | 1 day | `{showroom_id, variant_id}` | `{entrances, form_completions, lead_quality_avg, dwell_avg}` | Showroom A/B test optimization |
+| `community_brand_affinity` | 28 days | `{community_id, showroom_id}` | `{lead_count, avg_quality, conversion_rate, affinity_score}` | Community-to-brand matching |
+
+**Implementation Rules:**
+- `intent_readiness_daily` runs at **06:00 America/Sao_Paulo** (depends on `community-graph-build`)
+- `showroom_performance_daily` runs at **08:00 America/Sao_Paulo** (depends on intent readiness)
+- `community_brand_affinity` computed weekly from rolling 28-day window
+- All aggregates are cohort/community level — no individual-level data
 
 ### 7.2 Aggregate Schema
 
@@ -675,7 +724,9 @@ function getRequiredConsent(domain: string): 'telemetry' | 'whatsapp_activity' |
     case 'user':
     case 'gamification':
     case 'community':
-    case 'world': return 'telemetry';
+    case 'world':
+    case 'showroom':
+    case 'brand_zone': return 'telemetry';
     case 'age':
     case 'webhook':
     case 'system': return null; // No consent required
@@ -696,6 +747,7 @@ function getRequiredConsent(domain: string): 'telemetry' | 'whatsapp_activity' |
 | Email addresses | PII | Schema validation, email fields stripped |
 | GPS coordinates | Location tracking | Schema validation rejects `lat`, `lng`, `coordinates` |
 | IP addresses | PII | Never logged in events |
+| Bot conversation transcripts | Privacy, LGPD | Metadata only; schema validation rejects `transcript`, `conversation`, `chat_log` fields |
 
 ```typescript
 // Schema validation - HARD BLOCK on prohibited fields
@@ -709,6 +761,9 @@ const PROHIBITED_PROPERTY_PATTERNS = [
   /^email$/i,
   /^(lat|lng|latitude|longitude|coordinates)$/i,
   /^ip_address$/i,
+  /^transcript$/i,
+  /^conversation$/i,
+  /^chat_log$/i,
 ];
 
 function validateEventSchema(event: BaseEvent): void {
@@ -898,4 +953,4 @@ Exports follow data minimization principles:
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-22 - Updated webhook event properties to match uc-webhooks implementation (RetryableError/NonRetryableError types, correlation_id) -->
+<!-- Last Updated: 2026-01-29 - Added showroom.* and brand_zone.* events, Two-Pillar aggregates, bot transcript prohibition per 25_TWO_PILLAR_SAAS_STRATEGY.md -->
