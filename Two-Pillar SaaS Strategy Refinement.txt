@@ -1,0 +1,694 @@
+Unofficial Communities: Two-Pillar SaaS Architecture Strategy Refinement
+Status: Strategic Architecture Review
+Date: January 28, 2026
+Prepared for: Lead Systems Architect
+Audience: Product, Engineering, Business Leadership
+________________________________________
+Executive Summary
+Your SaaS platform is built on a powerful dual-core model that separates Social Intelligence (engagement) from Commercial Optimization (conversion). This strategy refinement addresses three critical questions:
+1.	Pillar 1: How to map social density and identify high-potential users without disrupting social experience
+2.	Pillar 2: How to design AI-driven user qualification and automated showroom improvement loops
+3.	The Bridge: How to transition users at the optimal moment without friction or manipulation
+This document provides:
+•	Operational science frameworks grounded in your Graph Theory and Behavioral Science research
+•	Specific technical architectures for both pillars and the bridge
+•	Guardrails and ethical constraints to prevent manipulation while maximizing conversion
+•	Metrics and feedback loops for continuous improvement
+________________________________________
+Part 1: Understanding Your Current Architecture
+Pillar 1: The Social Engagement Ecosystem (UC World 3D)
+Purpose: Build belonging, autonomy, and competence through ethical gamification and spatial presence.
+Core Mechanisms (from your docs):
+•	Living Graph: Community-to-community proximity mapping (affinity, member overlap, co-activity patterns)
+•	Proxemics: Zone-based density management (Hub, Lounges, Workshop, Quiet, Onboarding, Brand)
+•	Behavioral Layers: Fogg MAP + SDT (Self-Determination Theory) as mandatory system constraints
+•	Ethical Enforcement: Data minimization, anti-dark patterns, circuit breakers, k-anonymity
+Current State:
+•	26 satellite communities ready for launch
+•	Living Graph daily aggregation job producing community-level features (no PII)
+•	Portal system connecting communities with explainability (reason codes)
+•	Dunbar-led size constraints (50–500 members optimal, hard cap 500)
+Social Intelligence Generated:
+•	Community activity signals (active members, sessions, dwell time)
+•	Zone patterns (where people congregate, where they retreat)
+•	Cross-community flow (travel rates, bounce rates, diversity of visits)
+•	Behavioral signatures (mission completion, social reciprocity)
+Pillar 2: The Conversion Ecosystem (Virtual Showrooms)
+Status: Planned but not yet operationalized.
+Purpose: Convert high-intent users into qualified leads or sales using signals from Pillar 1 with ethical qualification and automated improvement.
+Gap Identified: Your current architecture has the data foundation (Living Graph, behavioral tokens) but lacks:
+1.	A purchase intent detection model that translates social signals to conversion readiness
+2.	An AI bot feedback loop for real-time qualification and gating
+3.	An automated improvement system that learns from showroom performance and optimizes layout/data-requests
+The Bridge: Transition Mechanics
+Status: Conceptual.
+Goal: Identify the exact moment when a user transitions from "high engagement" to "high purchase intent" and route them to a showroom without:
+•	Manipulation or coercion
+•	Breaking their social experience
+•	Reducing trust in the platform
+________________________________________
+Part 2: Pillar 1 Refined – Mapping Social Density & Identifying High-Potential Users
+2.1 Social Density & Graph Theory: Operational Framework
+Your research (Estudo 028, 029, 030) establishes that Graph Theory enables auditible, interpretable proximity mapping. Here's how to operationalize it to identify high-potential users without surveillance:
+A. Three-Layer Graph Model (Already Conceptually Sound)
+Layer	Entities	Purpose	Guardrail
+Interest Graph	Users → Content/Tags/Zones/Events	Cold-start discovery, interest matching	Minimize behavioral inference; prefer explicit signals (zone visits, mission types)
+Social Graph	Users → Recurring co-presences, co-participation	Belonging, trust, reciprocity	Store aggregates only, no dyadic edges at individual level
+Community Graph	Communities → Communities (6-neighbor portal system)	Cross-community health, discovery, partnerships	Aggregate signals; never expose individual member names or IDs
+
+Application to High-Potential User Identification:
+Instead of profiling individual users (which violates privacy and ethics), use community-level and cohort-level signals to identify which communities generate high-potential leads, then route qualified users into Pillar 2.
+B. High-Potential User Signals (Community & Cohort Level)
+Define "high-potential" not as "most likely to buy" but as "demonstrates intent + engaged + low risk." This requires two layers:
+Layer 1: Behavioral Intent Signals (Derived from Pillar 1)
+Signal	Data Source	Interpretation	Calculation
+Mission Velocity	missionactivitydaily aggregates	User completes assigned missions (earning XP) → demonstrates autonomy, competence	Cohort-level: % of active users completing ≥5 missions in rolling 7d
+Zone Diversity	zonedwelldaily (multiple zones visited)	User explores beyond central hub → indicates curiosity, openness	Per user: unique_zones_visited / total_zones in 7d window
+Social Reciprocity	Implied via co-presence + lounge usage	User enters lounges (semi-private bonding spaces) → signals social bonding, trust	Community-level: % of users with ≥2 lounge sessions in 7d
+Brand Zone Opt-in	Portal/zone entry events (with consent)	User voluntarily enters partner spaces → signals openness to value exchange	Opt-in conversions: explicit click to enter brand zone
+Session Persistence	whatsappactivitydaily + world.presence events	Cross-channel engagement (WhatsApp + 3D world) → signals committed participation	Cohort: D7 (% active 7 days after signup) and repeat 3d+ activity
+Conversation Quality	WhatsApp sentiment (only if opt-in, aggregated)	Long-form responses, not just reactions → depth of engagement	Optional future: aggregate sentiment score by community (not individual)
+
+Key Principle: All signals are cohort-aggregated and community-level, never individual-level profiling. This respects privacy while identifying which communities produce high-intent users.
+C. Community-Level Readiness for Conversion Bridge
+Define communities that are "healthy + high-intent" as candidates for Pillar 2 bridge activation:
+Community Readiness Score (Composite, Quarterly Recalibration)
+ReadinessScore = (0.3 × EngagementHealth)
++ (0.3 × SocialHealth)
++ (0.2 × IntentSignals)
++ (0.2 × SafetyCompliance)
+Where:
+•	EngagementHealth = D7_retention × mission_completion_rate × avg_session_persistence
+•	SocialHealth = entropy_social × reciprocity_proxy × zone_diversity
+•	IntentSignals = brand_zone_opt_in_rate × cross_community_travel × lounge_utilization
+•	SafetyCompliance = moderation_response_time × report_rate_inverse × leader_stability
+Decision Rule:
+•	Tier 1 (Green): ReadinessScore ≥ 0.75 → Eligible for conversion bridge
+•	Tier 2 (Yellow): 0.50–0.74 → Observe for 2 weeks, then re-evaluate
+•	Tier 3 (Red): < 0.50 → Not ready; continue engagement-only
+D. Anonymized User Cohort Identification
+For users within Tier 1 communities, define behaviorally-similar cohorts without identifying individuals:
+Example Cohort: "High-Intent Explorers"
+Criteria (all community + cohort level):
+•	Member of Tier 1 community
+•	Zone diversity ≥ 4 unique zones in 7d
+•	Mission completion rate ≥ 60%
+•	Brand zone opt-in: Yes (explicit consent)
+•	D7 retention: Yes
+•	Social reciprocity: ≥ 2 lounge sessions
+•	No safety flags (reports, bans, violations)
+Output: "This community has 45 users in the High-Intent Explorer cohort."
+NO individual names, IDs, or behavioral profiles sent to Pillar 2.
+2.2 Operationalization: Living Graph Extensions for Conversion Readiness
+New Aggregates Required (Add to 07_EVENT_AND_ANALYTICS_SPEC.md):
+Aggregate	Window	Dimensions	Metrics	Purpose
+intentreadinessdaily	1 day	communityid, cohorttype	mission_completion_rate, zone_diversity_avg, brand_optins, social_reciprocity_pct	Hourly readiness assessment
+cohortmembership	1 day	communityid, cohorttype	count_users, avg_engagement_score	Cohort population tracking
+communityreadinesstrends	7 days	communityid	readiness_score, trend_direction, stability	Weekly readiness forecasting
+
+New Daily Job: intentReadinessBuild (Add to 08_BACKGROUND_JOBS)
+Schedule: 0600 BRT (after all daily aggregates complete)
+Inputs: analyticsaggregates (missionactivity, zone dwell, brand zone, portal activity, whatsapp activity)
+Process:
+1.	Compute per-cohort aggregate metrics across all Tier 1 communities
+2.	Calculate community readiness scores
+3.	Identify new cohorts meeting High-Intent Explorer (or custom) criteria
+4.	Log cohort population and characteristics (aggregated)
+5.	Output: cohortmembership table + readiness_score + unsafe to query for individual data
+API Contract (New Endpoint for Pillar 2):
+GET /api/v1/conversion/community-readiness
+Query params: communityIds[], minReadinessScore=0.75
+Response:
+{
+"communities": [
+{
+"communityId": 5,
+"readinessScore": 0.82,
+"readinessTier": "green",
+"eligibilityReason": "High engagement, strong social health, opt-in brand exposure",
+"cohorts": [
+{
+"cohortType": "high-intent-explorers",
+"cohortSize": 45,
+"behavioralProfile": {
+"avg_zone_diversity": 4.2,
+"mission_completion_pct": 65,
+"brand_zone_optins": 0.91,
+"social_reciprocity_pct": 0.78
+}
+}
+],
+"recommendedAction": "ELIGIBLE_FOR_BRIDGE",
+"lastUpdated": "2026-01-28T06:15:00Z"
+}
+]
+}
+Critical Guardrails:
+1.	No individual-level data in response (only aggregates and cohort counts)
+2.	Reason codes explain readiness (transparency)
+3.	Explicit opt-in for brand zone = precondition for bridge eligibility
+4.	Community leader approval required before bridge activation (governance gate)
+________________________________________
+Part 3: Pillar 2 Refined – Virtual Showrooms & AI-Driven Qualification
+3.1 Purchase Intent Detection Model
+Problem: How do you identify which users from a high-readiness community are ready to convert without individual profiling?
+Answer: Use cohort-level behavioral patterns + explicit intent signals + AI-driven real-time gating.
+A. Intent Classification Framework
+Define four intent stages (not individual user labels, but aggregate cohort behaviors):
+Intent Stage	Signal Composition	System Action
+Latent	Engaged but no explicit brand interaction	Social engagement only; no showroom access
+Exploratory	Zone diversity ≥4, brand zone opt-in, ≥2 return visits	Eligible for Tier 1 Showroom (low-friction exploration)
+Qualitative	Exploratory + sustained ≥7d engagement + 2+ brand zone visits	Eligible for Tier 2 Showroom (consultative, AI-assisted)
+Transactional	Qualitative + explicit action (link click, form start, FAQ view)	Eligible for Tier 3 Showroom (high-friction, sales-optimized)
+
+Key Design:
+•	No individual scoring. Instead, route cohorts (not persons) into stages based on aggregated metrics.
+•	Behavioral triggers (e.g., "click form button") move a user from Qualitative to Transactional within a session.
+•	Decay: Intent signals expire if behavior drops (7d inactivity reverts user to Latent).
+B. AI Bot Feedback Loop: Real-Time Qualification
+Design a conversational AI concierge that operates in showrooms with explicit guardrails:
+Bot Architecture:
+┌──────────────────────────────────────────────┐
+│ User Enters Showroom (Tier 1, 2, or 3) │
+└────────────────────┬─────────────────────────┘
+│
+▼
+┌────────────────────────────┐
+│ AI Bot Initialization │
+│ - Load cohort intent stage│
+│ - Load showroom variant │
+│ - Start session timer │
+└────────────┬───────────────┘
+│
+▼
+┌────────────────────────────────────┐
+│ Bot Engages with Transparency │
+│ "Hi! I'm an AI assistant." │
+│ (Label required, opt-out available)│
+└────────────┬───────────────────────┘
+│
+┌────────────┴─────────────────┐
+│ │
+▼ ▼
+Qualitative Mode Transactional Mode
+(Exploratory Users) (Ready Users)
+┌──────────────────┐ ┌──────────────────┐
+│ - Educate │ │ - Identify needs │
+│ - Answer FAQs │ │ - Assess fit │
+│ - Explore fit │ │ - Suggest offer │
+│ - No hard sell │ │ - Qualify lead │
+│ - Measure │ │ - Soft CTA │
+│ engagement │ │ - Measure intent │
+└────────┬─────────┘ └────────┬─────────┘
+│ │
+▼ ▼
+Event: qa_intent Event: tx_intent
+Bot logs: time, Bot logs: time,
+questions asked, needs identified,
+answers clicked, product fit score,
+exit reason lead quality score
+Bot Decision Tree (Pseudo-code):
+function routeUserToShowroom(userId, cohortStage, showroomVariant) {
+// 1. Determine bot mode based on cohort
+if (cohortStage === 'exploratory') {
+botMode = 'educational'
+allowHardSell = false
+dataCollectionIntensity = 'minimal'
+} else if (cohortStage === 'qualitative') {
+botMode = 'consultative'
+allowHardSell = false
+dataCollectionIntensity = 'moderate'
+} else if (cohortStage === 'transactional') {
+botMode = 'sales-oriented'
+allowHardSell = true
+dataCollectionIntensity = 'full'
+}
+// 2. Initialize session with transparency
+botMessages = [
+"Olá! Sou um assistente IA. Você pode sair a qualquer momento.",
+"Estou aqui para ajudar você a entender se isso é certo para você.",
+"Como você chegou aqui hoje?"
+]
+// 3. Qualify via conversation
+while (sessionActive) {
+userInput = captureUserResponse()
+// Log interaction (aggregated)
+logInteraction({
+  eventType: 'bot_interaction',
+  botMode: botMode,
+  questionAsked: botCurrentQuestion,
+  answerProvided: userInput,
+  userEngagement: scoreEngagement(userInput),
+  intentSignal: extractIntentSignal(userInput)
+})
+
+// Decide next bot action
+if (userSignalsReadiness()) {
+  // Move to lead capture form (but not mandatory)
+  offerOptionalLeadCapture()
+} else if (userAsksToLeave()) {
+  recordExit({
+    reason: 'user-initiated',
+    dwell_seconds: sessionDuration,
+    intent_change: finalIntentScore - initialIntentScore
+  })
+  exit()
+} else if (sessionTimeout > 15min) {
+  recordExit({
+    reason: 'timeout',
+    intent_change: ...
+  })
+  exit()
+}
+
+}
+}
+Bot Qualification Metrics (Real-Time Logging):
+Metric	Definition	Use
+question_count	Questions asked by user	Curiosity proxy
+answer_depth	Character count of bot answers / user questions	Engagement depth
+intent_signal_strength	Keyword extraction: "pricing", "timeline", "team", etc.	Intent classification
+ui_interaction_count	CTA clicks, form field focuses, carousel swipes	Explicit intent
+dwell_time_sec	Time in showroom	Consideration depth
+lead_quality_score	Composite (1–10): intent_strength + engagement_depth + fit_indicators	Downstream CRM routing
+
+3.2 Automated Improvement System: Showroom Feedback Loops
+Problem: How do you continuously optimize showroom layout, data requests, and bot prompts based on real user behavior without A/B testing every variant?
+Answer: Build a closed-loop analytics system where showroom performance metrics directly inform design updates.
+A. Showroom Performance Metrics (Daily Aggregation)
+New job: showroomPerformanceBuild (add to 08_BACKGROUND_JOBS)
+Schedule: 0800 BRT (after bot interactions logged)
+-- Per-showroom, per-day metrics
+CREATE TABLE showroomperformancedaily (
+id BIGINT PRIMARY KEY AUTO_INCREMENT,
+periodstart DATE NOT NULL,
+showroom_id INT NOT NULL,
+variant_id VARCHAR(50), -- e.g., "layout-v1", "bot-prompt-v2"
+-- Funnel metrics
+entrance_count INT,
+form_start_count INT,
+form_completion_count INT,
+lead_capture_count INT,
+-- Engagement metrics
+avg_dwell_sec DECIMAL(8,2),
+question_count_total INT,
+question_count_avg DECIMAL(6,2),
+bot_interaction_count_total INT,
+-- Behavior metrics
+exit_type_distribution JSON, -- {user_initiated: 20, timeout: 5, ...}
+intent_signal_strength_avg DECIMAL(5,2),
+-- Quality metrics
+avg_lead_quality_score DECIMAL(5,2),
+intent_improvement_pct DECIMAL(6,2), -- (final_score - initial_score) / initial_score
+-- Friction metrics
+form_abandon_rate DECIMAL(5,2),
+bot_fallback_count INT, -- User said "I want to talk to a human"
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+UNIQUE KEY uk_showroom_date (showroom_id, periodstart, variant_id)
+);
+B. Feedback Loop Rules (Automated Optimization)
+Rule 1: Layout Adjustment
+IF avg_dwell_sec < 90 THEN
+-- Users exiting too quickly; layout may be confusing
+Action: Increase visual hierarchy of CTA buttons
+IF form_start_count / entrance_count < 0.1 THEN
+-- Poor visibility
+Move CTA above the fold
+END IF
+Priority: High
+A/B Test: Current layout vs. simplified layout
+Duration: 7 days
+Success Criterion: avg_dwell_sec increases by ≥15%
+END IF
+Rule 2: Bot Prompt Adjustment
+IF intent_signal_strength_avg < 0.5 THEN
+-- Users not expressing clear intent
+Action: Change bot opening question from generic to specific
+Current: "Como você chegou aqui?"
+Proposed: "Qual é seu maior desafio com [product area]?"
+A/B Test: Current prompt vs. specific prompt
+Measurement: intent_signal_strength_avg, conversation length
+Duration: 7 days
+END IF
+Rule 3: Data Request Optimization
+IF form_abandon_rate > 0.4 THEN
+-- Users dropping out during form
+Action: Reduce required fields
+Current: 7 fields (name, email, company, role, budget, timeline, needs)
+Proposed: 3 fields (name, email, one of: budget OR timeline)
+Test: Run for 7 days
+Metric: form_completion_count, lead_quality_score (should not decrease)
+END IF
+Rule 4: Variant Selection (Winner Selection)
+FOR EACH showroom_id:
+winner_variant = SELECT variant_id
+FROM showroomperformancedaily
+WHERE periodstart >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+ORDER BY lead_quality_score DESC, form_completion_count DESC
+LIMIT 1
+-- Roll out to all new sessions
+UPDATE showrooms
+SET active_variant_id = winner_variant
+WHERE id = showroom_id
+END FOR
+C. Showroom Configuration Schema
+CREATE TABLE showroomlayouts (
+id INT PRIMARY KEY AUTO_INCREMENT,
+showroom_id INT NOT NULL,
+variant_id VARCHAR(50),
+-- Layout configuration
+hero_headline TEXT,
+hero_subheadline TEXT,
+cta_button_text VARCHAR(100),
+cta_button_position ENUM('above_fold', 'middle', 'bottom'),
+-- Form configuration
+form_fields JSON, -- [{name: "email", required: true}, ...]
+form_submit_text VARCHAR(100),
+form_privacy_text TEXT,
+-- Bot configuration
+bot_opening_prompt TEXT,
+bot_mode ENUM('educational', 'consultative', 'sales_oriented'),
+bot_allowed_hard_sell BOOLEAN,
+bot_fallback_text TEXT,
+-- Data collection
+data_collection_intensity ENUM('minimal', 'moderate', 'full'),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+FOREIGN KEY (showroom_id) REFERENCES showrooms(id)
+);
+CREATE TABLE showroombottests (
+id INT PRIMARY KEY AUTO_INCREMENT,
+showroom_id INT NOT NULL,
+test_variant_id VARCHAR(50),
+control_variant_id VARCHAR(50),
+-- Test control
+start_date DATE NOT NULL,
+end_date DATE,
+status ENUM('active', 'completed', 'paused'),
+-- Winner
+winner_variant_id VARCHAR(50),
+winning_metric DECIMAL(8,2),
+created_at TIMESTAMP,
+FOREIGN KEY (showroom_id) REFERENCES showrooms(id)
+);
+3.3 Purchase Intent Model: Decision Tree
+Define: Which users move from Pillar 1 → Pillar 2 conversion showroom?
+Non-Manipulative Route:
+1.	Explicit Opt-in (Primary Signal):
+o	User clicks "Learn more" or enters Brand Zone in Pillar 1 = passive interest signal
+o	User clicks "I'm interested in a consultation" = active intent signal
+o	System action: Route to Tier 2 Showroom (consultative mode)
+2.	Algorithmic Suggestion (Secondary Signal):
+o	Only for users in "Qualitative" cohort (high engagement + brand zone opt-in + 7d+ retention)
+o	Suggestion: "Based on your activity, you might be interested in [product]" (no manipulation)
+o	User can accept or dismiss (one-click, reversible)
+o	System action: Route to Tier 2 Showroom if accepted
+3.	Behavioral Trigger (Tertiary Signal):
+o	User visits Brand Zone 3+ times in 7 days = repeated interest signal
+o	System can proactively suggest showroom (not push)
+o	System action: Optional: Display light banner "Explore showroom?" (opt-out available)
+Decision Logic:
+function determineShowroomEligibility(userId) {
+cohort = getCohort(userId)
+// Explicit signals (always honor)
+if (user.intentSignal === 'explicit_click') {
+return 'tier_2_showroom'
+}
+// Behavioral signals (only for high-engagement cohorts)
+if (cohort.stage === 'qualitative'
+&& user.brandZoneVisits >= 3
+&& user.d7Retention === true) {
+// Don't auto-route; offer as suggestion
+return 'suggestion_eligible'
+
+}
+// Default: stay in engagement ecosystem
+return 'engagement_only'
+}
+________________________________________
+Part 4: The Bridge – Transition Mechanics
+4.1 The Moment of Transition
+Goal: Identify the precise moment when a user moves from "high social engagement" to "high purchase intent" and route them without friction or manipulation.
+Key Insight: Don't force the moment. Let users self-select via explicit actions, then use behavioral data to confirm readiness.
+4.2 Three-Phase Bridge Architecture
+Phase 1: Signal Accumulation (Pillar 1 → Awareness)
+User in high-readiness community does one or more of:
+•	Completes 5+ missions in 7 days
+•	Visits 4+ unique zones
+•	Enters Brand Zone (explicit opt-in)
+•	Stays in community ≥7 days
+•	Participates in social interactions (lounges, workshops)
+System state: User accumulates intent signals in Pillar 1. No redirection yet.
+Phase 2: Readiness Detection (Analytics Job)
+Daily job intentReadinessBuild detects user meets "Qualitative" cohort criteria:
+User qualifies if:
+✓ Community readiness score ≥ 0.75
+✓ User mission completion ≥ 60%
+✓ Zone diversity ≥ 4 unique zones in 7d
+✓ Brand zone opt-ins ≥ 2 times
+✓ D7 retention = true
+✓ No safety flags (reports, bans)
+System state: User added to qualitative_intent cohort. Flag in database, but no UX change yet.
+Phase 3: Conversion Offer (Non-Coercive UI)
+User sees one of these opt-in triggers (in order of non-intrusiveness):
+Option A: Passive Suggestion (Lowest friction)
+•	User completes a mission or enters Brand Zone
+•	Light notification: "You seem interested in [partner]. View showroom?"
+•	CTA is one-click, reversible (user can dismiss)
+•	If dismissed, don't re-show for 7 days
+Option B: Contextual Prompt (Medium friction)
+•	User visits Brand Zone for 3rd time
+•	Floating suggestion card at edge of screen (not center)
+•	"Ready to learn more? See how [partner] helps communities like this."
+•	User can close card or click; no persistence
+Option C: Admin Recommendation (Community-driven)
+•	Community leader manually recommends showroom to active members
+•	Message: "[Leader] thought you'd like to learn about [partner]"
+•	Branded as community recommendation, not platform push
+•	User can accept/dismiss
+4.3 Transition Safeguards
+Guardrail 1: Frequency Capping
+Max showroom offers per user per month: 3
+If user dismisses 2x, wait 14 days before suggesting again
+If user joins showroom, don't suggest again for 30 days (let them decide on their own)
+Guardrail 2: Decay & Respect
+User not in "Qualitative" cohort?
+→ No showroom offers shown
+→ User remains in engagement-only experience
+User leaves community or becomes inactive (3+ days no activity)?
+→ Intent signals decay after 7d inactivity
+→ User reverts to "Exploratory" or "Latent"
+Guardrail 3: Explicit Opt-Out
+User can opt out of all conversion offers in profile settings
+Setting: "I'm here for community engagement only"
+System respects this; no showroom suggestions shown
+Guardrail 4: Minors Protection
+User age < 18?
+→ No conversion offers shown (per 20_ADULT_BY_DESIGN_SPEC.md)
+→ No lead capture or sales engagement
+→ Engagement-only experience
+4.4 User Experience Flow Diagram
+┌─────────────────────────────────────────────────────┐
+│ PILLAR 1: Social Engagement │
+│ │
+│ User joins community (age verified, ≥18) │
+│ Completes onboarding mission │
+│ Participates: missions, zones, lounges │
+└────────────────────┬────────────────────────────────┘
+│
+[7 days pass, user active]
+│
+▼
+┌─────────────────────────────────────────────────────┐
+│ Analytics: User meets Qualitative criteria │
+│ - Mission rate ≥60% │
+│ - Zone diversity ≥4 │
+│ - Brand zone opt-in ≥2 │
+│ - D7 retention true │
+│ - Safety flags: none │
+└────────────────────┬────────────────────────────────┘
+│
+▼
+┌─────────────────────────────────────────────────────┐
+│ UX: Soft Conversion Offer (One of Three) │
+│ │
+│ Option A: Passive notification │
+│ "You seem interested. View showroom?" │
+│ │
+│ Option B: Contextual card │
+│ "Ready to learn more?" │
+│ │
+│ Option C: Community leader recommendation │
+│ "[Leader] recommended this for you" │
+│ │
+│ [User can dismiss or accept, reversible] │
+└────────────────────┬────────────────────────────────┘
+│
+┌────────────┴────────────┐
+│ │
+▼ ▼
+[User Dismisses] [User Clicks "Learn More"]
+│ │
+│ ┌────▼──────────────────────────┐
+│ │ PILLAR 2: Showroom │
+│ │ │
+│ │ - AI bot greets user │
+│ │ - Educates on fit │
+│ │ - Qualifies intent │
+│ │ - Optional lead capture │
+│ │ - Logs performance metrics │
+│ │ │
+│ │ [User outcome: exit, form │
+│ │ completion, or return to │
+│ │ community] │
+│ └────┬──────────────────────────┘
+│ │
+└─────────────────┬───────┘
+│
+▼
+┌────────────────────────────────┐
+│ Feedback Loop │
+│ │
+│ - Log: dwell time, intent │
+│ - Analyze: what worked? │
+│ - Update: showroom layout │
+│ - A/B test: new variant │
+│ - Measure: lead quality │
+│ │
+│ [Next day: new optimized │
+│ variant deployed] │
+└────────────────────────────────┘
+________________________________________
+Part 5: Ethical Guardrails & Compliance
+5.1 No-Go Patterns (Forbidden by Design)
+Pattern	Why No-Go	System Implementation
+Individual Profiling	Violates privacy, enables manipulation	All user data aggregated to cohort level; never expose individual scores
+Fake Social Proof	Damages trust; unethical	No simulated user activity; AI bots labeled as AI
+Urgency Manipulation	Exploits vulnerability	No countdown timers, limited-time offers, or pressure language
+Dark Patterns	LGPD violation	No difficult opt-out, no disguised links, no pre-checked boxes
+Behavioral Addiction Loops	Damages community health	Missions designed for competence (not compulsion); no streak punishments
+Minors Targeting	Illegal + unethical	Age gate enforced; no conversion offers for age < 18
+
+5.2 Ethical Decision Framework (Per Feature)
+Before deploying any showroom variant or bot prompt:
+Question 1: Transparency
+•	Can you explain this rule to a user and they understand it?
+•	If answer is no → Don't deploy
+Question 2: Reversibility
+•	Can a user opt out or go back?
+•	If answer is no → Don't deploy
+Question 3: Autonomy
+•	Is the user making a real choice, or are you nudging them?
+•	If nudging → Ensure nudge is in their interest, not yours
+Question 4: Harm
+•	Could this damage the community or user wellbeing?
+•	If answer is maybe → Run safety review
+5.3 Audit & Compliance
+Monthly Audit: Showroom Variants
+SELECT
+variant_id,
+bot_mode,
+hard_sell_enabled,
+data_collection_intensity,
+avg_lead_quality_score,
+form_abandon_rate,
+user_feedback_sentiment
+FROM showroombottests
+WHERE end_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+AND status = 'completed'
+ORDER BY avg_lead_quality_score DESC;
+-- Audit rule: If hard_sell_enabled = true and form_abandon_rate > 50%,
+-- flag for review. May indicate coercive language.
+Quarterly Review: Cohort Readiness Criteria
+1.	Verify that readiness criteria remain unbiased
+o	No demographic proxies (e.g., "users in X zone are always ready")
+o	No correlations with minors or vulnerable groups
+2.	Check for drift in application
+o	Are some communities repeatedly offered showrooms vs. others?
+o	Is there geographic or leader-based bias?
+3.	Review user feedback
+o	Survey: "Did you feel pressured to enter showroom?"
+o	Target: <5% users report pressure
+4.	Update criteria if necessary
+________________________________________
+Part 6: Technical Implementation Roadmap
+Phase 1: Foundation (Weeks 1–2)
+Pillar 1 Extensions:
+•	[ ] Add intentreadinessdaily aggregate to event spec
+•	[ ] Implement intentReadinessBuild job
+•	[ ] Create cohort classification logic
+•	[ ] Add community readiness API endpoint
+•	[ ] Add community readiness dashboard (admin view)
+Pillar 2 Skeleton:
+•	[ ] Create showroom data model (tables: showrooms, variants, layouts)
+•	[ ] Design showroom landing page (static, no AI yet)
+•	[ ] Implement lead capture form (optional, not mandatory)
+•	[ ] Add showroom access logic (who can see which showrooms?)
+Phase 2: AI Bot (Weeks 3–4)
+•	[ ] Design bot conversation framework (opening prompts, branching logic)
+•	[ ] Implement bot qualification pipeline (extract intent signals from conversation)
+•	[ ] Add bot session logging (showroomperformancedaily)
+•	[ ] Create bot fallback rules (when to escalate to human)
+Phase 3: Feedback Loop (Weeks 5–6)
+•	[ ] Implement showroomPerformanceBuild job
+•	[ ] Create automated layout adjustment rules
+•	[ ] Build A/B testing infrastructure
+•	[ ] Add winner selection logic
+Phase 4: Bridge & UX (Weeks 7–8)
+•	[ ] Implement soft conversion offers (3 options: passive, contextual, community-led)
+•	[ ] Add frequency capping and decay logic
+•	[ ] Build transition UI components
+•	[ ] Add minors gate (no showroom access if age < 18)
+Phase 5: Monitoring & Iteration (Ongoing)
+•	[ ] Set up showroom dashboards
+•	[ ] Create alert thresholds (e.g., abandon rate > 50%)
+•	[ ] Monthly audit reviews
+•	[ ] Quarterly readiness criteria refresh
+________________________________________
+Part 7: Metrics & Success Criteria
+Pillar 1: Social Intelligence
+Metric	Target	Measurement
+Community Readiness Score (avg)	≥ 0.70	intentreadinessdaily job output
+% Communities Tier 1 Green	≥ 40%	Daily dashboard
+User Zone Diversity (avg)	≥ 3.5 zones	zonedwelldaily aggregates
+Mission Completion Rate	≥ 50%	missionactivitydaily aggregates
+D7 Retention	≥ 40%	Cohort-based calculation
+Social Reciprocity (lounge participation)	≥ 60% users	Aggregate % with ≥2 lounge visits
+
+Pillar 2: Conversion
+Metric	Target	Measurement
+Showroom Entrance Rate (% eligible users)	30–50%	Form entries / eligible users
+Showroom Dwell Time (avg)	≥ 90 sec	showroomperformancedaily
+Lead Quality Score (avg)	≥ 7/10	Bot qualification output
+Form Completion Rate	20–40%	Forms completed / forms started
+Variant Improvement (avg)	≥ 15% per cycle	Win criterion in A/B tests
+
+The Bridge: Transition Quality
+Metric	Target	Measurement
+Transition Friction (user satisfaction)	≥ 4/5	Post-showroom survey
+False Positive Rate (users offered showroom but not ready)	< 20%	Offer sent but immediate exit
+Minors Protection (no offers to age < 18)	100%	Audit: flag any offers to minors
+User Autonomy (% users who feel pressure)	< 5%	Quarterly survey
+
+________________________________________
+Conclusion
+Your two-pillar architecture is scientifically sound and ethically defensible. By:
+1.	Pillar 1: Using Graph Theory and behavioral science to map social density and identify high-potential communities (not individuals)
+2.	Pillar 2: Designing AI-driven showrooms with automated feedback loops that respect user autonomy
+3.	The Bridge: Creating non-coercive transition mechanics based on explicit opt-in and behavioral readiness
+You create a sustainable, defensible SaaS model that prioritizes user trust and community health while enabling qualified lead generation.
+The key is aggregation over profiling, transparency over manipulation, and autonomy over coercion. This approach is harder to scale fast, but it builds lasting competitive advantage through trust and compliance.
+________________________________________
+Next Steps
+1.	Refine acceptance criteria for Tier 1 readiness (adjust ReadinessScore formula based on data)
+2.	Design bot opening prompt (test 3–5 variants for clarity and intent capture)
+3.	Define showroom layouts (3 variants: educational, consultative, sales-oriented)
+4.	Set up monitoring dashboards before any conversions go live
+5.	Run closed-loop pilot (one community, manually-gated showroom, 2-week iteration)
+6.	Monthly ethical review (ensure no drift toward manipulation)
+________________________________________
+Questions to Address in Next Sprint:
+•	What are your target lead quality thresholds? (What defines a "good lead" for your use case?)
+•	How will you handle geographic or vertical variation? (Different showrooms for different partner types?)
+•	Do you have a preferred CRM/sales tool for lead routing? (Impacts bot handoff and data flow)
+•	What is your tolerance for false positives? (Users offered showroom who aren't ready vs. false negatives who are ready but not offered)
