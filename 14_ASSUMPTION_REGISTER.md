@@ -33,28 +33,32 @@ This document tracks all assumptions underlying the Unofficial Communities platf
 
 ## Assumptions
 
-### ASM-001: WhatsApp Remains Primary Communication Channel
+### ASM-001: WhatsApp and Instagram Are Key Engagement Channels in Brazil
 **Scope:** Market
 **Evidence Level:** High
 **Status:** Active
 
 **Description:**
-Brazilian communities will continue to use WhatsApp as their primary communication channel for the foreseeable future.
+Brazilian communities primarily communicate via WhatsApp and Instagram. UC is intentionally multi-channel: users join the platform directly and connect social media accounts (WhatsApp, Instagram, Facebook, etc.) as engagement multipliers. Collecting WhatsApp and Instagram at login is important to start capturing engagement data (messages, comments, shares, story replies, reactions). The more channels a user connects, the more engagement signals available for XP, missions, and community analytics. Email notifications serve as an additional outbound channel.
+
+**Note:** The WABA (WhatsApp Business API) cannot verify WhatsApp group membership — it is limited to 8 people and you cannot add an API number to arbitrary groups. UC does not depend on group membership verification.
 
 **Evidence:**
 - WhatsApp has 99% penetration in Brazil
-- No viable competitor gaining traction
-- User behavior deeply entrenched
+- Instagram is the second most-used social platform in Brazil
+- Multi-channel approach reduces single-platform dependency
+- User behavior deeply entrenched across both platforms
 
 **Risk if False:**
-- Core value proposition becomes irrelevant
-- Integration work wasted
-- Need to pivot to alternative platforms
+- Engagement data collection becomes insufficient if users don't connect channels
+- Need to find alternative engagement signal sources
+- Single-channel dependency creates platform risk
 
 **Validation Plan:**
-- Monitor market share reports quarterly
-- Track user-reported communication preferences
-- Watch for Telegram/Discord growth in target demographics
+- Monitor channel connection rates at signup (WhatsApp, Instagram, other)
+- Track engagement signal volume per channel
+- Watch for new platform adoption in target demographics
+- Measure correlation between connected channels and engagement scores
 
 ---
 
@@ -217,10 +221,10 @@ WhatsApp Cloud API and Instagram Graph API will maintain backward compatibility 
 **Status:** Active
 
 **Description:**
-Users will complete the WhatsApp verification and profile setup flow before accessing features.
+Users will complete the registration and social channel connection flow (WhatsApp and/or Instagram) before accessing features.
 
 **Evidence:**
-- Required for community verification (necessary)
+- Required for engagement data collection (necessary)
 - Similar flows exist in competitors
 - No alternative identified
 
@@ -341,7 +345,7 @@ Target users have access to modern browsers (Chrome 90+, Safari 14+, Firefox 90+
 
 | ID | Description | Scope | Evidence | Status |
 |----|-------------|-------|----------|--------|
-| ASM-001 | WhatsApp Remains Primary Communication | Market | High | Active |
+| ASM-001 | WhatsApp & Instagram Are Key Engagement Channels | Market | High | Active |
 | ASM-002 | Community Leaders Will Pay for Tools | Market | Medium | Active |
 | ASM-003 | Gamification Improves Community Health | Product | Medium | Active |
 | ASM-004 | 3D World Adds Value Beyond 2D | Product | Low | Active |
@@ -358,4 +362,4 @@ Target users have access to modern browsers (Chrome 90+, Safari 14+, Firefox 90+
 
 *Next Assumption ID: ASM-013*
 
-<!-- Last Reviewed: 2026-01-28 - All 12 assumptions verified as still active and accurate -->
+<!-- Last Updated: 2026-01-29 - ASM-001 reframed from WhatsApp-only to multi-channel (WhatsApp + Instagram + others), added WABA limitation note; ASM-008 updated for multi-channel onboarding -->

@@ -137,20 +137,38 @@ Examples:
 | `brand_zone.entered` | User enters brand zone | `{ community_id, brand_zone_id }` | Server |
 | `brand_zone.dwell` | User dwell in brand zone | `{ community_id, brand_zone_id, dwell_seconds }` | Server |
 
-### 2.8 WhatsApp Activity Events (Living Graph)
+### 2.8 Social Channel Activity Events (Living Graph)
+
+UC is a multi-channel platform. Users connect social media accounts (WhatsApp, Instagram, Facebook, etc.) to generate engagement signals. The more channels connected, the richer the engagement data. Events are organized by channel, with the same privacy rules applied uniformly.
+
+#### 2.8.1 WhatsApp Activity Events
 
 | Event Name | Trigger | Properties | Source |
 |------------|---------|------------|--------|
-| `whatsapp.message.sent` | User sends message to group | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `whatsapp.message.sent` | User sends message in connected channel | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
 | `whatsapp.reaction.added` | User reacts to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
 | `whatsapp.reply.sent` | User replies to message | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
-| `whatsapp.member.joined` | User joins WhatsApp group | `{ community_id, identity_id, joined_via }` | Webhooks |
-| `whatsapp.member.left` | User leaves WhatsApp group | `{ community_id, identity_id, left_reason }` | Webhooks |
+| `whatsapp.member.joined` | User joins connected WhatsApp channel | `{ community_id, identity_id, joined_via }` | Webhooks |
+| `whatsapp.member.left` | User leaves connected WhatsApp channel | `{ community_id, identity_id, left_reason }` | Webhooks |
 
-> **Privacy Rules:**
-> - Events are **counts-only** - no message content is ever stored
+#### 2.8.2 Instagram Activity Events (Pending Implementation)
+
+| Event Name | Trigger | Properties | Source |
+|------------|---------|------------|--------|
+| `instagram.comment.sent` | User comments on connected account post | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `instagram.story.replied` | User replies to a story | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `instagram.share.sent` | User shares content | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `instagram.reaction.added` | User reacts to content | `{ community_id, identity_id, timestamp_bucket }` | Webhooks |
+| `instagram.follow.started` | User follows connected account | `{ community_id, identity_id }` | Webhooks |
+
+#### 2.8.3 Future Channel Events
+
+Additional channels (Facebook, email opens/clicks, direct platform activity) will follow the same `<channel>.<entity>.<action>` naming convention and privacy rules as they are integrated.
+
+> **Privacy Rules (all social channels):**
+> - Events are **counts-only** — no message content is ever stored
 > - Events are stored in aggregate form (daily buckets) for graph computation
-> - Collection requires explicit consent (`consents.whatsapp_activity = true`)
+> - Collection requires explicit consent per channel (e.g., `consents.whatsapp_activity`, `consents.instagram_activity`)
 > - `identity_id` is anonymized after 90 days per retention policy
 
 ### 2.9 Age Verification Events (Adult-by-Design)
@@ -240,6 +258,7 @@ interface BaseEvent {
 | `showroom.*` | `showroom_id`, `community_id`, `event_version` | `telemetry` |
 | `brand_zone.*` | `community_id`, `event_version` | `telemetry` |
 | `whatsapp.*` | `community_id`, `identity_id`, `event_version` | `whatsapp_activity` |
+| `instagram.*` | `community_id`, `identity_id`, `event_version` | `instagram_activity` |
 | `age.*` | `identity_id`, `event_version` | None (required for safety) |
 | `webhook.*` | `event_version` | None (system event) |
 | `system.*` | `event_version` | None (system event) |
@@ -336,6 +355,7 @@ interface BaseEvent {
 
 **Consent Gate Rules:**
 - `whatsapp.*` events → Require `whatsapp_activity` consent → DROP if denied
+- `instagram.*` events → Require `instagram_activity` consent → DROP if denied
 - `showroom.*`, `brand_zone.*` events → Require `telemetry` consent → Anonymize if denied
 - `user.*`, `world.*`, etc. → Require `telemetry` consent → Anonymize if denied
 - `age.*`, `system.*` → No consent required (safety/operational)
@@ -452,6 +472,7 @@ CREATE TABLE analytics_events (
     properties JSON NOT NULL,
     consent_telemetry BOOLEAN NULL,                       -- Consent state at ingestion time
     consent_whatsapp BOOLEAN NULL,                        -- WhatsApp consent state
+    consent_instagram BOOLEAN NULL,                       -- Instagram consent state
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_event_time (event_name, timestamp),
@@ -507,13 +528,13 @@ These aggregates are required for the Living Graph community-to-community simila
 |----------------|--------|------------|---------|---------|
 | `community_activity_daily` | 1 day | `{community_id}` | `{active_identities, sessions, dwell_total_sec}` | Baseline activity normalization |
 | `zone_dwell_daily` | 1 day | `{community_id, zone_id}` | `{enter_count, exit_count, dwell_sec_bucketed}` | Proxemics evaluation |
-| `whatsapp_activity_daily` | 1 day | `{community_id}` | `{messages, reactions, joins, leaves}` | Primary social rhythm |
+| `social_activity_daily` | 1 day | `{community_id, channel}` | `{messages, reactions, joins, leaves}` | Social rhythm across all connected channels (WhatsApp, Instagram, etc.) |
 | `mission_activity_daily` | 1 day | `{community_id, mission_type}` | `{completed, unique_completers}` | Interest/competence signature |
 | `portal_activity_daily` | 1 day | `{from_community_id, to_community_id}` | `{travels, bounces, unique_travelers}` | Cross-community flow (E2 signal) |
 
 **Implementation Rules:**
 - Dwell is derived from `world.zone.entered` / `world.zone.exited` timestamp pairs
-- WhatsApp aggregates only include consented users (`whatsapp_activity = true`)
+- Social channel aggregates only include consented users (per-channel consent: `whatsapp_activity`, `instagram_activity`, etc.)
 - All aggregates run at **04:00 America/Sao_Paulo** daily
 - Backfill capability required for 28 days (pilot requirement)
 
@@ -627,14 +648,15 @@ CREATE TABLE analytics_aggregates (
   }
 }
 
-// Living Graph: WhatsApp Activity Daily
+// Living Graph: Social Activity Daily (per channel)
 {
-  "aggregate_type": "whatsapp_activity_daily",
+  "aggregate_type": "social_activity_daily",
   "period_type": "daily",
   "period_start": "2026-01-14",
   "period_end": "2026-01-14",
   "dimensions": {
-    "community_id": 1
+    "community_id": 1,
+    "channel": "whatsapp"
   },
   "metrics": {
     "messages": 234,
@@ -700,6 +722,12 @@ async function ingestEvent(event: BaseEvent, identityId: number): Promise<void> 
     return; // Do not store event
   }
 
+  if (consentRequired === 'instagram_activity' && !consent.instagram_activity) {
+    // Instagram events require explicit opt-in - DROP if no consent
+    console.log(`[Consent] Dropping ${event.event_name} - no instagram_activity consent`);
+    return; // Do not store event
+  }
+
   if (consentRequired === 'telemetry' && !consent.telemetry) {
     // Telemetry events - anonymize if no consent
     event.identity_id = null;
@@ -710,6 +738,7 @@ async function ingestEvent(event: BaseEvent, identityId: number): Promise<void> 
   event.consent_flags = {
     telemetry: consent.telemetry,
     whatsapp_activity: consent.whatsapp_activity,
+    instagram_activity: consent.instagram_activity,
   };
 
   // Validate schema before persistence
@@ -721,6 +750,7 @@ async function ingestEvent(event: BaseEvent, identityId: number): Promise<void> 
 function getRequiredConsent(domain: string): 'telemetry' | 'whatsapp_activity' | null {
   switch (domain) {
     case 'whatsapp': return 'whatsapp_activity';
+    case 'instagram': return 'instagram_activity';
     case 'user':
     case 'gamification':
     case 'community':
@@ -953,4 +983,4 @@ Exports follow data minimization principles:
 
 *This document defines how events flow through the system. All new events must be added to the catalog before implementation.*
 
-<!-- Last Updated: 2026-01-29 - Added showroom.* and brand_zone.* events, Two-Pillar aggregates, bot transcript prohibition per 25_TWO_PILLAR_SAAS_STRATEGY.md -->
+<!-- Last Updated: 2026-01-29 - Reframed Section 2.8 from WhatsApp-only to multi-channel (WhatsApp + Instagram + future channels); added Instagram events; renamed whatsapp_activity_daily to social_activity_daily with channel dimension; added instagram_activity consent -->

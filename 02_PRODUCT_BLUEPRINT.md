@@ -12,13 +12,13 @@
 "We know how to design healthier communities at scale, and we can prove it."
 
 ### Vision
-Unofficial Communities transforms WhatsApp groups into thriving, measurable communities through ethical gamification and spatial presence, enabling community leaders to build engagement without manipulation.
+Unofficial Communities empowers community leaders to build thriving, measurable communities by connecting engagement data from WhatsApp, Instagram, and other social channels through ethical gamification and spatial presence — enabling engagement without manipulation.
 
 ### Value Proposition
 
 | For | Who | Our Product | Unlike | Key Differentiator |
 |-----|-----|-------------|--------|-------------------|
-| Community Leaders | Manage WhatsApp groups of 50-500 members | Provides gamification, analytics, and 3D presence | Generic community tools that use dark patterns | Evidence-based ethical design with measurable outcomes |
+| Community Leaders | Manage communities of 50-500 members across WhatsApp, Instagram, and other channels | Provides gamification, analytics, and 3D presence | Generic community tools that use dark patterns | Evidence-based ethical design with measurable outcomes |
 
 ---
 
@@ -124,7 +124,7 @@ See `20_ADULT_BY_DESIGN_SPEC.md` for complete specification.
 | Feature | Description | Status | Priority |
 |---------|-------------|--------|----------|
 | WhatsApp Verification | Phone number verification via WhatsApp Cloud API | Implemented | P0 |
-| Instagram Verification | Optional social verification via Instagram Graph API | Implemented | P1 |
+| Instagram Verification | Social verification via Instagram Graph API | Implemented | P0 |
 | Profile Creation | Name, avatar, bio setup | Implemented | P0 |
 | Session Management | Redis-backed sessions, 7-day TTL | Implemented | P0 |
 
@@ -174,8 +174,8 @@ See `20_ADULT_BY_DESIGN_SPEC.md` for complete specification.
 
 | Feature | Description | Status | Priority |
 |---------|-------------|--------|----------|
-| WhatsApp Webhooks | Receive group messages for XP | Implemented | P0 |
-| Instagram Webhooks | Social activity tracking | Partial | P2 |
+| WhatsApp Webhooks | Receive social activity data (messages, reactions, replies) for engagement scoring | Implemented | P0 |
+| Instagram Webhooks | Receive social activity data (comments, shares, story replies) for engagement scoring | Partial | P0 |
 | API for Partners | External integrations | Planned | P3 |
 
 ---
@@ -186,8 +186,8 @@ The following are explicitly **NOT** goals for this product:
 
 | Non-Goal | Rationale |
 |----------|-----------|
-| Replace WhatsApp | We complement, not compete with WhatsApp |
-| Build a chat platform | Chat happens in WhatsApp; we add value on top |
+| Replace social media channels | We complement WhatsApp, Instagram, and other channels — not compete with them |
+| Build a chat platform | Chat happens on users' preferred channels (WhatsApp, Instagram, etc.); we add value by collecting engagement signals across all connected channels |
 | Maximize time-on-platform | We optimize for meaningful engagement, not attention capture |
 | Support all community sizes | We focus on 50-500 members; micro or mega communities are out of scope |
 | Global launch immediately | Brazil-first; internationalization is a future phase |
@@ -206,7 +206,7 @@ The following are explicitly **NOT** goals for this product:
 | Single VPS | All services on one Hostinger VPS | Scaling limited, single point of failure |
 | Portuguese Only | No i18n infrastructure | Brazil-only market |
 | Web Only | No native mobile apps | Mobile experience via responsive web |
-| Meta API Dependency | WhatsApp/Instagram features depend on Meta | Platform risk |
+| Meta API Dependency | WhatsApp/Instagram engagement data collection depends on Meta APIs | Platform risk |
 
 ### 6.2 Business Constraints
 
@@ -293,5 +293,5 @@ Current Phase: **Foundation** (UC World Phase 1)
 
 *This document defines what we build and why. Implementation details live in SYSTEM_ALGORITHM_AND_LIFECYCLE_SPEC.md and repository CLAUDE.md files.*
 
-<!-- Last Updated: 2026-01-18 - Added Adult-by-Design policy (Section 3.4) -->
+<!-- Last Updated: 2026-01-29 - Reframed from WhatsApp-centric to multi-channel platform (vision, value prop, priorities, non-goals, constraints) -->
 <!-- Last Reviewed: 2026-01-26 - No updates needed -->

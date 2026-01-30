@@ -11,7 +11,7 @@ FINAL_EXECUTION_PLAN.md
 
 ### 0.1 Scope (what this plan definitively delivers)
 
-This plan defines the end-to-end execution of the **Unofficial Communities Ecosystem** as a **science-governed 3D servicescape** that enhances WhatsApp communities via:
+This plan defines the end-to-end execution of the **Unofficial Communities Ecosystem** as a **science-governed 3D servicescape** that enhances communities via multi-channel engagement (WhatsApp, Instagram, and other connected social channels):
 
 * A **zone-based UC World** (hex layout, proxemic zoning, ethical prompts)
 * A **Living Graph** (community-to-community graph + neighborhood portals)
@@ -252,7 +252,7 @@ This is the operational contract the build must satisfy.
 
 The Living Graph is the **daily-updated community-to-community graph** that:
 
-1. Ingests behavior signals (world + WhatsApp + missions)
+1. Ingests behavior signals (world + WhatsApp + Instagram + other connected channels + missions)
 2. Aggregates into community-level features
 3. Builds weighted edges between communities
 4. Produces a **Neighborhood Graph of degree ≤ 6** per community
@@ -315,16 +315,18 @@ The Living Graph is the **daily-updated community-to-community graph** that:
 * `world.portal.activated` (must be extended for destination)
 * `mission.completed` (and/or mission lifecycle events)
 
-**WhatsApp-derived events** (currently missing from `07_EVENT_AND_ANALYTICS_SPEC.md` as a catalog):
+**Social channel-derived events** (WhatsApp implemented in `07_EVENT_AND_ANALYTICS_SPEC.md`; Instagram pending):
 
 * `whatsapp.message.sent` (counts only)
 * `whatsapp.reaction.added` (counts only)
 * `whatsapp.member.joined/left` (membership dynamics)
-* `whatsapp.admin.action` (optional, for governance; minimized)
+* `instagram.comment.sent` (counts only) — pending
+* `instagram.story.replied` (counts only) — pending
+* `instagram.share.sent` (counts only) — pending
 
 **Gap classification:**
 
-* **Blocking:** Without WhatsApp interaction counts, the graph is mostly “world-only” and risks being unrepresentative of the real community dynamics (WhatsApp is primary channel).
+* **Blocking:** Without social channel interaction counts, the graph is mostly "world-only" and risks being unrepresentative of real community dynamics. WhatsApp and Instagram are the initial primary data sources, with more channels planned.
 * This plan mandates adding these events to the taxonomy with minimization.
 
 ## 5.4 Aggregation layer: community-level features (buildable now)
@@ -338,7 +340,7 @@ All aggregates are keyed by: `aggregate_type`, `period_start`, and `dimensions` 
 | `community_activity_daily` | 1 day  | `{community_id}`                       | `{active_identities, sessions, dwell_total_sec}`   | Baseline activity normalization     |
 | `zone_dwell_daily`         | 1 day  | `{community_id, zone_id}`              | `{enter_count, exit_count, dwell_sec_bucketed}`    | Proxemics + servicescape evaluation |
 | `portal_activity_daily`    | 1 day  | `{from_community_id, to_community_id}` | `{travels, bounces}`                               | Social flow signal E2               |
-| `whatsapp_activity_daily`  | 1 day  | `{community_id}`                       | `{messages, reactions, join_events, leave_events}` | Primary social rhythm               |
+| `social_activity_daily`    | 1 day  | `{community_id, channel}`              | `{messages, reactions, join_events, leave_events}` | Social rhythm (WhatsApp, Instagram, other channels) |
 | `mission_activity_daily`   | 1 day  | `{community_id, mission_type}`         | `{completed}`                                      | Interest/competence signature       |
 
 **Implementation rule:**
@@ -366,7 +368,7 @@ All aggregates are keyed by: `aggregate_type`, `period_start`, and `dimensions` 
 
   * `zone_dwell_daily` distributions
   * `mission_activity_daily` distributions
-  * `whatsapp_activity_daily` normalized rhythm
+  * `social_activity_daily` normalized rhythm (WhatsApp, Instagram, other channels)
 * Output: cosine similarity across community vectors
 
 **E4 — Semantic similarity (future / high risk)**
@@ -629,7 +631,7 @@ Before pilot exit, conduct tabletop exercises to validate circuit breaker respon
 | Step | Output                                                    | Depends on |
 | ---: | --------------------------------------------------------- | ---------- |
 |    0 | Spec alignment + repo readiness                           | none       |
-|    1 | Event taxonomy complete (world + WhatsApp + portals)      | 0          |
+|    1 | Event taxonomy complete (world + social channels + portals) | 0          |
 |    2 | Consent-gated ingestion to `analytics_events`             | 1          |
 |    3 | Daily aggregates (community-level features)               | 2          |
 |    4 | Graph schema + build job (edges + portals + runs)         | 3          |
@@ -661,16 +663,16 @@ Before pilot exit, conduct tabletop exercises to validate circuit breaker respon
 
 ### STEP 1 — Event taxonomy upgrade (Blocking for Living Graph)
 
-**Objective:** Make the ecosystem observable with minimal, ethical signals.
+**Objective:** Make the ecosystem observable with minimal, ethical signals across all connected channels.
 **Systems involved:** `uc-world`, `uc-webhooks`, `07_EVENT_AND_ANALYTICS_SPEC.md`.
 **Behavioral outcome:** None directly; creates measurable signals.
 **DOD:**
 
-* Add WhatsApp event types to taxonomy (counts-only, no content)
+* Add social channel event types to taxonomy (WhatsApp + Instagram; counts-only, no content)
 * Extend `world.portal.activated` to include destination community (or add `world.portal.traveled`)
 * Ensure zone events use canonical zone IDs (`onboarding`, `hub`, `workshop`, `lounge_w`, `lounge_e`, `brand`, `quiet`, `portal_[dir]`)
   **Go / No-Go:**
-* **No-Go** to graph build if WhatsApp events are not instrumented (graph becomes “world-biased”).
+* **No-Go** to graph build if social channel events are not instrumented (graph becomes "world-biased").
   **Risks if rushed:** Overcollection (privacy violation) or undercollection (graph useless).
 
 ---
@@ -698,7 +700,7 @@ Before pilot exit, conduct tabletop exercises to validate circuit breaker respon
 **Behavioral outcome:** Enables health measurement without profiling.
 **DOD:**
 
-* Aggregates created: `community_activity_daily`, `zone_dwell_daily`, `whatsapp_activity_daily`, `mission_activity_daily`, `portal_activity_daily`
+* Aggregates created: `community_activity_daily`, `zone_dwell_daily`, `social_activity_daily`, `mission_activity_daily`, `portal_activity_daily`
 * Derived dwell computed reliably
 * Backfill for last 28 days possible (for pilot)
   **Go / No-Go:**
@@ -985,7 +987,7 @@ This plan requires edits to keep the system coherent. These are not optional; ot
 
 **Add:**
 
-* WhatsApp event taxonomy (counts-only; no message content)
+* Social channel event taxonomy — WhatsApp (done) + Instagram (pending) — counts-only; no message content
 * Portal travel destination field:
 
   * Option A: extend `world.portal.activated` properties with `to_community_id`
@@ -1044,7 +1046,7 @@ Add new risks (IDs continuing sequence):
 | Gap                                                                                                                      | Why it matters                                                  | Classification                        | Required action                                                                |
 | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------ |
 | v02 references missing files (`estudo-graph-theory-plataformas-comunidade.md`, `UC_EXECUTION_PLAN.md`) not provided here | Evidence chain incomplete                                       | Non-blocking but must be logged       | Remove references from future docs or add those sources to canonical set       |
-| WhatsApp events absent from analytics taxonomy                                                                           | Graph becomes unrepresentative of real community behavior       | **Blocking**                          | Add minimal events (counts-only) to `07` and implement ingestion               |
+| Instagram events absent from analytics taxonomy (WhatsApp done)                                                          | Graph under-represents multi-channel community behavior        | **Blocking**                          | Add Instagram events (counts-only) to `07` and implement ingestion             |
 | Timezone mismatch across specs (UTC vs BRT)                                                                              | Wrong daily windows → wrong missions/aggregates/graph           | **Blocking**                          | Decide and align across `04`, `08`, `06`                                       |
 | Proxemics numeric thresholds not defined                                                                                 | Density guardrails can’t auto-enforce safely                    | Non-blocking but risky                | Pilot calibration: measure crowding proxies and set thresholds                 |
 | Minor protection logic not representable (no age signals in schema)                                                      | Strategic briefing calls out minors; no system mechanism exists | Future optimization (high importance) | Decide whether age gating exists; if yes, add schema + consent + safety design |
@@ -1088,7 +1090,7 @@ Produce definitive, executable plan that unifies UC World (servicescape), Living
 
 1. `07_EVENT_AND_ANALYTICS_SPEC.md`
 
-   * Add WhatsApp analytics events (counts-only; no content).
+   * Add social channel analytics events — WhatsApp (done) + Instagram (pending) — counts-only; no content.
    * Extend portal events to capture destination community.
    * Lock zone IDs to canonical set.
 2. `08_BACKGROUND_JOBS_AND_ASYNC_PROCESSING.md`
@@ -1113,5 +1115,5 @@ Produce definitive, executable plan that unifies UC World (servicescape), Living
 * No graph-driven portals until event taxonomy + consent-gated ingestion + daily aggregates are stable.
 * No portal travel until membership/visibility gating is implemented and tested.
 * No semantic/chat-derived signals until governance + consent + minimization proof exists.
-<!-- Last Updated: 2026-01-19 - Step 7: Added Section 6.5 Tabletop Exercise Scenarios with 4 exercises and pre-pilot exit checklist -->
+<!-- Last Updated: 2026-01-29 - Reframed from WhatsApp-centric to multi-channel (WhatsApp + Instagram + others); renamed whatsapp_activity_daily to social_activity_daily -->
 <!-- Last Reviewed: 2026-01-26 - Full audit: Steps 0-3 100%, Step 4 85%, Step 5 75%, Step 6 80%, Step 7 80%, Step 8 50%, Step 9 15% -->
