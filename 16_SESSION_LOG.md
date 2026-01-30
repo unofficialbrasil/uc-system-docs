@@ -41,6 +41,43 @@ Each session entry follows this structure:
 
 ---
 
+## SESS-2026-01-30-1
+
+**Date:** 2026-01-30
+**Focus Area:** Multi-channel documentation reframing + Instagram engagement pipeline
+
+### Summary
+Reframed all documentation from WhatsApp-centric to multi-channel platform. Implemented Instagram Graph API webhook support for comment events. Expanded XP rules and daily presence to reward Instagram engagement. Fixed nginx webhook routing for all site domains. Tested Meta webhook connectivity — WhatsApp status events confirmed working, full message webhooks pending WABA phone number re-verification (code_verification_status: EXPIRED).
+
+### Changes Made
+- **uc-webhooks/src/meta/instagramGraphMapper.ts** (NEW): Maps Instagram Graph API `entry[].changes[]` payloads (comments) to SocialEvents
+- **uc-webhooks/src/meta/instagramRoute.ts**: Now processes both Messaging API (`entry[].messaging`) and Graph API (`entry[].changes`) events
+- **uc-webhooks/src/socialEvent.ts**: Added `comment` to `SocialEventType` enum
+- **uc-api/src/services/socialEventsProcessor.ts**: XP rules expanded (`reaction` +1, `reply` +2, `comment` +2); daily presence significant kinds broadened
+- **uc-api/src/services/analyticsEventsService.ts**: Added `instagram.comment_sent` to event type mapping
+- **nginx/unofficial.conf**: Added `/webhook/whatsapp` and `/webhook/instagram` locations to `unofficialcommunities.com.br` and `unofficialbrasil.com.br` HTTPS server blocks (previously only on `api.*` domains)
+- **uc-system-docs**: Multi-channel reframing across 02, 07, 14, 19 (committed in previous context window)
+
+### Documentation Updated
+- `uc-webhooks/CLAUDE.md`: Added instagramGraphMapper.ts to structure, updated event type table, added current status entry
+- `uc-api/CLAUDE.md`: Added Instagram engagement XP status entry, updated date
+- `16_SESSION_LOG.md`: This entry
+
+### Decisions Made
+- Removed `mention` event type — Meta's Instagram webhook doesn't offer a `mentions` field for subscription
+- Webhook URLs use `api.unofficialbrasil.com.br` domain in Meta dashboard, but nginx now routes webhooks on all domains for resilience
+- WABA phone number `+55 11 97271-8415` needs re-verification (code_verification_status: EXPIRED)
+
+### Follow-up Items
+- [ ] Re-verify WABA phone number (+55 11 97271-8415) — code_verification_status is EXPIRED
+- [ ] Request `instagram_manage_comments` permission via Meta App Review for Graph API comment webhooks
+- [ ] Request `instagram_manage_insights` permission for `story_insights` webhook field
+- [ ] Test end-to-end Instagram DM webhook flow after permissions granted
+- [ ] Remove stale phone numbers from WABA (`+55 11 97572-7222`, `+1 555 176-5950`)
+- [ ] Switch Meta App from Development to Live mode before Feb 9 launch
+
+---
+
 ## SESS-2026-01-28-1
 
 **Date:** 2026-01-28
