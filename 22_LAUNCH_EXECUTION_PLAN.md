@@ -318,7 +318,7 @@ Week 2 (Jan 27 - Feb 2):
 - [x] SEO basics (meta tags, sitemap with 16 URLs, robots.txt, JSON-LD structured data)
 - [x] GA4 tracking active (G-H2G0PRBYS2 configured, consent-gated)
 - [x] GSC verified + sitemap submitted
-- [ ] Mobile responsive on all pages (needs manual testing)
+- [x] Mobile responsive on all pages (Lighthouse audit 2026-01-30: A11Y 96, SEO 100, BP 96 across 17 pages)
 
 ---
 
@@ -502,4 +502,4 @@ mkdir -p src/app/\(site\)/reembolso
 
 *This document consolidates estrategia-lancamento.md, cronograma-3-semanas.md, guia-tecnico-seguranca-seo.md, estrategia-completa-pt1.md, politicas-conteudo.md, and resumo-executivo.md into an actionable execution plan.*
 
-<!-- Last Updated: 2026-01-28 - GA4 measurement ID configured (G-H2G0PRBYS2), Week 2 checklist 8/9 done (mobile testing pending) -->
+<!-- Last Updated: 2026-01-30 - Week 2 checklist 9/9 complete, mobile responsive audit passed (A11Y 96, accessibility fixes applied) -->

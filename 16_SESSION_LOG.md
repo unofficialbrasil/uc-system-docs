@@ -4134,3 +4134,37 @@ Reviewed project status and next development steps. Identified that uc-close and
 - [ ] Complete Living Graph Steps 4-8 (doc 19)
 - [ ] Perform 5 canonical doc updates required by doc 25 Section 14 (07, 08, 06, 12, 09) before Pillar 2 implementation
 - [ ] Update doc 22 status table to reflect completed work (currently shows stale percentages from Jan 24)
+
+---
+
+## SESS-2026-01-30-2
+
+**Date:** 2026-01-30
+**Focus Area:** Infrastructure probe fixes, webhook testing, mobile accessibility audit
+
+### Summary
+Fixed Redis/MySQL health probes in uc-open command. Attempted WhatsApp and Instagram webhook testing (both blocked by Meta platform issues). Ran comprehensive Lighthouse mobile audit on all 17 public pages, identified and fixed accessibility issues, raising A11Y scores from 85-87 to 96.
+
+### Changes Made
+- **uc-system-docs/uc-open.md + uc-close.md**: Fixed Redis probe to read password from inside container (`docker exec ... cat /run/secrets/redis_password`), fixed MySQL probe to filter by `api-db` container and use DATABASE_URL credentials
+- **unofficial-communities/src/styles/theme.css**: `--uc-text-muted` lightened `#6e7681` → `#848d97`, `--uc-ruby` darkened `#fc3151` → `#e02b48` for WCAG contrast
+- **unofficial-communities/src/components/marketing/header.tsx**: Added `aria-label` and `aria-expanded` to mobile nav button
+- **unofficial-communities/src/components/marketing/footer.tsx**: Links changed to persistent underline
+- **unofficial-communities/src/components/marketing/blog-post.tsx**: Heading hierarchy fix (h3→h2), badge contrast fix
+- **unofficial-communities/6 page files** (blog, seguranca, reembolso, termos, privacidade, contato, precos, sobre): Heading hierarchy fixes, link underline fixes
+
+### Documentation Updated
+- unofficial-communities/CLAUDE.md: Added accessibility audit details to Current Status
+- uc-system-docs/22_LAUNCH_EXECUTION_PLAN.md: Week 2 mobile testing marked complete (9/9)
+- uc-system-docs/16_SESSION_LOG.md: This entry
+
+### Decisions Made
+- WhatsApp phone verification expired (`code_verification_status: EXPIRED`) — needs manual fix via Meta Business Suite, deferred
+- Instagram webhook subscription was missing entirely — created it, but app in Development mode blocks delivery to non-role users
+- Accessibility: targeted WCAG AA (4.5:1 contrast ratio), accepted 96 score as practical maximum (Lighthouse penalizes for items outside our control like color-contrast false positives)
+
+### Follow-up Items
+- [ ] Fix WhatsApp phone verification via Meta Business Suite (status: EXPIRED)
+- [ ] Switch Meta App to Live mode for Instagram webhook delivery
+- [ ] Complete Living Graph Steps 4-8 (doc 19)
+- [ ] Week 3 execution starts Feb 3: blog setup, SEO, GA4+GSC, cross-browser testing
